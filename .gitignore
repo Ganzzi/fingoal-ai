@@ -1,0 +1,21 @@
+# Environment and dependency files
+.env
+venv/
+.envrc
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+.bmad-core/
+.github/
+.claude/
+.roomodes
+CLAUDE.md
+
+.vscode/
+md_explode.py

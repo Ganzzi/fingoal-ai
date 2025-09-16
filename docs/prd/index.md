@@ -1,0 +1,12 @@
+# FinGoal AI Product Requirements Document (PRD)
+
+- [Goals and Background Context](./goals-and-background-context.md)
+- [Requirements](./requirements.md)
+- [User Interface Design Goals](./user-interface-design-goals.md)
+- [Technical Assumptions](./technical-assumptions.md)
+- [Epic List (Updated Multi-Agent Architecture)](./epic-list-updated-multi-agent-architecture.md)
+- [MVP Scope (Multi-Agent Architecture)](./mvp-scope-multi-agent-architecture.md)
+- [Epic 1: Foundational Setup & Core UI Shell](./epic-1-foundational-setup-core-ui-shell.md)
+- [Epic 2: Interactive Onboarding & Profile Management](./epic-2-interactive-onboarding-profile-management.md)
+- [Epic 3: The Data Dashboard & Analysis](./epic-3-the-data-dashboard-analysis.md)
+- [Epic 4: Advanced Interactions & Notifications](./epic-4-advanced-interactions-notifications.md)
