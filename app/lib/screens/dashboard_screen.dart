@@ -1,13 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../providers/dashboard_provider.dart';
+import '../widgets/dashboard/enhanced_accounts_section.dart';
+import '../widgets/dashboard/enhanced_budgets_section.dart';
+import '../widgets/dashboard/enhanced_transactions_section.dart';
+import '../widgets/dashboard/financial_overview_section.dart';
 
-/// Dashboard Screen Placeholder
+/// Financial Dashboard Screen
 ///
-/// This screen serves as a placeholder for the future Financial Dashboard functionality.
-/// It provides a clean, professional interface that will be replaced with actual
-/// financial data visualization in future stories.
-class DashboardScreen extends StatelessWidget {
+/// Displays comprehensive financial overview including:
+/// - Financial overview with key metrics
+/// - Money accounts and balances
+/// - Budget tracking and progress
+/// - Recent transactions
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  // TODO: Replace with actual auth token from auth provider
+  final String _mockAuthToken = 'mock-jwt-token-for-development';
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize provider and load dashboard data when screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<DashboardProvider>();
+
+      // Initialize provider first
+      provider.initialize().then((_) {
+        // If no cached data, fetch from API
+        if (!provider.hasData) {
+          provider.fetchDashboardData(authToken: _mockAuthToken);
+        }
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,219 +50,147 @@ class DashboardScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Main Icon
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(60),
-                ),
-                child: Icon(
-                  Icons.dashboard_outlined,
-                  size: 64,
-                  color: colorScheme.onPrimaryContainer,
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Title
-              Text(
-                l10n.financialDashboard,
-                style: textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 16),
-
-              // Description
-              Text(
-                l10n.financialOverviewDescription,
-                style: textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 24),
-
-              // Feature Cards Grid
-              Row(
-                children: [
-                  Expanded(
-                    child: Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.account_balance_wallet_outlined,
-                              color: colorScheme.primary,
-                              size: 32,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              l10n.accountBalance,
-                              style: textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+      appBar: AppBar(
+        title: Text(l10n.financialDashboard),
+        backgroundColor: colorScheme.surface,
+        elevation: 0,
+        scrolledUnderElevation: 1,
+        actions: [
+          Consumer<DashboardProvider>(
+            builder: (context, provider, _) {
+              return IconButton(
+                onPressed: provider.isLoading
+                    ? null
+                    : () => provider.refreshDashboardData(
+                        authToken: _mockAuthToken),
+                icon: provider.isLoading
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: colorScheme.onSurfaceVariant,
                         ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.trending_up_outlined,
-                              color: colorScheme.primary,
-                              size: 32,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              l10n.spendingTrends,
-                              style: textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.savings_outlined,
-                              color: colorScheme.primary,
-                              size: 32,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              l10n.budgetTracking,
-                              style: textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.insights_outlined,
-                              color: colorScheme.primary,
-                              size: 32,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              l10n.financialInsights,
-                              style: textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Additional Info Card
-              Card(
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.analytics_outlined,
-                        color: colorScheme.primary,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          l10n.realtimeAnalytics,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Coming Soon Badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  l10n.comingSoon,
-                  style: textTheme.labelMedium?.copyWith(
-                    color: colorScheme.onSecondaryContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
+                      )
+                    : const Icon(Icons.refresh),
+                tooltip: 'Refresh',
+              );
+            },
           ),
-        ),
+        ],
+      ),
+      body: Consumer<DashboardProvider>(
+        builder: (context, provider, _) {
+          if (provider.isLoading && provider.dashboardData == null) {
+            // Initial loading state
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: colorScheme.primary,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading your financial data...',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (provider.error != null) {
+            // Error state
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: colorScheme.error,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Unable to load dashboard',
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      provider.error?.message ?? 'Unknown error occurred',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: () => provider.refreshDashboardData(
+                          authToken: _mockAuthToken),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Try Again'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          final data = provider.dashboardData;
+          if (data == null) {
+            // No data state (shouldn't happen, but defensive)
+            return const Center(
+              child: Text('No dashboard data available'),
+            );
+          }
+
+          // Main dashboard content
+          return RefreshIndicator(
+            onRefresh: () =>
+                provider.refreshDashboardData(authToken: _mockAuthToken),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Financial Overview Section
+                  FinancialOverviewSection(overview: data.financialOverview),
+
+                  const SizedBox(height: 24),
+
+                  // Money Accounts Section - Enhanced with Chat Integration
+                  EnhancedMoneyAccountsSection(accounts: data.moneyAccounts),
+
+                  const SizedBox(height: 24),
+
+                  // Budgets Section - Enhanced with Chat Integration
+                  EnhancedBudgetsSection(budgets: data.budgets),
+
+                  const SizedBox(height: 24),
+
+                  // Recent Transactions Section - Enhanced with Chat Integration
+                  EnhancedTransactionsSection(
+                    transactions: data.recentTransactions,
+                    onViewAll: () {
+                      // TODO: Navigate to full transactions list
+                    },
+                  ),
+
+                  // Bottom padding for navigation bar
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

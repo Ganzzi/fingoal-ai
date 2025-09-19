@@ -1,7 +1,7 @@
 # Requirements
 
 ## Functional
-1.  **FR1:** The system shall provide Google OAuth authentication through n8n login API.
+1.  **FR1:** The system shall provide email/password authentication through n8n registration and login APIs.
 2.  **FR2:** The app shall feature a unified chat interface for all user interactions with AI agents.
 3.  **FR3:** The chat interface shall accept user input via text, transcribed voice, and image uploads.
 4.  **FR4:** The chat interface shall display contextual responses from specialized AI agents.

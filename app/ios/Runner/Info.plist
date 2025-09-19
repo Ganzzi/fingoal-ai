@@ -45,5 +45,24 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- Push Notification Configuration -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>background-fetch</string>
+	</array>
+	
+	<!-- URL Schemes for Deep Linking -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>fingoal.deeplink</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fingoal</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

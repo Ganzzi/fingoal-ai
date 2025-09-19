@@ -1,7 +1,7 @@
 # MVP Scope (Multi-Agent Architecture)
 
 ## Core Features Included
-*   **Authentication:** Google OAuth integration with JWT tokens via n8n Login API
+*   **Authentication:** Email/password registration and login with JWT tokens via n8n Authentication APIs
 *   **Multi-Agent AI System:** 9 specialized agents with persistent memory and context awareness
 *   **Chat Interface:** Multi-modal input (text, voice, images) with intelligent agent routing
 *   **Flexible Data Storage:** JSONB schemas for complex financial data alongside structured tables
@@ -23,7 +23,7 @@
 ## Infrastructure Components
 *   **Database:** PostgreSQL with UUID v7, structured tables, and JSONB flexibility
 *   **Backend:** Complete n8n workflow system with webhook APIs
-*   **Authentication:** JWT-based security with Google OAuth
+*   **Authentication:** JWT-based security with email/password authentication
 *   **Memory System:** Persistent agent memory for context-aware conversations
 
 ## Out of Scope (Future Features)
@@ -35,7 +35,7 @@
 
 ## Success Criteria
 Users can:
-1. Authenticate via Google OAuth and receive secure JWT tokens
+1. Register with email/password and authenticate to receive secure JWT tokens
 2. Chat with specialized AI agents that provide contextual, intelligent responses
 3. Upload receipts and have transaction data extracted automatically
 4. Receive personalized financial analysis and budget recommendations

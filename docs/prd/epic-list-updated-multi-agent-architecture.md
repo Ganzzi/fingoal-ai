@@ -1,7 +1,7 @@
 # Epic List (Updated Multi-Agent Architecture)
 
 *   **Epic 1: Authentication & Infrastructure Setup:**
-    *   **Goal:** Establish Google OAuth authentication, database schema with UUID v7, and core n8n infrastructure including DB Init, Login API, and Router AI workflows.
+    *   **Goal:** Establish email/password authentication system, database schema with UUID v7, and core n8n infrastructure including DB Init, Registration API, Login API, and Router AI workflows.
 
 *   **Epic 2: Multi-Agent AI System:**
     *   **Goal:** Implement the 9 specialized AI agents (Router, Data Collector, Analyzer, Planner, Educator, Monitor, Consultant, Compliance Checker, Memory Updater) with persistent memory storage and inter-agent communication.

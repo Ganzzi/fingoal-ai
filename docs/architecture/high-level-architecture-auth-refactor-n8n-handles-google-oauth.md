@@ -1,13 +1,13 @@
 # High Level Architecture (Auth refactor: n8n handles Google OAuth)
 
 ## Technical Summary
-n8n acts as the complete backend system, providing REST-like APIs through webhook endpoints for all mobile app interactions including login, token refresh, profile management, chat, and dashboard data. The authentication flow works as follows:
+n8n acts as the complete backend system, providing REST-like APIs through webhook endpoints for all mobile app interactions including registration, login, token refresh, profile management, chat, and dashboard data. The authentication flow works as follows:
 
-- Mobile app initiates Google OAuth and receives authorization code
-- Mobile app calls n8n login API with the authorization code
-- n8n exchanges code with Google's OAuth endpoint, stores encrypted tokens in PostgreSQL
+- Mobile app collects email/password credentials from user
+- Mobile app calls n8n login API with email and password
+- n8n verifies credentials against hashed passwords in PostgreSQL
 - n8n issues JWT session token to mobile app for subsequent API calls
-- For token refresh, mobile app calls n8n refresh API, which handles Google token renewal
+- For token refresh, mobile app calls n8n refresh API, which handles JWT token renewal
 
 The system uses a multi-agent AI architecture with 9 specialized agents, each with persistent memory stored in PostgreSQL. User data is flexibly stored using JSONB schemas for complex financial information while maintaining structured tables for core entities.
 
@@ -22,21 +22,22 @@ The system uses a multi-agent AI architecture with 9 specialized agents, each wi
 
 ## Auth Design Details
 - Authentication Agent (n8n) responsibilities:
-  - Exchange authorization code for tokens (POST to https://oauth2.googleapis.com/token).
-  - Store access_token, refresh_token, expiry, token metadata in `users`/`auth_tokens` tables (encrypted).
+  - Handle user registration with email/password validation and secure password hashing.
+  - Verify email/password credentials against hashed passwords in PostgreSQL.
+  - Store user credentials, profile data, and session metadata in `users` table (encrypted).
   - Generate application session JWTs (short-lived) and optional refresh sessions.
-  - Handle refresh flow: use refresh_token to obtain new access_token and update DB.
-  - Support token revoke/cleanup and logging.
+  - Handle refresh flow: use refresh_token to obtain new JWT and update DB.
+  - Support password reset, account lockout, and audit logging.
 - Security:
-  - Store OAuth client_id and client_secret as n8n credentials/env variables.
-  - Use PKCE for mobile flows: Flutter obtains auth code with PKCE, sends code to Router Agent.
+  - Store JWT signing secrets and email service credentials as n8n credentials/env variables.
+  - Use bcrypt or argon2 for secure password hashing with salt.
   - All n8n endpoints must be HTTPS, protected by API keys and rate limits.
-  - Encrypt tokens at rest and restrict DB access.
+  - Encrypt sensitive data at rest and restrict DB access.
 - Client flow (recommended):
-  1. Flutter initiates Google OAuth in external browser with PKCE, redirect URI points to a lightweight redirect handler (deep link) that returns an auth code.
-  2. Flutter sends auth code to Router Agent /n8n-config webhook for "auth/exchange".
-  3. n8n Authentication Agent exchanges code, stores tokens, returns app JWT to Flutter.
-  4. When access_token expires, Flutter calls /auth/refresh; n8n uses stored refresh_token to refresh with Google and returns new app JWT.
+  1. Flutter collects email/password from user registration or login form.
+  2. Flutter sends credentials to n8n /webhook/register or /webhook/login endpoint.
+  3. n8n Authentication Agent verifies credentials, stores user data (registration) or validates (login), returns app JWT to Flutter.
+  4. When JWT expires, Flutter calls /webhook/refresh; n8n uses stored refresh_token to issue new JWT.
 
 ## Repository Structure
 *   Structure: Monorepo

@@ -1,0 +1,1064 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "auth",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "112e254e-93e5-4ca9-9c34-c783e95ca7a8",
+            "name": "Auth Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                1104,
+                240
+            ],
+            "webhookId": "auth-webhook"
+        },
+        {
+            "parameters": {
+                "rules": {
+                    "values": [
+                        {
+                            "conditions": {
+                                "options": {
+                                    "caseSensitive": true,
+                                    "leftValue": "",
+                                    "typeValidation": "strict"
+                                },
+                                "conditions": [
+                                    {
+                                        "leftValue": "={{ $json.body.action || $json.action }}",
+                                        "rightValue": "register",
+                                        "operator": {
+                                            "type": "string",
+                                            "operation": "equals"
+                                        }
+                                    }
+                                ],
+                                "combinator": "and"
+                            },
+                            "renameOutput": true,
+                            "outputKey": "register"
+                        },
+                        {
+                            "conditions": {
+                                "options": {
+                                    "caseSensitive": true,
+                                    "leftValue": "",
+                                    "typeValidation": "strict"
+                                },
+                                "conditions": [
+                                    {
+                                        "leftValue": "={{ $json.body.action || $json.action }}",
+                                        "rightValue": "login",
+                                        "operator": {
+                                            "type": "string",
+                                            "operation": "equals"
+                                        }
+                                    }
+                                ],
+                                "combinator": "and"
+                            },
+                            "renameOutput": true,
+                            "outputKey": "login"
+                        },
+                        {
+                            "conditions": {
+                                "options": {
+                                    "caseSensitive": true,
+                                    "leftValue": "",
+                                    "typeValidation": "strict"
+                                },
+                                "conditions": [
+                                    {
+                                        "leftValue": "={{ $json.body.action || $json.action }}",
+                                        "rightValue": "logout",
+                                        "operator": {
+                                            "type": "string",
+                                            "operation": "equals"
+                                        }
+                                    }
+                                ],
+                                "combinator": "and"
+                            },
+                            "renameOutput": true,
+                            "outputKey": "logout"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "026070b6-3930-40ab-b86b-ea7680d9b5bd",
+            "name": "Route Switch",
+            "type": "n8n-nodes-base.switch",
+            "typeVersion": 3.2,
+            "position": [
+                1328,
+                224
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract and validate input data for registration\nconst { email, password, name } = $input.first().json.body || $input.first().json;\n\nif (!email || !password) {\n  return {\n    error: true,\n    status: 400,\n    message: 'Email and password are required'\n  };\n}\n\nif (!name) {\n  return {\n    error: true,\n    status: 400,\n    message: 'Name is required for registration'\n  };\n}\n\n// Email format validation\nconst emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\nif (!emailRegex.test(email)) {\n  return {\n    error: true,\n    status: 400,\n    message: 'Invalid email format'\n  };\n}\n\n// Password strength validation\nif (password.length < 8) {\n  return {\n    error: true,\n    status: 400,\n    message: 'Password must be at least 8 characters long'\n  };\n}\n\nif (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)/.test(password)) {\n  return {\n    error: true,\n    status: 400,\n    message: 'Password must contain uppercase letter, lowercase letter, and number'\n  };\n}\n\nreturn {\n  email: email.toLowerCase().trim(),\n  password,\n  name: name.trim(),\n  valid: true\n};"
+            },
+            "id": "7686a0fc-0e52-4333-bdc6-38ee87aa9539",
+            "name": "Validate Registration Input",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1552,
+                128
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "leftValue": "={{ $json.error }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "e4adabcc-b06f-46ee-9d62-e4c20ac4bcc1",
+            "name": "Check Validation",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                1792,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT id FROM users WHERE email = '{{ $json.email }}'",
+                "options": {}
+            },
+            "id": "3bb9f708-9f4f-4a68-8206-188b0e6c5fd6",
+            "name": "Check Existing User",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                2000,
+                48
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "leftValue": "={{ $json.id }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "notEmpty"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "ca24cd61-afb4-447e-845a-c89b688df1ed",
+            "name": "Check User Exists",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                2208,
+                48
+            ]
+        },
+        {
+            "parameters": {
+                "type": "SHA256",
+                "value": "={{ $('Check Validation').item.json.password }}"
+            },
+            "type": "n8n-nodes-base.crypto",
+            "typeVersion": 1,
+            "position": [
+                2528,
+                96
+            ],
+            "id": "211ce3a4-957f-4c33-92f8-fcd5362f8183",
+            "name": "Hash Password"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "INSERT INTO users (email, password_hash, name) VALUES ('{{ $('Check Validation').item.json.email }}', '{{ $json.data }}', '{{ $('Check Validation').item.json.name }}') RETURNING id, email, name, created_at",
+                "options": {}
+            },
+            "id": "93136e2f-0f8d-43bc-8dfc-69478929e7cd",
+            "name": "Create User",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                2864,
+                -32
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "useJson": true,
+                "claimsJson": "={\n  \"expiresIn\": \"24h\",\n  \"userId\": \"{{ $json.id }}\",\n  \"email\": \"{{ $json.email }}\"\n}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.jwt",
+            "typeVersion": 1,
+            "position": [
+                3120,
+                -32
+            ],
+            "id": "b7d3f0f1-5616-417f-903c-dcdc5bf80a87",
+            "name": "Generate JWT",
+            "credentials": {
+                "jwtAuth": {
+                    "id": "oOaAzR6thOsg7HXV",
+                    "name": "JWT Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "mode": "raw",
+                "jsonOutput": "={\n  \"success\": true,\n  \"token\": \"{{ $json.token }}\",\n  \"user\": {\n    \"id\": \"{{ $('Create User').item.json.id }}\",\n    \"email\": \"{{ $('Create User').item.json.email }}\",\n    \"name\": \"{{ $('Create User').item.json.name }}\",\n    \"created_at\": \"{{ $('Create User').item.json.created_at }}\"\n  },\n  \"message\": \"Registration successful\"\n}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                3344,
+                -32
+            ],
+            "id": "f8903a64-3ae1-4249-bca2-4c29450476b1",
+            "name": "Format Registration Response"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract and validate login input data\nconst { email, password } = $input.first().json.body || $input.first().json;\n\nif (!email || !password) {\n  return {\n    error: true,\n    status: 400,\n    message: 'Email and password are required'\n  };\n}\n\n// Email format validation\nconst emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\nif (!emailRegex.test(email)) {\n  return {\n    error: true,\n    status: 400,\n    message: 'Invalid email format'\n  };\n}\n\nreturn {\n  email: email.toLowerCase().trim(),\n  password,\n  valid: true\n};"
+            },
+            "id": "2292afdc-5526-44a5-a8ab-b675be90f5c3",
+            "name": "Validate Login Input",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1552,
+                336
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "leftValue": "={{ $json.error }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "6ab2227b-7999-4b0b-99de-5795c9c698f9",
+            "name": "Check Login Validation",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                1760,
+                528
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT id, email, name, password_hash, created_at FROM users WHERE email = '{{ $json.email }}'",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                2032,
+                672
+            ],
+            "id": "0deb0d84-684f-4b80-aa46-479d30b93adf",
+            "name": "Get User",
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "leftValue": "={{ $json.id }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "notEmpty"
+                            },
+                            "id": "82fa440d-1337-4365-9214-415aa14ad992"
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                2560,
+                576
+            ],
+            "id": "a0b2e3a4-e439-4c0e-82f8-262991f49ab0",
+            "name": "Check User Found"
+        },
+        {
+            "parameters": {
+                "type": "SHA256",
+                "value": "={{ $('Check Login Validation').item.json.password }}"
+            },
+            "type": "n8n-nodes-base.crypto",
+            "typeVersion": 1,
+            "position": [
+                2752,
+                560
+            ],
+            "id": "b10e98a4-9055-4d42-ae95-440574e12c3b",
+            "name": "Hash Login Password"
+        },
+        {
+            "parameters": {
+                "mode": "raw",
+                "jsonOutput": "={\n  \"id\": \"{{ $json.id }}\",\n  \"email\": \"{{ $json.email }}\",\n  \"name\": \"{{ $json.name }}\",\n  \"created_at\": \"{{ $json.created_at }}\",\n  \"passwordValid\": {{ $json.password_hash === $('Hash Login Password').item.json.data }}\n}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                2928,
+                560
+            ],
+            "id": "9d508fd0-58d3-4a2d-a1ab-6d4cd8a34b77",
+            "name": "Check Password"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 1
+                    },
+                    "conditions": [
+                        {
+                            "leftValue": "={{ $json.passwordValid }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            },
+                            "id": "b3cbdb66-bd8e-42ca-af2d-356758d70802"
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "951a0ec2-2241-4122-ba0a-c15f2999aaec",
+            "name": "Verify Password",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                3104,
+                560
+            ]
+        },
+        {
+            "parameters": {
+                "useJson": true,
+                "claimsJson": "={\n  \"expiresIn\": \"24h\",\n  \"userId\": \"{{ $json.id }}\",\n  \"email\": \"{{ $json.email }}\"\n}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.jwt",
+            "typeVersion": 1,
+            "position": [
+                3312,
+                544
+            ],
+            "id": "61474052-2f1e-4e1b-b649-fdd35afde74c",
+            "name": "Generate Login JWT",
+            "credentials": {
+                "jwtAuth": {
+                    "id": "oOaAzR6thOsg7HXV",
+                    "name": "JWT Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "mode": "raw",
+                "jsonOutput": "={\n  \"success\": true,\n  \"token\": \"{{ $json.token }}\",\n  \"user\": {\n    \"id\": \"{{ $('Verify Password').item.json.id }}\",\n    \"email\": \"{{ $('Verify Password').item.json.email }}\",\n    \"name\": \"{{ $('Verify Password').item.json.name }}\",\n    \"created_at\": \"{{ $('Verify Password').item.json.created_at }}\"\n  },\n  \"message\": \"Login successful\"\n}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                3488,
+                544
+            ],
+            "id": "9a8df74b-a06e-4c81-86cc-5c60c749b70d",
+            "name": "Format Login Response"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract Authorization header for logout\nconst headers = $input.first().json.headers || {};\nconst authHeader = headers.authorization || headers.Authorization || '';\n\nif (!authHeader) {\n  return [{\n    json: {\n      error: true,\n      status: 401,\n      message: 'Authorization header missing for logout'\n    }\n  }];\n}\n\n// Check if header starts with 'Bearer '\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      error: true,\n      status: 401,\n      message: 'Invalid authorization format for logout'\n    }\n  }];\n}\n\n// Extract token\nconst token = authHeader.substring(7);\n\nif (!token) {\n  return [{\n    json: {\n      error: true,\n      status: 401,\n      message: 'JWT token missing for logout'\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    token: token,\n    valid: true\n  }\n}];"
+            },
+            "id": "e9b84713-7f9b-4509-9219-7764462e7ee1",
+            "name": "Extract Logout Token",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1632,
+                1072
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "leftValue": "={{ $json.error }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "f5e6e421-047f-4748-904c-51b85ce4ea45",
+            "name": "Check Logout Token",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                1872,
+                1072
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "verify",
+                "token": "={{$json.token}}",
+                "options": {}
+            },
+            "id": "39385868-4f27-42f8-b892-42cc5828ced7",
+            "name": "Verify Logout Token",
+            "type": "n8n-nodes-base.jwt",
+            "typeVersion": 1,
+            "position": [
+                2112,
+                1168
+            ],
+            "credentials": {
+                "jwtAuth": {
+                    "id": "oOaAzR6thOsg7HXV",
+                    "name": "JWT Auth account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{$json}}",
+                "options": {}
+            },
+            "id": "01d4c8cb-b4e3-48d7-8c04-3e5302740ce3",
+            "name": "Registration Success Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                3600,
+                -32
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{$json}}",
+                "options": {}
+            },
+            "id": "82165b95-d72c-4a80-b7e3-04698243a0c8",
+            "name": "Login Success Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                3664,
+                544
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { success: true, message: 'Logout successful' } }}",
+                "options": {
+                    "responseCode": 200
+                }
+            },
+            "id": "346ea8fc-7760-49af-836b-802dfd85ba78",
+            "name": "Logout Success Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                2384,
+                1024
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { success: false, error: $json.message || 'Validation failed' } }}",
+                "options": {
+                    "responseCode": "={{$json.status || 400}}"
+                }
+            },
+            "id": "1a0977a4-9bab-40fc-b729-6ca42d5b0e77",
+            "name": "Validation Error Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                2032,
+                -144
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { success: false, error: 'User already exists' } }}",
+                "options": {
+                    "responseCode": 409
+                }
+            },
+            "id": "defb71e1-fa16-464d-84d2-4abedf8b1ce5",
+            "name": "Duplicate User Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                2624,
+                -192
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { success: false, error: 'Server error during registration' } }}",
+                "options": {
+                    "responseCode": 500
+                }
+            },
+            "id": "7a826458-797f-4a5e-9c75-aaeb94335bc1",
+            "name": "Registration Server Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                3088,
+                128
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { success: false, error: $json.message || 'Invalid credentials' } }}",
+                "options": {
+                    "responseCode": "={{$json.status || 400}}"
+                }
+            },
+            "id": "4bae0577-a97c-413a-b6cd-1fcfa7322c14",
+            "name": "Login Validation Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                2240,
+                448
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { success: false, error: 'Invalid email or password' } }}",
+                "options": {
+                    "responseCode": 401
+                }
+            },
+            "id": "28465041-efa4-4313-88a3-5c1a22820bfa",
+            "name": "User Not Found Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                2752,
+                736
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { success: false, error: 'Invalid password' } }}",
+                "options": {
+                    "responseCode": 401
+                }
+            },
+            "id": "645a66a5-c0f4-46ff-b92b-27891b7d1d29",
+            "name": "Password Invalid Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                3312,
+                720
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { success: false, error: 'Server error during login' } }}",
+                "options": {
+                    "responseCode": 500
+                }
+            },
+            "id": "8044ce0c-80b9-434d-8065-9f13ba1bc83f",
+            "name": "Login Server Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                2512,
+                816
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { success: false, error: $json.message || 'Logout failed' } }}",
+                "options": {
+                    "responseCode": "={{$json.status || 401}}"
+                }
+            },
+            "id": "89593e67-ce01-4bdc-bca9-768496c01cbe",
+            "name": "Logout Error Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                2112,
+                992
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { success: false, error: 'Invalid logout token' } }}",
+                "options": {
+                    "responseCode": 401
+                }
+            },
+            "id": "d7ffde1d-b183-41e0-898a-1a19ef893421",
+            "name": "Logout Token Invalid",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                2384,
+                1184
+            ]
+        }
+    ],
+    "connections": {
+        "Auth Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Route Switch",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Route Switch": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Registration Input",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Validate Login Input",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Extract Logout Token",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Registration Input": {
+            "main": [
+                [
+                    {
+                        "node": "Check Validation",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Validation": {
+            "main": [
+                [
+                    {
+                        "node": "Validation Error Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Check Existing User",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Existing User": {
+            "main": [
+                [
+                    {
+                        "node": "Check User Exists",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check User Exists": {
+            "main": [
+                [
+                    {
+                        "node": "Duplicate User Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Hash Password",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Hash Password": {
+            "main": [
+                [
+                    {
+                        "node": "Create User",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create User": {
+            "main": [
+                [
+                    {
+                        "node": "Generate JWT",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Registration Server Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate JWT": {
+            "main": [
+                [
+                    {
+                        "node": "Format Registration Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Registration Response": {
+            "main": [
+                [
+                    {
+                        "node": "Registration Success Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Login Input": {
+            "main": [
+                [
+                    {
+                        "node": "Check Login Validation",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Login Validation": {
+            "main": [
+                [
+                    {
+                        "node": "Login Validation Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Get User",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get User": {
+            "main": [
+                [
+                    {
+                        "node": "Check User Found",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Login Server Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check User Found": {
+            "main": [
+                [
+                    {
+                        "node": "Hash Login Password",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "User Not Found Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Hash Login Password": {
+            "main": [
+                [
+                    {
+                        "node": "Check Password",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Password": {
+            "main": [
+                [
+                    {
+                        "node": "Verify Password",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Verify Password": {
+            "main": [
+                [
+                    {
+                        "node": "Generate Login JWT",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Password Invalid Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate Login JWT": {
+            "main": [
+                [
+                    {
+                        "node": "Format Login Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Login Response": {
+            "main": [
+                [
+                    {
+                        "node": "Login Success Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Logout Token": {
+            "main": [
+                [
+                    {
+                        "node": "Check Logout Token",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Logout Token": {
+            "main": [
+                [
+                    {
+                        "node": "Logout Error Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Verify Logout Token",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Verify Logout Token": {
+            "main": [
+                [
+                    {
+                        "node": "Logout Success Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Logout Token Invalid",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "8f73175c8cfc4e9b66eecf1cdc8ab8fdf6289436294741f796d676a38d70095e"
+    }
+}

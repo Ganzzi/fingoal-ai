@@ -1,4 +1,4 @@
-# Development Workflow
+# Deve3.  Configure JWT signing secrets and email service credentials for authentication.opment Workflow
 
 ## Local Development Setup
 1.  Install Flutter SDK, an IDE (VS Code/Android Studio), and Docker (for PostgreSQL).
@@ -26,7 +26,7 @@ When developing n8n workflows for this project, reference the comprehensive docu
     *   AI Agent Chat API: `docs/n8n_config_creation_instructions/ai-agent-chat-api-workflow-example.md`
 *   **Connection Patterns:** `docs/n8n_config_creation_instructions/connection-structure.md`
 *   **Overview:** `docs/n8n_config_creation_instructions/overview.md`
-5.  Populate a `.env` file with credentials for PostgreSQL, n8n, Google OAuth, and LLM provider.
+5.  Populate a `.env` file with credentials for PostgreSQL, n8n, JWT secrets, email service, and LLM provider.
 6.  (Future) Set up Node.js environment for Socket.io server development.
 
 ## Development Commands

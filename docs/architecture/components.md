@@ -7,9 +7,11 @@
     *   **Reference:** `docs/n8n_config_creation_instructions/database-scheme-initialization-workflow-example.md`
 
 **Authentication Workflows:**
-*   **Login API:** Webhook trigger. Handles Google OAuth code exchange, stores encrypted tokens, issues JWT.
+*   **Register API:** Webhook trigger. Handles user registration with email/password validation, stores hashed passwords, creates user profile.
     *   **Reference:** `docs/n8n_config_creation_instructions/authentication-login-register-logout-jwt-workflow-example.md`
-*   **Token Refresh API:** Webhook trigger. Refreshes Google tokens and updates database.
+*   **Login API:** Webhook trigger. Handles email/password verification, issues JWT tokens upon successful authentication.
+    *   **Reference:** `docs/n8n_config_creation_instructions/authentication-login-register-logout-jwt-workflow-example.md`
+*   **Token Refresh API:** Webhook trigger. Refreshes JWT tokens and updates database.
     *   **Reference:** `docs/n8n_config_creation_instructions/authentication-jwt-middleware-workflow-example.md`
 
 **AI Agent Workflows:**
@@ -39,7 +41,8 @@
     *   **Reference:** `docs/n8n_config_creation_instructions/4-data-processing-nodes.md`
 
 ## Frontend Components (Flutter Widgets)
-*   **`LoginScreen`:** Handles the Google Sign-In flow via Firebase Auth.
+*   **`LoginScreen`:** Handles email/password authentication and registration flows.
+*   **`RegisterScreen`:** Handles new user registration with email/password validation.
 *   **`MainNavigationShell`:** The main stateful widget that holds the `PageView` and manages navigation between the Chat and Dashboard screens.
 *   **`ChatScreen`:** Contains the `MessageList` and `MessageComposer` widgets.
 *   **`MessageList`:** A `ListView.builder` that can render different types of message bubbles (text, forms).

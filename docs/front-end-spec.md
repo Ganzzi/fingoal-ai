@@ -6,7 +6,7 @@ This document defines the user experience goals, information architecture, user 
 The frontend integrates with a sophisticated multi-agent AI backend through n8n workflows, requiring specialized handling for Google OAuth authentication, JWT tokens, and contextual agent responses.
 
 ### Architecture Integration
-*   **Authentication:** Google OAuth via n8n Login API with JWT token management
+*   **Authentication:** Email/password authentication via n8n Registration/Login APIs with JWT token management
 *   **Backend Communication:** RESTful APIs through n8n webhooks with specialized agent routing
 *   **Multi-Agent Responses:** Dynamic UI adaptation based on different AI agent response types
 *   **Real-time Features:** Prepared for Socket.io integration for future push notifications
@@ -51,13 +51,13 @@ graph TD
 
 ## User Flows
 
-### Google OAuth Authentication Flow
+### Email/Password Authentication Flow
 
-**User Goal:** To securely authenticate with Google and access the AI financial advisor.
+**User Goal:** To securely register or authenticate with email/password and access the AI financial advisor.
 
-**Entry Points:** App launch or when JWT token expires.
+**Entry Points:** App launch, new user registration, or when JWT token expires.
 
-**Success Criteria:** User successfully authenticates via Google OAuth and receives a valid JWT token for API access.
+**Success Criteria:** User successfully registers/authenticates via email/password and receives a valid JWT token for API access.
 
 **Flow Diagram:**
 

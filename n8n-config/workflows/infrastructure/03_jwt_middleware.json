@@ -1,0 +1,322 @@
+{
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "68d0d23c-1cd8-4096-94b6-f88be20d95c9",
+            "name": "When Called by Another Workflow",
+            "type": "n8n-nodes-base.executeWorkflowTrigger",
+            "typeVersion": 1,
+            "position": [
+                4128,
+                -64
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract Authorization header from webhook request\nconst headers = $input.first().json.headers || {};\nconst authHeader = headers.authorization || headers.Authorization || '';\n\nreturn [{\n  json: {\n    authHeader: authHeader\n  }\n}];"
+            },
+            "id": "5a66d31b-b307-4382-aa14-b6ab7f45e27c",
+            "name": "Extract Auth Header",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                4304,
+                -64
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract JWT token from Authorization header\nconst authHeader = $input.first().json.authHeader;\n\nif (!authHeader) {\n  return [{\n    json: {\n      error: true,\n      status: 401,\n      message: 'Authorization header missing',\n      details: 'Valid JWT token required',\n      authenticated: false\n    }\n  }];\n}\n\n// Check if header starts with 'Bearer '\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      error: true,\n      status: 401,\n      message: 'Invalid authorization format',\n      details: 'Authorization header must start with Bearer',\n      authenticated: false\n    }\n  }];\n}\n\n// Extract token\nconst token = authHeader.substring(7);\n\nif (!token) {\n  return [{\n    json: {\n      error: true,\n      status: 401,\n      message: 'Token missing',\n      details: 'JWT token not found in Authorization header',\n      authenticated: false\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    token: token,\n    error: false,\n    authenticated: false\n  }\n}];"
+            },
+            "id": "6ee3ac01-33e3-4f0d-8021-766dc20faf5f",
+            "name": "Extract JWT Token",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                4464,
+                -64
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 1
+                    },
+                    "conditions": [
+                        {
+                            "id": "token-error-check",
+                            "leftValue": "={{$json.error}}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "4fc697ff-ad7d-49c7-91e1-0358d6bd7a4f",
+            "name": "Check Token Extraction",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                4640,
+                -64
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "verify",
+                "token": "={{ $json.token }}",
+                "options": {}
+            },
+            "id": "d10bcd4e-78e9-45eb-91b0-242780074f15",
+            "name": "Verify JWT Token",
+            "type": "n8n-nodes-base.jwt",
+            "typeVersion": 1,
+            "position": [
+                4848,
+                80
+            ],
+            "retryOnFail": false,
+            "credentials": {
+                "jwtAuth": {
+                    "id": "oOaAzR6thOsg7HXV",
+                    "name": "JWT Auth account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "fields": {
+                    "values": [
+                        {
+                            "name": "authenticated",
+                            "type": "booleanValue"
+                        },
+                        {
+                            "name": "userId",
+                            "stringValue": "={{ $json.userId }}"
+                        },
+                        {
+                            "name": "email",
+                            "stringValue": "={{ $json.email }}"
+                        },
+                        {
+                            "name": "success",
+                            "type": "booleanValue"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "d9861ae7-d342-45b7-b644-9e8a2df5b1e2",
+            "name": "Format Auth Success",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3,
+            "position": [
+                5040,
+                -80
+            ]
+        },
+        {
+            "parameters": {
+                "fields": {
+                    "values": [
+                        {
+                            "name": "authenticated",
+                            "type": "booleanValue",
+                            "booleanValue": "false"
+                        },
+                        {
+                            "name": "success",
+                            "type": "booleanValue",
+                            "booleanValue": "false"
+                        },
+                        {
+                            "name": "error",
+                            "stringValue": "={{ $json.message }}"
+                        },
+                        {
+                            "name": "status"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "2ada8372-2207-452b-966f-c7dea8bfd02b",
+            "name": "Format Auth Error",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3,
+            "position": [
+                4848,
+                -160
+            ]
+        },
+        {
+            "parameters": {
+                "fields": {
+                    "values": [
+                        {
+                            "name": "authenticated",
+                            "type": "booleanValue",
+                            "booleanValue": "false"
+                        },
+                        {
+                            "name": "success",
+                            "type": "booleanValue",
+                            "booleanValue": "false"
+                        },
+                        {
+                            "name": "error",
+                            "stringValue": "Invalid or expired JWT token"
+                        },
+                        {
+                            "name": "status"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "cd8bdfc6-7bdd-4a53-97bd-e2e2e94c7a98",
+            "name": "Format JWT Error",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3,
+            "position": [
+                5120,
+                144
+            ]
+        },
+        {
+            "parameters": {
+                "path": "auth-middleware",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2.1,
+            "position": [
+                4128,
+                112
+            ],
+            "id": "468c0642-143d-4385-824e-ecb72d114206",
+            "name": "Webhook",
+            "webhookId": "97a2ec86-f735-4372-b02e-7ca5f44edae6"
+        }
+    ],
+    "connections": {
+        "When Called by Another Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Auth Header",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Auth Header": {
+            "main": [
+                [
+                    {
+                        "node": "Extract JWT Token",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract JWT Token": {
+            "main": [
+                [
+                    {
+                        "node": "Check Token Extraction",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Token Extraction": {
+            "main": [
+                [
+                    {
+                        "node": "Format Auth Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Verify JWT Token",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Verify JWT Token": {
+            "main": [
+                [
+                    {
+                        "node": "Format Auth Success",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Format JWT Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Auth Header",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {
+        "Webhook": [
+            {
+                "headers": {
+                    "host": "localhost:5678",
+                    "user-agent": "curl/8.4.0",
+                    "accept": "*/*",
+                    "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVzSW4iOiIyNGgiLCJ1c2VySWQiOiJmNjM1NWE3My04YWJmLTQ2MDItYWM3MS00MTIyNGJmMjRkMDQiLCJlbWFpbCI6Im5ld3VzZXJAZXhhbXBsZS5jb20iLCJpYXQiOjE3NTgyNzE5Mjh9.s4xraMpJ8264ZbCAQZMw9EDR_2tP3eRWPxJNRpVgjGU"
+                },
+                "params": {},
+                "query": {},
+                "body": {},
+                "webhookUrl": "http://localhost:5678/webhook/auth-middleware",
+                "executionMode": "production",
+                "jwtPayload": {
+                    "expiresIn": "24h",
+                    "userId": "f6355a73-8abf-4602-ac71-41224bf24d04",
+                    "email": "newuser@example.com",
+                    "iat": 1758271928
+                }
+            }
+        ]
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "8f73175c8cfc4e9b66eecf1cdc8ab8fdf6289436294741f796d676a38d70095e"
+    }
+}

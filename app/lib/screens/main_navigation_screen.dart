@@ -102,6 +102,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         ),
         centerTitle: true,
         actions: [
+          // Profile icon
           IconButton(
             onPressed: () {
               Navigator.of(context).push(
