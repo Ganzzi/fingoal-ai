@@ -5,6 +5,8 @@
 - [Tech Stack](./tech-stack.md)
 - [API Specification](./api-specification.md)
 - [Authentication API](./authentication-api.md)
+- [User Profile API](./user-profile-api.md)
+- [Categories API](./categories-api.md)
 - [Components](./components.md)
 - [Core Workflows](./core-workflows.md)
 - [Database Schema](./database-schema.md)

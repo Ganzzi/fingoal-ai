@@ -1,0 +1,608 @@
+{
+    "name": "Dashboard Agent",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "dashboard",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "dashboard-webhook",
+            "name": "Dashboard Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                -1000,
+                200
+            ],
+            "webhookId": "dashboard-webhook-id"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract and validate JWT token from Authorization header\nconst headers = $input.first().json.headers || {};\nconst authHeader = headers.authorization || headers.Authorization || '';\n\nif (!authHeader) {\n  return [{\n    json: {\n      error: true,\n      status: 401,\n      message: 'Authorization header missing',\n      details: 'Valid JWT token required for dashboard access'\n    }\n  }];\n}\n\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      error: true,\n      status: 401,\n      message: 'Invalid authorization format',\n      details: 'Authorization header must start with Bearer'\n    }\n  }];\n}\n\nconst token = authHeader.substring(7);\nif (!token) {\n  return [{\n    json: {\n      error: true,\n      status: 401,\n      message: 'Token missing',\n      details: 'JWT token not found in Authorization header'\n    }\n  }];\n}\n\n// Pass original request data along with token\nconst requestData = $input.first().json;\nreturn [{\n  json: {\n    token: token,\n    error: false,\n    originalRequest: requestData,\n    requestTimestamp: new Date().toISOString()\n  }\n}];"
+            },
+            "id": "extract-jwt-token",
+            "name": "Extract JWT Token",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -800,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-auth-error",
+                            "leftValue": "={{ $json.error }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "check-auth-error",
+            "name": "Check Auth Error",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -600,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "verify",
+                "token": "={{ $json.token }}",
+                "options": {}
+            },
+            "id": "verify-jwt-token",
+            "name": "Verify JWT Token",
+            "type": "n8n-nodes-base.jwt",
+            "typeVersion": 1,
+            "position": [
+                -400,
+                100
+            ],
+            "credentials": {
+                "jwtAuth": {
+                    "id": "jwt-auth-credentials"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract user ID from JWT payload for database queries\nconst jwtPayload = $input.first().json;\nconst userId = jwtPayload.sub || jwtPayload.user_id || jwtPayload.id;\n\nif (!userId) {\n  return [{\n    json: {\n      error: true,\n      status: 401,\n      message: 'Invalid JWT token',\n      details: 'User ID not found in token payload'\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    userId: userId,\n    userEmail: jwtPayload.email,\n    authenticated: true,\n    error: false\n  }\n}];"
+            },
+            "id": "extract-user-id",
+            "name": "Extract User ID",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -200,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Fetch all money accounts for the user\nSELECT \n    id,\n    name,\n    account_type,\n    institution_name,\n    balance,\n    currency,\n    is_active,\n    created_at,\n    updated_at\nFROM money_accounts \nWHERE user_id = $1 AND is_active = true\nORDER BY created_at ASC;",
+                "options": {
+                    "queryParameters": {
+                        "parameters": [
+                            {
+                                "name": "user_id",
+                                "value": "={{ $json.userId }}"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "fetch-money-accounts",
+            "name": "Fetch Money Accounts",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                0,
+                -100
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-connection"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Fetch budgets with category information and spending calculations\nSELECT \n    b.id,\n    b.name as budget_name,\n    b.amount as allocated_amount,\n    b.currency,\n    b.period,\n    b.start_date,\n    b.end_date,\n    b.is_active,\n    sc.id as category_id,\n    sc.name as category_name,\n    sc.color,\n    sc.icon,\n    COALESCE(spent.total_spent, 0) as spent_amount\nFROM budgets b\nLEFT JOIN spending_categories sc ON b.category_id = sc.id\nLEFT JOIN (\n    SELECT \n        t.category_id,\n        SUM(ABS(t.amount)) as total_spent\n    FROM transactions t\n    WHERE t.user_id = $1 \n        AND t.transaction_type = 'expense'\n        AND t.transaction_date >= CURRENT_DATE - INTERVAL '30 days'\n    GROUP BY t.category_id\n) spent ON b.category_id = spent.category_id\nWHERE b.user_id = $1 AND b.is_active = true\nORDER BY b.created_at ASC;",
+                "options": {
+                    "queryParameters": {
+                        "parameters": [
+                            {
+                                "name": "user_id",
+                                "value": "={{ $json.userId }}"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "fetch-budgets",
+            "name": "Fetch Budgets",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                0,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-connection"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Fetch recent transactions (last 20)\nSELECT \n    t.id,\n    t.amount,\n    t.currency,\n    t.description,\n    t.transaction_date,\n    t.transaction_type,\n    t.merchant_name,\n    t.notes,\n    ma.name as account_name,\n    ma.account_type,\n    sc.name as category_name,\n    sc.color as category_color,\n    sc.icon as category_icon\nFROM transactions t\nLEFT JOIN money_accounts ma ON t.account_id = ma.id\nLEFT JOIN spending_categories sc ON t.category_id = sc.id\nWHERE t.user_id = $1\nORDER BY t.transaction_date DESC, t.created_at DESC\nLIMIT 20;",
+                "options": {
+                    "queryParameters": {
+                        "parameters": [
+                            {
+                                "name": "user_id",
+                                "value": "={{ $json.userId }}"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "fetch-recent-transactions",
+            "name": "Fetch Recent Transactions",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                0,
+                100
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-connection"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Fetch flexible financial data (investments, debts, goals, etc.)\nSELECT \n    dm.data_type,\n    dm.schema_definition,\n    dr.id as data_id,\n    dr.data as data_content,\n    dr.status,\n    dr.created_at,\n    dr.updated_at\nFROM data_metadata dm\nLEFT JOIN data_rows dr ON dm.id = dr.metadata_id AND dr.user_id = $1 AND dr.status = 'active'\nWHERE dm.user_id = $1 AND dm.is_active = true\nORDER BY dm.data_type, dr.created_at DESC;",
+                "options": {
+                    "queryParameters": {
+                        "parameters": [
+                            {
+                                "name": "user_id",
+                                "value": "={{ $json.userId }}"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "fetch-flexible-data",
+            "name": "Fetch Flexible Data",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                0,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-connection"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "mode": "combine",
+                "combineBy": "combineAll",
+                "options": {}
+            },
+            "id": "merge-all-data",
+            "name": "Merge All Data",
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 2,
+            "position": [
+                200,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Process and format all dashboard data into structured response\nconst inputs = $input.all();\n\n// Extract data from each query result\nconst moneyAccountsData = inputs.find(item => item.json?.query?.includes('money_accounts'))?.json || [];\nconst budgetsData = inputs.find(item => item.json?.query?.includes('budgets'))?.json || [];\nconst transactionsData = inputs.find(item => item.json?.query?.includes('transactions'))?.json || [];\nconst flexibleData = inputs.find(item => item.json?.query?.includes('data_metadata'))?.json || [];\n\n// Format money accounts\nconst moneyAccounts = Array.isArray(moneyAccountsData) ? moneyAccountsData.map(account => ({\n  id: account.id,\n  name: account.name,\n  type: account.account_type,\n  institution: account.institution_name,\n  balance: parseFloat(account.balance || 0),\n  currency: account.currency || 'USD',\n  isActive: account.is_active\n})) : [];\n\n// Format budgets with calculations\nconst budgets = Array.isArray(budgetsData) ? budgetsData.map(budget => {\n  const allocated = parseFloat(budget.allocated_amount || 0);\n  const spent = parseFloat(budget.spent_amount || 0);\n  const remaining = Math.max(0, allocated - spent);\n  const percentageUsed = allocated > 0 ? Math.min(100, (spent / allocated) * 100) : 0;\n  \n  return {\n    id: budget.id,\n    categoryId: budget.category_id,\n    categoryName: budget.category_name,\n    budgetName: budget.budget_name,\n    allocated: allocated,\n    spent: spent,\n    remaining: remaining,\n    percentageUsed: Math.round(percentageUsed * 100) / 100,\n    currency: budget.currency || 'USD',\n    period: budget.period,\n    color: budget.color,\n    icon: budget.icon,\n    isActive: budget.is_active\n  };\n}) : [];\n\n// Format recent transactions\nconst recentTransactions = Array.isArray(transactionsData) ? transactionsData.map(transaction => ({\n  id: transaction.id,\n  date: transaction.transaction_date,\n  description: transaction.description || transaction.merchant_name || 'Transaction',\n  amount: parseFloat(transaction.amount || 0),\n  currency: transaction.currency || 'USD',\n  type: transaction.transaction_type,\n  category: transaction.category_name,\n  categoryColor: transaction.category_color,\n  categoryIcon: transaction.category_icon,\n  account: transaction.account_name,\n  accountType: transaction.account_type,\n  merchant: transaction.merchant_name,\n  notes: transaction.notes\n})) : [];\n\n// Calculate financial overview\nconst totalAssets = moneyAccounts\n  .filter(acc => ['bank', 'cash', 'investment'].includes(acc.type))\n  .reduce((sum, acc) => sum + acc.balance, 0);\n\nconst totalDebts = moneyAccounts\n  .filter(acc => acc.type === 'credit_card')\n  .reduce((sum, acc) => sum + Math.abs(acc.balance), 0);\n\nconst netWorth = totalAssets - totalDebts;\n\n// Calculate monthly income and expenses from recent transactions\nconst monthlyIncome = recentTransactions\n  .filter(t => t.type === 'income')\n  .reduce((sum, t) => sum + Math.abs(t.amount), 0);\n\nconst monthlyExpenses = recentTransactions\n  .filter(t => t.type === 'expense')\n  .reduce((sum, t) => sum + Math.abs(t.amount), 0);\n\n// Process flexible data (investments, debts, goals, etc.)\nconst otherData = {};\nif (Array.isArray(flexibleData)) {\n  flexibleData.forEach(item => {\n    const dataType = item.data_type;\n    if (!otherData[dataType]) {\n      otherData[dataType] = [];\n    }\n    if (item.data_content) {\n      otherData[dataType].push({\n        id: item.data_id,\n        ...item.data_content,\n        status: item.status,\n        createdAt: item.created_at,\n        updatedAt: item.updated_at\n      });\n    }\n  });\n}\n\n// Build final response\nconst dashboardData = {\n  moneyAccounts: moneyAccounts,\n  budgets: budgets,\n  recentTransactions: recentTransactions,\n  financialOverview: {\n    totalAssets: Math.round(totalAssets * 100) / 100,\n    totalDebts: Math.round(totalDebts * 100) / 100,\n    netWorth: Math.round(netWorth * 100) / 100,\n    monthlyIncome: Math.round(monthlyIncome * 100) / 100,\n    monthlyExpenses: Math.round(monthlyExpenses * 100) / 100,\n    savingsRate: monthlyIncome > 0 ? Math.round(((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100) : 0\n  },\n  otherData: otherData,\n  metadata: {\n    generatedAt: new Date().toISOString(),\n    accountsCount: moneyAccounts.length,\n    budgetsCount: budgets.length,\n    transactionsCount: recentTransactions.length,\n    dataTypesCount: Object.keys(otherData).length\n  }\n};\n\nreturn [{ json: dashboardData }];"
+            },
+            "id": "format-dashboard-data",
+            "name": "Format Dashboard Data",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                400,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-empty-data",
+                            "leftValue": "={{ $json.metadata.accountsCount + $json.metadata.budgetsCount + $json.metadata.transactionsCount }}",
+                            "rightValue": 0,
+                            "operator": {
+                                "type": "number",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "check-empty-state",
+            "name": "Check Empty State",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                600,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Create empty state response for new users\nconst emptyDashboardData = {\n  moneyAccounts: [],\n  budgets: [],\n  recentTransactions: [],\n  financialOverview: {\n    totalAssets: 0,\n    totalDebts: 0,\n    netWorth: 0,\n    monthlyIncome: 0,\n    monthlyExpenses: 0,\n    savingsRate: 0\n  },\n  otherData: {\n    investments: [],\n    debts: [],\n    goals: [],\n    insurance: [],\n    properties: []\n  },\n  metadata: {\n    generatedAt: new Date().toISOString(),\n    accountsCount: 0,\n    budgetsCount: 0,\n    transactionsCount: 0,\n    dataTypesCount: 0,\n    isEmpty: true\n  },\n  emptyState: {\n    title: \"Welcome to Your Financial Dashboard\",\n    message: \"Get started by adding your first money account or setting up a budget.\",\n    suggestions: [\n      \"Add your bank accounts to track balances\",\n      \"Set up budgets for your spending categories\",\n      \"Start recording transactions\",\n      \"Define your financial goals\"\n    ]\n  }\n};\n\nreturn [{ json: emptyDashboardData }];"
+            },
+            "id": "create-empty-state",
+            "name": "Create Empty State",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                800,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {
+                    "responseCode": 200,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "name": "Cache-Control",
+                                "value": "no-cache, no-store, must-revalidate"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "respond-dashboard-data",
+            "name": "Respond Dashboard Data",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1000,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {
+                    "responseCode": 200,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "name": "Cache-Control",
+                                "value": "no-cache, no-store, must-revalidate"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "respond-empty-state",
+            "name": "Respond Empty State",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1000,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ {\n  \"error\": true,\n  \"status\": $json.status || 401,\n  \"message\": $json.message || \"Authentication failed\",\n  \"details\": $json.details || \"Please provide a valid JWT token\",\n  \"timestamp\": new Date().toISOString()\n} }}",
+                "options": {
+                    "responseCode": "={{ $json.status || 401 }}",
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "respond-auth-error",
+            "name": "Respond Auth Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                -400,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ {\n  \"error\": true,\n  \"status\": 401,\n  \"message\": \"JWT token verification failed\",\n  \"details\": \"Invalid or expired JWT token\",\n  \"timestamp\": new Date().toISOString()\n} }}",
+                "options": {
+                    "responseCode": 401,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "respond-jwt-error",
+            "name": "Respond JWT Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                -200,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Log dashboard request for analytics and debugging\nconst userId = $('Extract User ID').first()?.json?.userId;\nconst timestamp = new Date().toISOString();\nconst dashboardData = $input.first().json;\n\nconsole.log('Dashboard Request:', {\n  userId: userId,\n  timestamp: timestamp,\n  accountsCount: dashboardData.metadata?.accountsCount || 0,\n  budgetsCount: dashboardData.metadata?.budgetsCount || 0,\n  transactionsCount: dashboardData.metadata?.transactionsCount || 0,\n  isEmpty: dashboardData.metadata?.isEmpty || false\n});\n\n// Pass data through unchanged\nreturn $input.all();"
+            },
+            "id": "log-dashboard-request",
+            "name": "Log Dashboard Request",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                800,
+                0
+            ]
+        }
+    ],
+    "connections": {
+        "Dashboard Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Extract JWT Token",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract JWT Token": {
+            "main": [
+                [
+                    {
+                        "node": "Check Auth Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Auth Error": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Auth Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Verify JWT Token",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Verify JWT Token": {
+            "main": [
+                [
+                    {
+                        "node": "Extract User ID",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Respond JWT Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract User ID": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch Money Accounts",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Fetch Budgets",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Fetch Recent Transactions",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Fetch Flexible Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Money Accounts": {
+            "main": [
+                [
+                    {
+                        "node": "Merge All Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Budgets": {
+            "main": [
+                [
+                    {
+                        "node": "Merge All Data",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "Fetch Recent Transactions": {
+            "main": [
+                [
+                    {
+                        "node": "Merge All Data",
+                        "type": "main",
+                        "index": 2
+                    }
+                ]
+            ]
+        },
+        "Fetch Flexible Data": {
+            "main": [
+                [
+                    {
+                        "node": "Merge All Data",
+                        "type": "main",
+                        "index": 3
+                    }
+                ]
+            ]
+        },
+        "Merge All Data": {
+            "main": [
+                [
+                    {
+                        "node": "Format Dashboard Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Dashboard Data": {
+            "main": [
+                [
+                    {
+                        "node": "Check Empty State",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Empty State": {
+            "main": [
+                [
+                    {
+                        "node": "Create Empty State",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Log Dashboard Request",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create Empty State": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Empty State",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Log Dashboard Request": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Dashboard Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "templateCredsSetupCompleted": false,
+        "instanceId": "fingoal-ai-dashboard-agent-workflow"
+    }
+}

@@ -1,0 +1,684 @@
+{
+    "name": "Monitoring Agent",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "hours",
+                            "hoursInterval": 3
+                        }
+                    ]
+                }
+            },
+            "id": "monitoring-schedule-trigger",
+            "name": "Monitoring Schedule Trigger",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1,
+            "position": [
+                -800,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "execution_id",
+                            "value": "={{ $json.id || 'manual-' + $now() }}"
+                        },
+                        {
+                            "name": "execution_start",
+                            "value": "={{ $now() }}"
+                        },
+                        {
+                            "name": "monitoring_type",
+                            "value": "scheduled_monitoring"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "init-monitoring-context",
+            "name": "Init Monitoring Context",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3,
+            "position": [
+                -600,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Fetch all active users for monitoring\nSELECT \n  id as user_id,\n  email,\n  display_name,\n  language,\n  timezone,\n  currency,\n  created_at\nFROM users \nWHERE created_at <= NOW() - INTERVAL '24 hours'  -- Only monitor users active for at least 24 hours\nORDER BY created_at ASC;",
+                "options": {}
+            },
+            "id": "fetch-active-users",
+            "name": "Fetch Active Users",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                -400,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-connection"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "batchSize": 5,
+                "options": {}
+            },
+            "id": "split-users-batch",
+            "name": "Split Users Batch",
+            "type": "n8n-nodes-base.splitInBatches",
+            "typeVersion": 3,
+            "position": [
+                -200,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Get user's financial data for monitoring\nWITH user_budgets AS (\n  SELECT \n    b.id as budget_id,\n    b.category_id,\n    sc.name as category_name,\n    b.amount as budget_amount,\n    b.currency,\n    b.period,\n    b.start_date,\n    b.end_date\n  FROM budgets b\n  JOIN spending_categories sc ON b.category_id = sc.id\n  WHERE b.user_id = '{{ $json.user_id }}' \n    AND b.is_active = true\n    AND (b.end_date IS NULL OR b.end_date >= CURRENT_DATE)\n),\ncurrent_spending AS (\n  SELECT \n    t.category_id,\n    SUM(t.amount) as total_spent,\n    COUNT(*) as transaction_count,\n    MAX(t.transaction_date) as last_transaction,\n    AVG(t.amount) as avg_transaction\n  FROM transactions t\n  WHERE t.user_id = '{{ $json.user_id }}'\n    AND t.transaction_type = 'expense'\n    AND t.transaction_date >= DATE_TRUNC('month', CURRENT_DATE)\n  GROUP BY t.category_id\n),\nrecent_activity AS (\n  SELECT \n    COUNT(*) as transactions_last_7_days,\n    SUM(amount) as spending_last_7_days,\n    AVG(amount) as avg_daily_spending\n  FROM transactions\n  WHERE user_id = '{{ $json.user_id }}'\n    AND transaction_type = 'expense'\n    AND transaction_date >= CURRENT_DATE - INTERVAL '7 days'\n)\nSELECT \n  '{{ $json.user_id }}' as user_id,\n  '{{ $json.email }}' as user_email,\n  '{{ $json.language || \"en\" }}' as user_language,\n  '{{ $json.currency || \"VND\" }}' as user_currency,\n  ub.budget_id,\n  ub.category_id,\n  ub.category_name,\n  ub.budget_amount,\n  COALESCE(cs.total_spent, 0) as current_spent,\n  COALESCE(cs.transaction_count, 0) as transaction_count,\n  cs.last_transaction,\n  cs.avg_transaction,\n  CASE \n    WHEN ub.budget_amount > 0 THEN \n      ROUND((COALESCE(cs.total_spent, 0) / ub.budget_amount) * 100, 1)\n    ELSE 0 \n  END as budget_utilization_percent,\n  ra.transactions_last_7_days,\n  ra.spending_last_7_days,\n  ra.avg_daily_spending\nFROM user_budgets ub\nLEFT JOIN current_spending cs ON ub.category_id = cs.category_id\nCROSS JOIN recent_activity ra;",
+                "options": {}
+            },
+            "id": "analyze-user-financial-data",
+            "name": "Analyze User Financial Data",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                0,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-connection"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Analyze financial data and determine alerts to generate\nconst userData = $input.all();\nconst alerts = [];\nconst now = new Date();\n\n// Process each user's financial data\nfor (const user of userData) {\n  const {\n    user_id,\n    user_email, \n    user_language,\n    user_currency,\n    budget_id,\n    category_id,\n    category_name,\n    budget_amount,\n    current_spent,\n    budget_utilization_percent,\n    transaction_count,\n    last_transaction,\n    avg_transaction,\n    transactions_last_7_days,\n    spending_last_7_days,\n    avg_daily_spending\n  } = user.json;\n\n  // Skip if no budget data\n  if (!budget_id) continue;\n\n  // 1. Budget Overspend Alerts\n  if (budget_utilization_percent >= 120) {\n    alerts.push({\n      user_id,\n      user_email,\n      user_language,\n      user_currency,\n      alert_type: 'budget_critical_overspend',\n      severity: 'critical',\n      category_name,\n      category_id,\n      budget_amount,\n      current_spent,\n      utilization_percent: budget_utilization_percent,\n      title: user_language === 'vi' ? \n        `🚨 Vượt ngân sách ${category_name}` :\n        `🚨 ${category_name} Budget Exceeded`,\n      priority: 3\n    });\n  } else if (budget_utilization_percent >= 100) {\n    alerts.push({\n      user_id,\n      user_email,\n      user_language,\n      user_currency,\n      alert_type: 'budget_overspend',\n      severity: 'warning',\n      category_name,\n      category_id,\n      budget_amount,\n      current_spent,\n      utilization_percent: budget_utilization_percent,\n      title: user_language === 'vi' ? \n        `⚠️ Đã hết ngân sách ${category_name}` :\n        `⚠️ ${category_name} Budget Used Up`,\n      priority: 2\n    });\n  } else if (budget_utilization_percent >= 80) {\n    alerts.push({\n      user_id,\n      user_email,\n      user_language,\n      user_currency,\n      alert_type: 'budget_warning',\n      severity: 'info',\n      category_name,\n      category_id,\n      budget_amount,\n      current_spent,\n      utilization_percent: budget_utilization_percent,\n      title: user_language === 'vi' ? \n        `💡 Sắp hết ngân sách ${category_name}` :\n        `💡 ${category_name} Budget Nearly Used`,\n      priority: 1\n    });\n  }\n\n  // 2. Unusual Spending Pattern Alerts\n  if (avg_daily_spending && avg_transaction) {\n    const unusual_threshold = avg_transaction * 3; // 3x average transaction\n    const recent_high_spending = spending_last_7_days > (avg_daily_spending * 14); // 2x weekly average\n    \n    if (recent_high_spending) {\n      alerts.push({\n        user_id,\n        user_email,\n        user_language,\n        user_currency,\n        alert_type: 'unusual_spending_pattern',\n        severity: 'warning',\n        category_name,\n        category_id,\n        spending_last_7_days,\n        avg_daily_spending,\n        title: user_language === 'vi' ? \n          `📈 Chi tiêu bất thường cho ${category_name}` :\n          `📈 Unusual Spending in ${category_name}`,\n        priority: 2\n      });\n    }\n  }\n\n  // 3. Inactive Spending Alerts (no transactions in frequently used categories)\n  if (transaction_count > 5 && last_transaction) { // Only for active categories\n    const daysSinceLastTransaction = Math.floor((now - new Date(last_transaction)) / (1000 * 60 * 60 * 24));\n    \n    if (daysSinceLastTransaction >= 14) {\n      alerts.push({\n        user_id,\n        user_email,\n        user_language,\n        user_currency,\n        alert_type: 'spending_inactive',\n        severity: 'info',\n        category_name,\n        category_id,\n        days_since_last: daysSinceLastTransaction,\n        title: user_language === 'vi' ? \n          `🤔 Không có giao dịch ${category_name} gần đây` :\n          `🤔 No Recent ${category_name} Transactions`,\n        priority: 1\n      });\n    }\n  }\n}\n\n// Return alerts grouped by user for efficient processing\nconst alertsByUser = alerts.reduce((acc, alert) => {\n  if (!acc[alert.user_id]) {\n    acc[alert.user_id] = [];\n  }\n  acc[alert.user_id].push(alert);\n  return acc;\n}, {});\n\nconst result = Object.entries(alertsByUser).map(([user_id, userAlerts]) => ({\n  user_id,\n  alerts: userAlerts,\n  alert_count: userAlerts.length,\n  highest_priority: Math.max(...userAlerts.map(a => a.priority)),\n  user_email: userAlerts[0].user_email,\n  user_language: userAlerts[0].user_language,\n  user_currency: userAlerts[0].user_currency\n}));\n\nreturn result.length > 0 ? result : [{ no_alerts: true, message: 'No alerts generated for this batch' }];"
+            },
+            "id": "generate-alert-analysis",
+            "name": "Generate Alert Analysis",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                200,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-alerts-exist",
+                            "leftValue": "={{ $json.no_alerts }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "notEqual"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "check-alerts-generated",
+            "name": "Check Alerts Generated",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                400,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Process alerts for database insertion and notification\nconst userAlerts = $json.alerts;\nconst processed = [];\n\nfor (const alert of userAlerts) {\n  // Format currency amounts\n  const formatAmount = (amount, currency) => {\n    if (currency === 'VND') {\n      return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';\n    } else {\n      return new Intl.NumberFormat('en-US', { \n        style: 'currency', \n        currency: currency || 'USD' \n      }).format(amount);\n    }\n  };\n\n  // Generate detailed alert message based on type and language\n  let message = '';\n  let actionUrl = '';\n  \n  const { alert_type, user_language, category_name, current_spent, budget_amount, utilization_percent, user_currency } = alert;\n  \n  switch (alert_type) {\n    case 'budget_critical_overspend':\n      if (user_language === 'vi') {\n        message = `Bạn đã chi ${formatAmount(current_spent, user_currency)} cho ${category_name}, vượt ${utilization_percent}% ngân sách ${formatAmount(budget_amount, user_currency)}. Hãy xem xét điều chỉnh chi tiêu!`;\n      } else {\n        message = `You've spent ${formatAmount(current_spent, user_currency)} on ${category_name}, exceeding ${utilization_percent}% of your ${formatAmount(budget_amount, user_currency)} budget. Consider adjusting your spending!`;\n      }\n      actionUrl = `/dashboard?tab=budget&category=${alert.category_id}`;\n      break;\n      \n    case 'budget_overspend':\n      if (user_language === 'vi') {\n        message = `Ngân sách ${category_name} đã hết! Bạn đã chi ${formatAmount(current_spent, user_currency)} trong tháng này.`;\n      } else {\n        message = `Your ${category_name} budget is used up! You've spent ${formatAmount(current_spent, user_currency)} this month.`;\n      }\n      actionUrl = `/dashboard?tab=budget&category=${alert.category_id}`;\n      break;\n      \n    case 'budget_warning':\n      const remaining = budget_amount - current_spent;\n      if (user_language === 'vi') {\n        message = `Bạn đã sử dụng ${utilization_percent}% ngân sách ${category_name}. Còn lại ${formatAmount(remaining, user_currency)} cho tháng này.`;\n      } else {\n        message = `You've used ${utilization_percent}% of your ${category_name} budget. ${formatAmount(remaining, user_currency)} remaining this month.`;\n      }\n      actionUrl = `/dashboard?tab=budget&category=${alert.category_id}`;\n      break;\n      \n    case 'unusual_spending_pattern':\n      if (user_language === 'vi') {\n        message = `Chi tiêu ${category_name} tuần này cao hơn bình thường. Hãy kiểm tra các giao dịch gần đây.`;\n      } else {\n        message = `Your ${category_name} spending this week is higher than usual. Check your recent transactions.`;\n      }\n      actionUrl = `/dashboard?tab=transactions&category=${alert.category_id}`;\n      break;\n      \n    case 'spending_inactive':\n      if (user_language === 'vi') {\n        message = `Không có giao dịch ${category_name} trong ${alert.days_since_last} ngày. Có vấn đề gì không?`;\n      } else {\n        message = `No ${category_name} transactions for ${alert.days_since_last} days. Is everything okay?`;\n      }\n      actionUrl = `/dashboard?tab=transactions&category=${alert.category_id}`;\n      break;\n  }\n  \n  // Prepare database record\n  processed.push({\n    user_id: alert.user_id,\n    alert_type: alert.alert_type,\n    title: alert.title,\n    message: message,\n    severity: alert.severity,\n    action_url: actionUrl,\n    data: {\n      category_id: alert.category_id,\n      category_name: alert.category_name,\n      budget_amount: alert.budget_amount,\n      current_spent: alert.current_spent,\n      utilization_percent: alert.utilization_percent,\n      priority: alert.priority,\n      currency: alert.user_currency\n    },\n    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days\n    // Notification data\n    notification_title: alert.title,\n    notification_body: message,\n    user_email: alert.user_email,\n    user_language: alert.user_language\n  });\n}\n\nreturn processed;"
+            },
+            "id": "process-alerts-for-storage",
+            "name": "Process Alerts for Storage",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                600,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Check for duplicate alerts in the last 24 hours to prevent spam\nSELECT \n  user_id,\n  alert_type,\n  data->>'category_id' as category_id\nFROM alerts \nWHERE user_id = '{{ $json.user_id }}' \n  AND alert_type = '{{ $json.alert_type }}'\n  AND (data->>'category_id') = '{{ $json.data.category_id }}'\n  AND created_at >= NOW() - INTERVAL '24 hours'\nLIMIT 1;",
+                "options": {}
+            },
+            "id": "check-duplicate-alerts",
+            "name": "Check Duplicate Alerts",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                800,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-connection"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-not-duplicate",
+                            "leftValue": "={{ $json.length }}",
+                            "rightValue": 0,
+                            "operator": {
+                                "type": "number",
+                                "operation": "equal"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "filter-duplicate-alerts",
+            "name": "Filter Duplicate Alerts",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                1000,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Insert new alert into database\nINSERT INTO alerts (\n  user_id,\n  alert_type,\n  title,\n  message,\n  severity,\n  data,\n  action_url,\n  expires_at,\n  created_at,\n  updated_at\n) VALUES (\n  '{{ $('Process Alerts for Storage').item.json.user_id }}',\n  '{{ $('Process Alerts for Storage').item.json.alert_type }}',\n  '{{ $('Process Alerts for Storage').item.json.title }}',\n  '{{ $('Process Alerts for Storage').item.json.message }}',\n  '{{ $('Process Alerts for Storage').item.json.severity }}',\n  '{{ JSON.stringify($('Process Alerts for Storage').item.json.data) }}',\n  '{{ $('Process Alerts for Storage').item.json.action_url }}',\n  '{{ $('Process Alerts for Storage').item.json.expires_at }}',\n  NOW(),\n  NOW()\n) RETURNING id, title, message, severity, created_at;",
+                "options": {}
+            },
+            "id": "insert-alert-record",
+            "name": "Insert Alert Record",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                1200,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-connection"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Get FCM tokens for the user to send push notifications\nSELECT \n  u.id as user_id,\n  u.email,\n  u.language,\n  COALESCE(u.fcm_tokens, '[]'::jsonb) as fcm_tokens\nFROM users u\nWHERE u.id = '{{ $('Process Alerts for Storage').item.json.user_id }}'\n  AND JSONB_ARRAY_LENGTH(COALESCE(u.fcm_tokens, '[]'::jsonb)) > 0;",
+                "options": {}
+            },
+            "id": "get-user-fcm-tokens",
+            "name": "Get User FCM Tokens",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                1400,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-connection"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-fcm-tokens-exist",
+                            "leftValue": "={{ $json.length }}",
+                            "rightValue": 0,
+                            "operator": {
+                                "type": "number",
+                                "operation": "greaterThan"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "check-fcm-tokens-available",
+            "name": "Check FCM Tokens Available",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                1600,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Prepare FCM notification payload\nconst alertData = $('Process Alerts for Storage').item.json;\nconst userData = $input.first().json;\nconst tokens = JSON.parse(userData.fcm_tokens);\n\nconst notifications = [];\n\n// Create notification for each FCM token\nfor (const token of tokens) {\n  if (token && typeof token === 'string') {\n    notifications.push({\n      token: token,\n      notification: {\n        title: alertData.notification_title,\n        body: alertData.notification_body,\n        icon: 'ic_notification',\n        sound: 'default'\n      },\n      data: {\n        alert_type: alertData.alert_type,\n        severity: alertData.severity,\n        action_url: alertData.action_url,\n        category_id: alertData.data.category_id || '',\n        alert_id: $('Insert Alert Record').first().json.id || '',\n        timestamp: new Date().toISOString()\n      },\n      android: {\n        notification: {\n          channelId: 'financial_alerts',\n          priority: alertData.severity === 'critical' ? 'high' : 'default',\n          defaultSound: true,\n          defaultVibrateTimings: true\n        }\n      },\n      apns: {\n        payload: {\n          aps: {\n            alert: {\n              title: alertData.notification_title,\n              body: alertData.notification_body\n            },\n            sound: 'default',\n            badge: 1\n          }\n        }\n      }\n    });\n  }\n}\n\nreturn notifications;"
+            },
+            "id": "prepare-fcm-notifications",
+            "name": "Prepare FCM Notifications",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1800,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://fcm.googleapis.com/v1/projects/fingoal-ai/messages:send",
+                "authentication": "serviceAccount",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "message",
+                            "value": "={{ JSON.stringify($json) }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "response": {
+                        "response": {
+                            "responseFormat": "json"
+                        }
+                    },
+                    "timeout": 10000
+                }
+            },
+            "id": "send-fcm-notification",
+            "name": "Send FCM Notification",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                2000,
+                200
+            ],
+            "credentials": {
+                "googleServiceAccount": {
+                    "id": "fcm-service-account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Log notification delivery result\nconst fcmResponse = $input.first().json;\nconst alertData = $('Process Alerts for Storage').item.json;\nconst notificationData = $('Prepare FCM Notifications').item.json;\n\nconst deliveryResult = {\n  alert_id: $('Insert Alert Record').first().json.id,\n  user_id: alertData.user_id,\n  alert_type: alertData.alert_type,\n  notification_sent: !!fcmResponse.name,\n  fcm_message_id: fcmResponse.name || null,\n  delivery_status: fcmResponse.name ? 'sent' : 'failed',\n  error: fcmResponse.error || null,\n  timestamp: new Date().toISOString(),\n  token_used: notificationData.token\n};\n\nreturn [deliveryResult];"
+            },
+            "id": "log-notification-delivery",
+            "name": "Log Notification Delivery",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2200,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Log when no FCM tokens are available\nconst alertData = $('Process Alerts for Storage').item.json;\n\nreturn [{\n  alert_id: $('Insert Alert Record').first().json.id,\n  user_id: alertData.user_id,\n  alert_type: alertData.alert_type,\n  notification_sent: false,\n  delivery_status: 'no_tokens',\n  error: 'No FCM tokens available for user',\n  timestamp: new Date().toISOString()\n}];"
+            },
+            "id": "log-no-tokens-available",
+            "name": "Log No Tokens Available",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1600,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Log skipped duplicate alert\nconst alertData = $('Process Alerts for Storage').item.json;\n\nreturn [{\n  user_id: alertData.user_id,\n  alert_type: alertData.alert_type,\n  status: 'skipped_duplicate',\n  message: 'Alert skipped - similar alert sent within 24 hours',\n  timestamp: new Date().toISOString()\n}];"
+            },
+            "id": "log-duplicate-skipped",
+            "name": "Log Duplicate Skipped",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1000,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Log when no alerts are generated for the batch\nconst batchInfo = $input.first().json;\n\nreturn [{\n  batch_status: 'no_alerts',\n  message: batchInfo.message || 'No alerts generated for this user batch',\n  timestamp: new Date().toISOString(),\n  execution_id: $('Init Monitoring Context').first().json.execution_id\n}];"
+            },
+            "id": "log-no-alerts",
+            "name": "Log No Alerts",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                400,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "combine",
+                "combineBy": "combineAll",
+                "options": {}
+            },
+            "id": "merge-batch-results",
+            "name": "Merge Batch Results",
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 2,
+            "position": [
+                2400,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Log monitoring execution summary\nINSERT INTO monitoring_logs (\n  execution_id,\n  execution_start,\n  execution_end,\n  users_processed,\n  alerts_generated,\n  notifications_sent,\n  status,\n  created_at\n) VALUES (\n  '{{ $('Init Monitoring Context').first().json.execution_id }}',\n  '{{ $('Init Monitoring Context').first().json.execution_start }}',\n  '{{ $now() }}',\n  {{ $('Split Users Batch').first().json.totalItems || 0 }},\n  {{ $json.length || 0 }},\n  {{ ($json.filter(item => item.notification_sent === true)).length || 0 }},\n  'completed',\n  NOW()\n) ON CONFLICT (execution_id) DO UPDATE SET\n  execution_end = EXCLUDED.execution_end,\n  users_processed = EXCLUDED.users_processed,\n  alerts_generated = EXCLUDED.alerts_generated,\n  notifications_sent = EXCLUDED.notifications_sent,\n  status = EXCLUDED.status;",
+                "options": {}
+            },
+            "id": "log-execution-summary",
+            "name": "Log Execution Summary",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                2600,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-connection"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Monitoring Schedule Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Init Monitoring Context",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Init Monitoring Context": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch Active Users",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Active Users": {
+            "main": [
+                [
+                    {
+                        "node": "Split Users Batch",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Split Users Batch": {
+            "main": [
+                [
+                    {
+                        "node": "Analyze User Financial Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Analyze User Financial Data": {
+            "main": [
+                [
+                    {
+                        "node": "Generate Alert Analysis",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate Alert Analysis": {
+            "main": [
+                [
+                    {
+                        "node": "Check Alerts Generated",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Alerts Generated": {
+            "main": [
+                [
+                    {
+                        "node": "Process Alerts for Storage",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Log No Alerts",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Process Alerts for Storage": {
+            "main": [
+                [
+                    {
+                        "node": "Check Duplicate Alerts",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Duplicate Alerts": {
+            "main": [
+                [
+                    {
+                        "node": "Filter Duplicate Alerts",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Filter Duplicate Alerts": {
+            "main": [
+                [
+                    {
+                        "node": "Insert Alert Record",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Log Duplicate Skipped",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Insert Alert Record": {
+            "main": [
+                [
+                    {
+                        "node": "Get User FCM Tokens",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get User FCM Tokens": {
+            "main": [
+                [
+                    {
+                        "node": "Check FCM Tokens Available",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check FCM Tokens Available": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare FCM Notifications",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Log No Tokens Available",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare FCM Notifications": {
+            "main": [
+                [
+                    {
+                        "node": "Send FCM Notification",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Send FCM Notification": {
+            "main": [
+                [
+                    {
+                        "node": "Log Notification Delivery",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Log Notification Delivery": {
+            "main": [
+                [
+                    {
+                        "node": "Merge Batch Results",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Log No Tokens Available": {
+            "main": [
+                [
+                    {
+                        "node": "Merge Batch Results",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "Log Duplicate Skipped": {
+            "main": [
+                [
+                    {
+                        "node": "Merge Batch Results",
+                        "type": "main",
+                        "index": 2
+                    }
+                ]
+            ]
+        },
+        "Log No Alerts": {
+            "main": [
+                [
+                    {
+                        "node": "Merge Batch Results",
+                        "type": "main",
+                        "index": 3
+                    }
+                ]
+            ]
+        },
+        "Merge Batch Results": {
+            "main": [
+                [
+                    {
+                        "node": "Log Execution Summary",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "templateCredsSetupCompleted": false,
+        "instanceId": "fingoal-ai-monitoring-agent-workflow"
+    }
+}

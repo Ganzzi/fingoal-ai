@@ -129,6 +129,26 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Force logout for debugging/testing - clears all auth data
+  Future<void> forceLogout() async {
+    _setLoading(true);
+
+    try {
+      // Clear all authentication data
+      await _authService.clearAuthData();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Force logout error: $e');
+      }
+    }
+
+    // Clear local state
+    _isAuthenticated = false;
+    _user = null;
+    _setLoading(false);
+    notifyListeners();
+  }
+
   /// Refresh authentication token
   Future<bool> refreshToken() async {
     try {

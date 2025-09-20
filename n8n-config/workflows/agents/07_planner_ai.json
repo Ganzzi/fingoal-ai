@@ -1,0 +1,579 @@
+{
+    "name": "Analysis Agent",
+    "nodes": [
+        {
+            "parameters": {
+                "path": "analysis",
+                "options": {}
+            },
+            "id": "analysis-webhook-trigger",
+            "name": "Analysis Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                240,
+                300
+            ],
+            "webhookId": "analysis-agent-webhook"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "auth-check",
+                            "leftValue": "={{ $json.headers.authorization }}",
+                            "rightValue": "",
+                            "operator": {
+                                "operation": "exists",
+                                "type": "string"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "auth-validation",
+            "name": "Auth Validation",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "text",
+                "responseBody": "=Unauthorized: Missing authentication token",
+                "options": {
+                    "responseCode": 401,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "auth-error-response",
+            "name": "Auth Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                460,
+                480
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://localhost:3000/auth/validate",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "options": {
+                    "headers": {
+                        "entries": [
+                            {
+                                "name": "Authorization",
+                                "value": "={{ $json.headers.authorization }}"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "jwt-validation",
+            "name": "JWT Validation",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "jwt-valid-check",
+                            "leftValue": "={{ $json.valid }}",
+                            "rightValue": true,
+                            "operator": {
+                                "operation": "equals",
+                                "type": "boolean"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "jwt-check",
+            "name": "JWT Check",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                900,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "text",
+                "responseBody": "=Unauthorized: Invalid token",
+                "options": {
+                    "responseCode": 401,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "jwt-error-response",
+            "name": "JWT Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                900,
+                480
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  ma.id,\n  ma.name,\n  ma.account_type,\n  ma.balance,\n  ma.currency,\n  ma.created_at,\n  ma.updated_at\nFROM money_accounts ma\nWHERE ma.user_id = $1\nORDER BY ma.created_at DESC",
+                "options": {
+                    "queryParams": {
+                        "parameters": [
+                            {
+                                "parameter": "={{ $('JWT Validation').item.json.user_id }}"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "fetch-accounts",
+            "name": "Fetch Accounts",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                1120,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-fingoal-db",
+                    "name": "FinGoal PostgreSQL"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  b.id,\n  b.category_id,\n  sc.name as category_name,\n  b.allocated_amount,\n  b.period_type,\n  b.period_start,\n  b.period_end,\n  COALESCE(spent.total_spent, 0) as spent_amount,\n  b.allocated_amount - COALESCE(spent.total_spent, 0) as remaining_amount,\n  CASE \n    WHEN b.allocated_amount > 0 \n    THEN (COALESCE(spent.total_spent, 0) / b.allocated_amount * 100)\n    ELSE 0 \n  END as utilization_percentage\nFROM budgets b\nLEFT JOIN spending_categories sc ON b.category_id = sc.id\nLEFT JOIN (\n  SELECT \n    t.category_id,\n    SUM(ABS(t.amount)) as total_spent\n  FROM transactions t\n  WHERE t.user_id = $1\n    AND t.transaction_type = 'expense'\n    AND t.transaction_date >= CURRENT_DATE - INTERVAL '30 days'\n  GROUP BY t.category_id\n) spent ON b.category_id = spent.category_id\nWHERE b.user_id = $1\n  AND b.is_active = true\nORDER BY b.created_at DESC",
+                "options": {
+                    "queryParams": {
+                        "parameters": [
+                            {
+                                "parameter": "={{ $('JWT Validation').item.json.user_id }}"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "fetch-budgets",
+            "name": "Fetch Budgets",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                1120,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-fingoal-db",
+                    "name": "FinGoal PostgreSQL"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  t.id,\n  t.amount,\n  t.description,\n  t.transaction_date,\n  t.transaction_type,\n  t.category_id,\n  sc.name as category_name,\n  sc.icon as category_icon,\n  sc.color as category_color,\n  ma.name as account_name,\n  ma.account_type\nFROM transactions t\nLEFT JOIN spending_categories sc ON t.category_id = sc.id\nLEFT JOIN money_accounts ma ON t.account_id = ma.id\nWHERE t.user_id = $1\n  AND t.transaction_date >= CURRENT_DATE - INTERVAL '90 days'\nORDER BY t.transaction_date DESC\nLIMIT 50",
+                "options": {
+                    "queryParams": {
+                        "parameters": [
+                            {
+                                "parameter": "={{ $('JWT Validation').item.json.user_id }}"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "fetch-transactions",
+            "name": "Fetch Transactions",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                1120,
+                400
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-fingoal-db",
+                    "name": "FinGoal PostgreSQL"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  dm.id,\n  dm.data_type,\n  dm.category,\n  dm.subcategory,\n  dm.description,\n  dr.field_name,\n  dr.field_value,\n  dr.data_type as field_data_type,\n  dm.created_at\nFROM data_metadata dm\nLEFT JOIN data_rows dr ON dm.id = dr.metadata_id\nWHERE dm.user_id = $1\n  AND dm.data_type IN ('investment', 'debt', 'goal', 'insurance')\nORDER BY dm.created_at DESC",
+                "options": {
+                    "queryParams": {
+                        "parameters": [
+                            {
+                                "parameter": "={{ $('JWT Validation').item.json.user_id }}"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "fetch-extended-data",
+            "name": "Fetch Extended Data",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                1120,
+                500
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-fingoal-db",
+                    "name": "FinGoal PostgreSQL"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Aggregate and format financial data for AI analysis\nconst accounts = $input('Fetch Accounts').all();\nconst budgets = $input('Fetch Budgets').all();\nconst transactions = $input('Fetch Transactions').all();\nconst extendedData = $input('Fetch Extended Data').all();\nconst userId = $('JWT Validation').item.json.user_id;\nconst userLanguage = $json.language || 'en';\n\n// Process accounts data\nconst accountsData = accounts.map(item => ({\n  id: item.json.id,\n  name: item.json.name,\n  type: item.json.account_type,\n  balance: parseFloat(item.json.balance || 0),\n  currency: item.json.currency || 'USD'\n}));\n\n// Calculate total assets and debts\nconst totalAssets = accountsData\n  .filter(acc => ['checking', 'savings', 'investment'].includes(acc.type))\n  .reduce((sum, acc) => sum + acc.balance, 0);\n\nconst totalDebts = accountsData\n  .filter(acc => ['credit_card', 'loan'].includes(acc.type))\n  .reduce((sum, acc) => sum + Math.abs(acc.balance), 0);\n\nconst netWorth = totalAssets - totalDebts;\n\n// Process budgets data\nconst budgetsData = budgets.map(item => ({\n  categoryName: item.json.category_name,\n  allocated: parseFloat(item.json.allocated_amount || 0),\n  spent: parseFloat(item.json.spent_amount || 0),\n  remaining: parseFloat(item.json.remaining_amount || 0),\n  utilization: parseFloat(item.json.utilization_percentage || 0)\n}));\n\n// Calculate total budget performance\nconst totalBudgetAllocated = budgetsData.reduce((sum, b) => sum + b.allocated, 0);\nconst totalBudgetSpent = budgetsData.reduce((sum, b) => sum + b.spent, 0);\nconst overallBudgetUtilization = totalBudgetAllocated > 0 ? (totalBudgetSpent / totalBudgetAllocated * 100) : 0;\n\n// Process transactions data\nconst transactionsData = transactions.map(item => ({\n  amount: parseFloat(item.json.amount || 0),\n  description: item.json.description,\n  date: item.json.transaction_date,\n  type: item.json.transaction_type,\n  category: item.json.category_name,\n  account: item.json.account_name\n}));\n\n// Calculate spending by category (last 30 days)\nconst last30Days = new Date();\nlast30Days.setDate(last30Days.getDate() - 30);\n\nconst recentTransactions = transactionsData.filter(t => new Date(t.date) > last30Days);\nconst spendingByCategory = {};\nconst totalIncome = recentTransactions\n  .filter(t => t.type === 'income')\n  .reduce((sum, t) => sum + Math.abs(t.amount), 0);\nconst totalExpenses = recentTransactions\n  .filter(t => t.type === 'expense')\n  .reduce((sum, t) => sum + Math.abs(t.amount), 0);\n\nrecentTransactions\n  .filter(t => t.type === 'expense')\n  .forEach(t => {\n    const category = t.category || 'Uncategorized';\n    spendingByCategory[category] = (spendingByCategory[category] || 0) + Math.abs(t.amount);\n  });\n\n// Process extended data (investments, debts, goals)\nconst extendedDataProcessed = {};\nextendedData.forEach(item => {\n  const type = item.json.data_type;\n  if (!extendedDataProcessed[type]) {\n    extendedDataProcessed[type] = [];\n  }\n  \n  const existingItem = extendedDataProcessed[type].find(i => i.id === item.json.id);\n  if (existingItem) {\n    existingItem.fields = existingItem.fields || {};\n    if (item.json.field_name && item.json.field_value) {\n      existingItem.fields[item.json.field_name] = item.json.field_value;\n    }\n  } else {\n    extendedDataProcessed[type].push({\n      id: item.json.id,\n      category: item.json.category,\n      subcategory: item.json.subcategory,\n      description: item.json.description,\n      fields: item.json.field_name && item.json.field_value ? \n        { [item.json.field_name]: item.json.field_value } : {}\n    });\n  }\n});\n\n// Create financial analysis summary\nconst financialSummary = {\n  userId: userId,\n  language: userLanguage,\n  analysisDate: new Date().toISOString(),\n  \n  // Account overview\n  accounts: {\n    total: accountsData.length,\n    totalAssets: totalAssets,\n    totalDebts: totalDebts,\n    netWorth: netWorth,\n    accounts: accountsData\n  },\n  \n  // Budget analysis\n  budgets: {\n    total: budgetsData.length,\n    totalAllocated: totalBudgetAllocated,\n    totalSpent: totalBudgetSpent,\n    overallUtilization: overallBudgetUtilization,\n    budgets: budgetsData\n  },\n  \n  // Spending analysis\n  spending: {\n    totalIncome: totalIncome,\n    totalExpenses: totalExpenses,\n    netCashFlow: totalIncome - totalExpenses,\n    savingsRate: totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome * 100) : 0,\n    spendingByCategory: spendingByCategory,\n    recentTransactionsCount: recentTransactions.length\n  },\n  \n  // Extended financial data\n  extendedData: extendedDataProcessed\n};\n\nreturn { financialData: financialSummary };"
+            },
+            "id": "process-financial-data",
+            "name": "Process Financial Data",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1340,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Create comprehensive financial analysis prompt\nconst data = $json.financialData;\nconst language = data.language;\n\n// Format currency values\nconst formatCurrency = (amount, currency = 'USD') => {\n  return new Intl.NumberFormat(language === 'vi' ? 'vi-VN' : 'en-US', {\n    style: 'currency',\n    currency: currency === 'VND' ? 'VND' : 'USD'\n  }).format(amount);\n};\n\n// Create structured financial data for AI\nconst accountsSummary = `\nACCOUNT OVERVIEW:\n- Total Accounts: ${data.accounts.total}\n- Total Assets: ${formatCurrency(data.accounts.totalAssets)}\n- Total Debts: ${formatCurrency(data.accounts.totalDebts)}\n- Net Worth: ${formatCurrency(data.accounts.netWorth)}\n\nAccount Details:\n${data.accounts.accounts.map(acc => \n  `  • ${acc.name} (${acc.type}): ${formatCurrency(acc.balance, acc.currency)}`\n).join('\\n')}`;\n\nconst budgetsSummary = `\nBUDGET ANALYSIS:\n- Total Budget Categories: ${data.budgets.total}\n- Total Allocated: ${formatCurrency(data.budgets.totalAllocated)}\n- Total Spent: ${formatCurrency(data.budgets.totalSpent)}\n- Overall Utilization: ${data.budgets.overallUtilization.toFixed(1)}%\n\nBudget Performance:\n${data.budgets.budgets.map(budget => \n  `  • ${budget.categoryName}: ${formatCurrency(budget.spent)} / ${formatCurrency(budget.allocated)} (${budget.utilization.toFixed(1)}%)`\n).join('\\n')}`;\n\nconst spendingSummary = `\nSPENDING ANALYSIS (Last 30 Days):\n- Total Income: ${formatCurrency(data.spending.totalIncome)}\n- Total Expenses: ${formatCurrency(data.spending.totalExpenses)}\n- Net Cash Flow: ${formatCurrency(data.spending.netCashFlow)}\n- Savings Rate: ${data.spending.savingsRate.toFixed(1)}%\n\nTop Spending Categories:\n${Object.entries(data.spending.spendingByCategory)\n  .sort(([,a], [,b]) => b - a)\n  .slice(0, 5)\n  .map(([category, amount]) => `  • ${category}: ${formatCurrency(amount)}`)\n  .join('\\n')}`;\n\nconst extendedSummary = Object.keys(data.extendedData).length > 0 ? `\nADDITIONAL FINANCIAL DATA:\n${Object.entries(data.extendedData).map(([type, items]) => \n  `${type.toUpperCase()}S (${items.length}):\\n${items.map(item => \n    `  • ${item.description || item.category}: ${Object.entries(item.fields).map(([k,v]) => `${k}: ${v}`).join(', ')}`\n  ).join('\\n')}`\n).join('\\n\\n')}` : '';\n\n// Create language-specific prompt\nconst prompts = {\n  en: `You are a professional financial advisor analyzing a client's complete financial profile. Provide a comprehensive financial analysis with specific, actionable recommendations.\n\nCLIENT FINANCIAL DATA:\n${accountsSummary}\n${budgetsSummary}\n${spendingSummary}\n${extendedSummary}\n\nANALYSIS REQUIREMENTS:\n1. **Financial Health Summary**: Overall assessment of financial position\n2. **Budget Performance**: Analysis of spending vs budget allocations\n3. **Spending Patterns**: Key insights from transaction analysis\n4. **Savings & Debt Management**: Emergency fund, debt ratios, payment strategies\n5. **Goal Progress**: Assessment of financial goal achievement\n6. **Actionable Recommendations**: 3-5 specific, prioritized action items\n\nFORMAT REQUIREMENTS:\n- Professional, encouraging tone\n- Well-structured with clear sections\n- Specific numbers and percentages where relevant\n- Practical, actionable advice\n- 600-800 words total\n\nLanguage: English`,\n\n  vi: `Bạn là một chuyên gia tư vấn tài chính đang phân tích hồ sơ tài chính đầy đủ của khách hàng. Hãy cung cấp một phân tích tài chính toàn diện với các khuyến nghị cụ thể, có thể thực hiện được.\n\nDỮ LIỆU TÀI CHÍNH KHÁCH HÀNG:\n${accountsSummary}\n${budgetsSummary}\n${spendingSummary}\n${extendedSummary}\n\nYÊU CẦU PHÂN TÍCH:\n1. **Tóm tắt Sức khỏe Tài chính**: Đánh giá tổng thể về tình hình tài chính\n2. **Hiệu suất Ngân sách**: Phân tích chi tiêu so với phân bổ ngân sách\n3. **Mô hình Chi tiêu**: Những hiểu biết chính từ phân tích giao dịch\n4. **Quản lý Tiết kiệm & Nợ**: Quỹ khẩn cấp, tỷ lệ nợ, chiến lược thanh toán\n5. **Tiến độ Mục tiêu**: Đánh giá việc đạt được mục tiêu tài chính\n6. **Khuyến nghị Hành động**: 3-5 hành động cụ thể, được ưu tiên\n\nYÊU CẦU ĐỊNH DẠNG:\n- Giọng điệu chuyên nghiệp, khuyến khích\n- Cấu trúc rõ ràng với các phần rõ ràng\n- Số liệu cụ thể và tỷ lệ phần trăm khi liên quan\n- Lời khuyên thực tế, có thể thực hiện được\n- Tổng cộng 600-800 từ\n\nNgôn ngữ: Tiếng Việt`\n};\n\nconst selectedPrompt = prompts[language] || prompts.en;\n\nreturn { \n  prompt: selectedPrompt,\n  financialData: data,\n  language: language\n};"
+            },
+            "id": "create-analysis-prompt",
+            "name": "Create Analysis Prompt",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1560,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "model": "gemini-1.5-pro",
+                "options": {
+                    "temperature": 0.3,
+                    "maxTokens": 2000
+                }
+            },
+            "id": "ai-financial-analysis",
+            "name": "AI Financial Analysis",
+            "type": "@n8n/n8n-nodes-langchain.llmGoogleGemini",
+            "typeVersion": 1,
+            "position": [
+                1780,
+                300
+            ],
+            "credentials": {
+                "googleGeminiApi": {
+                    "id": "google-gemini-api",
+                    "name": "Google Gemini API"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Format AI analysis response for chat interface\nconst analysis = $json.response || $json.text || '';\nconst financialData = $('Create Analysis Prompt').item.json.financialData;\nconst language = financialData.language;\n\n// Extract key metrics for structured response\nconst metrics = {\n  netWorth: financialData.accounts.netWorth,\n  totalAssets: financialData.accounts.totalAssets,\n  totalDebts: financialData.accounts.totalDebts,\n  monthlyCashFlow: financialData.spending.netCashFlow,\n  savingsRate: financialData.spending.savingsRate,\n  budgetUtilization: financialData.budgets.overallUtilization\n};\n\n// Create structured response\nconst structuredResponse = {\n  type: 'financial_analysis',\n  analysis: {\n    content: analysis,\n    summary: {\n      netWorth: metrics.netWorth,\n      cashFlow: metrics.monthlyCashFlow,\n      savingsRate: `${metrics.savingsRate.toFixed(1)}%`,\n      budgetUtilization: `${metrics.budgetUtilization.toFixed(1)}%`\n    },\n    language: language,\n    generatedAt: new Date().toISOString()\n  },\n  success: true,\n  message: language === 'vi' ? \n    'Phân tích tài chính đã được tạo thành công' : \n    'Financial analysis generated successfully'\n};\n\nreturn structuredResponse;"
+            },
+            "id": "format-response",
+            "name": "Format Response",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2000,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "success-response",
+            "name": "Success Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                2220,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Handle analysis errors and create fallback response\nconst error = $json.error || $json.message || 'Unknown error occurred';\nconst language = $('JWT Validation').item.json.language || 'en';\n\nconst fallbackMessages = {\n  en: \"I apologize, but I'm unable to generate your financial analysis at the moment. This could be due to insufficient data or a temporary system issue. Please ensure you have added accounts, transactions, and budgets to your profile, then try again.\",\n  vi: \"Tôi xin lỗi, nhưng hiện tại tôi không thể tạo phân tích tài chính cho bạn. Điều này có thể do dữ liệu không đủ hoặc sự cố hệ thống tạm thời. Vui lòng đảm bảo bạn đã thêm tài khoản, giao dịch và ngân sách vào hồ sơ của mình, sau đó thử lại.\"\n};\n\nconst errorResponse = {\n  type: 'financial_analysis',\n  analysis: {\n    content: fallbackMessages[language] || fallbackMessages.en,\n    summary: null,\n    language: language,\n    generatedAt: new Date().toISOString()\n  },\n  success: false,\n  error: error,\n  message: language === 'vi' ? \n    'Không thể tạo phân tích tài chính' : \n    'Unable to generate financial analysis'\n};\n\nreturn errorResponse;"
+            },
+            "id": "error-handler",
+            "name": "Error Handler",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2000,
+                500
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {
+                    "responseCode": 500,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "error-response",
+            "name": "Error Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                2220,
+                500
+            ]
+        }
+    ],
+    "connections": {
+        "Analysis Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Auth Validation",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Auth Validation": {
+            "main": [
+                [
+                    {
+                        "node": "JWT Validation",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Auth Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "JWT Validation": {
+            "main": [
+                [
+                    {
+                        "node": "JWT Check",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "JWT Check": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch Accounts",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Fetch Budgets",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Fetch Transactions",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Fetch Extended Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "JWT Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Accounts": {
+            "main": [
+                [
+                    {
+                        "node": "Process Financial Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Budgets": {
+            "main": [
+                [
+                    {
+                        "node": "Process Financial Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Transactions": {
+            "main": [
+                [
+                    {
+                        "node": "Process Financial Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Extended Data": {
+            "main": [
+                [
+                    {
+                        "node": "Process Financial Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Process Financial Data": {
+            "main": [
+                [
+                    {
+                        "node": "Create Analysis Prompt",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create Analysis Prompt": {
+            "main": [
+                [
+                    {
+                        "node": "AI Financial Analysis",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "AI Financial Analysis": {
+            "main": [
+                [
+                    {
+                        "node": "Format Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Response": {
+            "main": [
+                [
+                    {
+                        "node": "Success Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "tags": [
+        {
+            "createdAt": "2025-09-17T10:30:00.000Z",
+            "updatedAt": "2025-09-17T10:30:00.000Z",
+            "id": "analysis-agent",
+            "name": "analysis"
+        }
+    ],
+    "triggerCount": 1,
+    "updatedAt": "2025-09-17T10:30:00.000Z",
+    "versionId": "analysis-v1.0"
+}
