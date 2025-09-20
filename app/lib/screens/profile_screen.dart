@@ -3,8 +3,14 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../providers/language_provider.dart';
 import '../providers/category_provider.dart';
+import '../providers/user_profile_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/category_models.dart';
+import '../models/user_profile_models.dart';
 import '../widgets/notification_widgets.dart';
+import 'profile_edit_screen.dart';
+import 'category_management_screen.dart';
+import 'category_edit_screen.dart';
 
 /// Profile Screen UI Shell
 ///
@@ -113,33 +119,81 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // Load categories when the screen initializes
+    // Load user profile and categories when the screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadCategories();
+      _loadProfileData();
     });
   }
 
-  /// Load categories from the API
-  /// In a real app, the auth token would come from an auth provider
-  Future<void> _loadCategories() async {
+  /// Load user profile and categories from the API
+  Future<void> _loadProfileData() async {
+    final authProvider = context.read<AuthProvider>();
+    final userProfileProvider = context.read<UserProfileProvider>();
     final categoryProvider = context.read<CategoryProvider>();
 
-    // TODO: Replace with actual auth token from auth provider
-    const String dummyAuthToken = 'your-jwt-token-here';
+    try {
+      // Get auth token
+      final authToken = await authProvider.authService.getToken();
+      if (authToken == null) {
+        // If no token, user should be redirected to login
+        return;
+      }
 
-    if (!categoryProvider.hasInitialized) {
-      await categoryProvider.loadCategories(authToken: dummyAuthToken);
+      // Load user profile if not already loaded
+      if (!userProfileProvider.hasInitialized) {
+        await userProfileProvider.loadUserProfile(authToken: authToken);
+      }
+
+      // Load categories if not already loaded
+      if (!categoryProvider.hasInitialized) {
+        await categoryProvider.loadCategories(authToken: authToken);
+      }
+    } catch (e) {
+      print('Error loading profile data: $e');
+      // Handle error gracefully - the UI will show fallback content
     }
   }
 
-  /// Refresh categories by pulling from API
-  Future<void> _refreshCategories() async {
+  /// Refresh both user profile and categories by pulling from API
+  Future<void> _refreshProfileData() async {
+    final authProvider = context.read<AuthProvider>();
+    final userProfileProvider = context.read<UserProfileProvider>();
     final categoryProvider = context.read<CategoryProvider>();
 
-    // TODO: Replace with actual auth token from auth provider
-    const String dummyAuthToken = 'your-jwt-token-here';
+    try {
+      // Get auth token
+      final authToken = await authProvider.authService.getToken();
+      if (authToken == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please log in again to refresh data'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
 
-    await categoryProvider.refreshCategories(authToken: dummyAuthToken);
+      // Refresh both user profile and categories
+      await Future.wait([
+        userProfileProvider.refreshUserProfile(authToken: authToken),
+        categoryProvider.refreshCategories(authToken: authToken),
+      ]);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile data refreshed successfully'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      print('Error refreshing profile data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to refresh profile data'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   @override
@@ -170,33 +224,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // User Profile Section
-            _buildUserProfileSection(context, colorScheme, textTheme, l10n),
+      body: RefreshIndicator(
+        onRefresh: _refreshProfileData,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // User Profile Section
+              _buildUserProfileSection(context, colorScheme, textTheme, l10n),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // Spending Categories Section
-            _buildSpendingCategoriesSection(
-                context, colorScheme, textTheme, l10n),
+              // Spending Categories Section
+              _buildSpendingCategoriesSection(
+                  context, colorScheme, textTheme, l10n),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // Language Settings Section
-            _buildLanguageSection(context, colorScheme, textTheme, l10n),
+              // Language Settings Section
+              _buildLanguageSection(context, colorScheme, textTheme, l10n),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // Notification Settings Section
-            _buildNotificationSettingsSection(
-                context, colorScheme, textTheme, l10n),
+              // Notification Settings Section
+              _buildNotificationSettingsSection(
+                  context, colorScheme, textTheme, l10n),
 
-            const SizedBox(height: 32),
-          ],
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
       ),
     );
@@ -397,115 +455,295 @@ class _ProfileScreenState extends State<ProfileScreen> {
     TextTheme textTheme,
     AppLocalizations l10n,
   ) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            // Avatar and Edit Button Row
-            Row(
-              children: [
-                // Avatar
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.person,
-                    size: 40,
-                    color: colorScheme.onPrimaryContainer,
-                  ),
-                ),
+    return Consumer<UserProfileProvider>(
+      builder: (context, userProfileProvider, child) {
+        // Loading state
+        if (userProfileProvider.isLoading) {
+          return Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.all(24.0),
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          );
+        }
 
-                const SizedBox(width: 16),
-
-                // User Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'John Doe',
-                        style: textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'FinGoal AI User',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+        // Error state
+        if (userProfileProvider.error != null) {
+          return Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: colorScheme.error,
                   ),
-                ),
-
-                // Edit Button (placeholder)
-                OutlinedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Edit profile coming in future updates'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error loading profile',
+                    style: textTheme.titleMedium?.copyWith(
+                      color: colorScheme.error,
                     ),
                   ),
-                  child: Text(l10n.edit),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    userProfileProvider.error!,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _refreshProfileData,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
             ),
+          );
+        }
 
-            const SizedBox(height: 24),
+        final userProfile = userProfileProvider.userProfile;
 
-            // Contact Information
-            Column(
+        return Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
               children: [
-                _buildInfoTile(
-                  context,
-                  colorScheme,
-                  textTheme,
-                  Icons.email_outlined,
-                  'Email',
-                  'john.doe@example.com',
+                // Avatar and Edit Button Row
+                Row(
+                  children: [
+                    // Avatar
+                    _buildUserAvatar(
+                      userProfile,
+                      colorScheme,
+                      userProfileProvider.userInitials,
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    // User Info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            userProfile?.name ?? 'Loading...',
+                            style: textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'FinGoal AI User',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          if (userProfile?.isActive == false)
+                            Container(
+                              margin: const EdgeInsets.only(top: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: colorScheme.errorContainer,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Inactive',
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onErrorContainer,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    // Edit Button
+                    OutlinedButton(
+                      onPressed: userProfile != null
+                          ? () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ProfileEditScreen(),
+                                ),
+                              );
+                            }
+                          : null,
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(l10n.edit),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                _buildInfoTile(
-                  context,
-                  colorScheme,
-                  textTheme,
-                  Icons.phone_outlined,
-                  'Phone',
-                  '+1 (555) 123-4567',
-                ),
-                const SizedBox(height: 12),
-                _buildInfoTile(
-                  context,
-                  colorScheme,
-                  textTheme,
-                  Icons.location_on_outlined,
-                  'Location',
-                  'New York, NY',
+
+                const SizedBox(height: 24),
+
+                // Contact Information
+                Column(
+                  children: [
+                    _buildInfoTile(
+                      context,
+                      colorScheme,
+                      textTheme,
+                      Icons.email_outlined,
+                      'Email',
+                      userProfile?.email ?? 'Not available',
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoTile(
+                      context,
+                      colorScheme,
+                      textTheme,
+                      Icons.language_outlined,
+                      'Language',
+                      _getLanguageDisplayName(userProfile?.language ?? 'en'),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoTile(
+                      context,
+                      colorScheme,
+                      textTheme,
+                      Icons.schedule_outlined,
+                      'Timezone',
+                      userProfile?.timezone ?? 'UTC',
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoTile(
+                      context,
+                      colorScheme,
+                      textTheme,
+                      Icons.attach_money_outlined,
+                      'Currency',
+                      userProfile?.currency ?? 'USD',
+                    ),
+                    if (userProfile?.lastLogin != null) ...[
+                      const SizedBox(height: 12),
+                      _buildInfoTile(
+                        context,
+                        colorScheme,
+                        textTheme,
+                        Icons.login_outlined,
+                        'Last Login',
+                        _formatDateTime(userProfile!.lastLogin!),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
+  }
+
+  /// Build user avatar widget
+  Widget _buildUserAvatar(
+    UserProfile? userProfile,
+    ColorScheme colorScheme,
+    String initials,
+  ) {
+    if (userProfile?.avatarUrl != null && userProfile!.avatarUrl!.isNotEmpty) {
+      return CircleAvatar(
+        radius: 40,
+        backgroundImage: NetworkImage(userProfile.avatarUrl!),
+        onBackgroundImageError: (exception, stackTrace) {
+          // Fallback to initials if image fails to load
+        },
+        child: userProfile.avatarUrl!.isEmpty
+            ? Text(
+                initials,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onPrimaryContainer,
+                ),
+              )
+            : null,
+      );
+    } else {
+      return Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          color: colorScheme.primaryContainer,
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Text(
+            initials,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onPrimaryContainer,
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  /// Get display name for language code
+  String _getLanguageDisplayName(String languageCode) {
+    switch (languageCode.toLowerCase()) {
+      case 'en':
+        return 'English';
+      case 'vi':
+        return 'Vietnamese';
+      case 'es':
+        return 'Spanish';
+      case 'fr':
+        return 'French';
+      case 'de':
+        return 'German';
+      case 'ja':
+        return 'Japanese';
+      case 'ko':
+        return 'Korean';
+      case 'zh':
+        return 'Chinese';
+      default:
+        return languageCode.toUpperCase();
+    }
+  }
+
+  /// Format DateTime for display
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays == 0) {
+      return 'Today at ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    } else {
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    }
   }
 
   /// Build individual info tile for contact information
@@ -582,11 +820,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 TextButton(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            'Category management coming in future updates'),
-                        duration: Duration(seconds: 2),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const CategoryManagementScreen(),
                       ),
                     );
                   },
@@ -641,7 +877,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: _refreshCategories,
+                        onPressed: _refreshProfileData,
                         child: const Text('Retry'),
                       ),
                     ],
@@ -810,13 +1046,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${category.name} management coming soon'),
-            duration: const Duration(seconds: 2),
+      onTap: () async {
+        final result = await Navigator.of(context).push<bool>(
+          MaterialPageRoute(
+            builder: (context) => CategoryEditScreen(category: category),
           ),
         );
+
+        // Refresh categories if the edit was successful
+        if (result == true) {
+          await _refreshProfileData();
+        }
       },
     );
   }
@@ -867,7 +1107,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       onTap: () {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${category.name} management coming soon'),
+            content: Text(
+                '${category.name} is a default category and cannot be edited'),
             duration: const Duration(seconds: 2),
           ),
         );

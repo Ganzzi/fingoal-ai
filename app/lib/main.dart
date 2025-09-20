@@ -9,7 +9,8 @@ import 'providers/category_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/chat_provider.dart';
-// import 'providers/notification_provider.dart';
+import 'providers/user_profile_provider.dart';
+import 'providers/notification_provider.dart';
 import 'services/router_service.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -59,7 +60,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
-        // ChangeNotifierProvider(create: (_) => NotificationProvider()), // Disabled for now
+        ChangeNotifierProvider(create: (_) => UserProfileProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: Consumer<LanguageProvider>(
         builder: (context, languageProvider, child) {
