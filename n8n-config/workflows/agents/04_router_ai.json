@@ -1,0 +1,576 @@
+{
+    "name": "Router Agent",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "router",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "router-webhook",
+            "name": "Router Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                -800,
+                200
+            ],
+            "webhookId": "router-webhook-id"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-language-exists",
+                            "leftValue": "={{ $json.body.language }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "notEmpty"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "validate-language-field",
+            "name": "Validate Language Field",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -600,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-language-valid",
+                            "leftValue": "={{ $json.body.language }}",
+                            "rightValue": "en,vi",
+                            "operator": {
+                                "type": "string",
+                                "operation": "inContains"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "validate-language-value",
+            "name": "Validate Language Value",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -400,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "detected_language",
+                            "value": "={{ $json.body.language }}"
+                        },
+                        {
+                            "name": "request_timestamp",
+                            "value": "={{ $now() }}"
+                        },
+                        {
+                            "name": "webhook_path",
+                            "value": "/webhook/router"
+                        },
+                        {
+                            "name": "request_method",
+                            "value": "POST"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "log-detected-language",
+            "name": "Log Detected Language",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3,
+            "position": [
+                -200,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": false,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-analyze-command",
+                            "leftValue": "={{ $('Router Webhook').item.json.body.message || $('Router Webhook').item.json.body.query || '' }}",
+                            "rightValue": "analyze",
+                            "operator": {
+                                "type": "string",
+                                "operation": "contains"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "check-command-type",
+            "name": "Check Command Type",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                0,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://localhost:5678/webhook/analysis",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{ $('Router Webhook').item.json.headers.authorization }}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "language",
+                            "value": "={{ $json.detected_language }}"
+                        },
+                        {
+                            "name": "command",
+                            "value": "analyze_finances"
+                        },
+                        {
+                            "name": "timestamp",
+                            "value": "={{ $json.request_timestamp }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "route-to-analysis",
+            "name": "Route to Analysis Agent",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                200,
+                50
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "forward-analysis-response",
+            "name": "Forward Analysis Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                400,
+                50
+            ]
+        },
+        {
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "status",
+                            "value": "received"
+                        },
+                        {
+                            "name": "language",
+                            "value": "={{ $json.detected_language }}"
+                        },
+                        {
+                            "name": "timestamp",
+                            "value": "={{ $json.request_timestamp }}"
+                        },
+                        {
+                            "name": "message",
+                            "value": "Command not recognized. Available commands: analyze finances"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "format-default-response",
+            "name": "Format Default Response",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3,
+            "position": [
+                200,
+                150
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ {\n  \"status\": $json.status,\n  \"message\": $json.message,\n  \"language\": $json.language\n} }}",
+                "options": {
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "respond-default",
+            "name": "Respond Default",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                400,
+                150
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ {\n  \"status\": $json.status,\n  \"language\": $json.language\n} }}",
+                "options": {
+                    "responseCode": 200,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "respond-success",
+            "name": "Respond Success",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                200,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "status",
+                            "value": "error"
+                        },
+                        {
+                            "name": "message",
+                            "value": "Invalid language field. Supported languages: en, vi"
+                        },
+                        {
+                            "name": "language",
+                            "value": "={{ $json.body.language || null }}"
+                        },
+                        {
+                            "name": "error_code",
+                            "value": "INVALID_LANGUAGE"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "format-invalid-language-error",
+            "name": "Format Invalid Language Error",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3,
+            "position": [
+                -200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ {\n  \"status\": $json.status,\n  \"message\": $json.message,\n  \"language\": $json.language\n} }}",
+                "options": {
+                    "responseCode": 400,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "respond-invalid-language",
+            "name": "Respond Invalid Language",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                0,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "status",
+                            "value": "error"
+                        },
+                        {
+                            "name": "message",
+                            "value": "Missing required language field"
+                        },
+                        {
+                            "name": "language",
+                            "value": "null"
+                        },
+                        {
+                            "name": "error_code",
+                            "value": "MISSING_LANGUAGE"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "format-missing-language-error",
+            "name": "Format Missing Language Error",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3,
+            "position": [
+                -400,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ {\n  \"status\": $json.status,\n  \"message\": $json.message,\n  \"language\": null\n} }}",
+                "options": {
+                    "responseCode": 400,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "respond-missing-language",
+            "name": "Respond Missing Language",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                -200,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "raw",
+                "jsonOutput": "={{ {\n  \"webhook_url\": \"/webhook/router\",\n  \"method\": \"POST\",\n  \"detected_language\": $json.detected_language,\n  \"timestamp\": $json.request_timestamp,\n  \"user_agent\": $('Router Webhook').item.json.headers['user-agent'] || 'unknown',\n  \"content_type\": $('Router Webhook').item.json.headers['content-type'] || 'unknown'\n} }}",
+                "options": {}
+            },
+            "id": "debug-log",
+            "name": "Debug Log",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3,
+            "position": [
+                -200,
+                -50
+            ]
+        }
+    ],
+    "connections": {
+        "Router Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Language Field",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Language Field": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Language Value",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Format Missing Language Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Language Value": {
+            "main": [
+                [
+                    {
+                        "node": "Log Detected Language",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Format Invalid Language Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Log Detected Language": {
+            "main": [
+                [
+                    {
+                        "node": "Debug Log",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Check Command Type",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Command Type": {
+            "main": [
+                [
+                    {
+                        "node": "Route to Analysis Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Format Default Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Route to Analysis Agent": {
+            "main": [
+                [
+                    {
+                        "node": "Forward Analysis Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Default Response": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Default",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Success Response": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Success",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Invalid Language Error": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Invalid Language",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Missing Language Error": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Missing Language",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "templateCredsSetupCompleted": false,
+        "instanceId": "fingoal-ai-router-agent-workflow"
+    }
+}

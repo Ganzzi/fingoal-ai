@@ -1,0 +1,641 @@
+{
+    "name": "Intake Agent",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "intake",
+                "authentication": "jwtAuth",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "intake-webhook",
+            "name": "Intake Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                -1000,
+                200
+            ],
+            "webhookId": "intake-webhook-id"
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "TpPWaKie1jlKNQJc",
+                    "mode": "list",
+                    "cachedResultName": "Middleware"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "authHeader": "={{ $json.headers.authorization || $json.headers.Authorization }}"
+                    }
+                },
+                "options": {
+                    "waitForSubWorkflow": true
+                }
+            },
+            "id": "execute-auth-middleware",
+            "name": "Execute Auth Middleware",
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.2,
+            "position": [
+                -800,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-authenticated",
+                            "leftValue": "={{ $json.authenticated }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "check-authentication",
+            "name": "Check Authentication",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -600,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract user context and onboarding data from request\nconst requestBody = $('Intake Webhook').item.json.body || {};\nconst jwtPayload = $('Intake Webhook').item.json.jwtPayload || {};\n\n// Get user information from JWT\nconst userId = jwtPayload.userId || jwtPayload.user_id;\nconst userEmail = jwtPayload.email;\n\n// Extract request parameters\nconst language = requestBody.language || 'en';\nconst currentStep = requestBody.currentStep || 'welcome';\nconst userMessage = requestBody.message || '';\nconst isInitialRequest = requestBody.isInitialRequest === true;\nconst fromRouter = requestBody.fromRouter === true;\n\n// Enhanced logging for debugging\nconst requestContext = {\n  userId,\n  userEmail,\n  language,\n  currentStep,\n  userMessage,\n  isInitialRequest,\n  fromRouter,\n  timestamp: new Date().toISOString(),\n  userAgent: $('Intake Webhook').item.json.headers['user-agent'] || 'unknown'\n};\n\nconsole.log('Intake Agent Request Context:', requestContext);\n\nreturn [{\n  json: requestContext\n}];"
+            },
+            "id": "extract-request-context",
+            "name": "Extract Request Context",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -400,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-initial-or-router",
+                            "leftValue": "={{ $json.isInitialRequest || $json.fromRouter }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "check-request-type",
+            "name": "Check Request Type",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -200,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Enhanced welcome response with comprehensive onboarding initialization\nconst language = $json.language;\nconst userId = $json.userId;\n\n// Multi-language welcome messages with personalization\nconst welcomeMessages = {\n  en: {\n    greeting: \"Welcome to FinGoal! 🎯\",\n    intro: \"I'm your AI financial assistant, and I'm excited to help you take control of your finances.\",\n    explanation: \"I'll guide you through setting up your financial profile in just 4 simple steps. This will help me provide personalized advice and insights tailored to your unique situation.\",\n    first_step: \"Let's start with your money accounts - tell me about your bank accounts, credit cards, and any cash you have on hand.\",\n    encouragement: \"Take your time and share as much or as little detail as you're comfortable with. I'm here to help! 💪\"\n  },\n  vi: {\n    greeting: \"Chào mừng bạn đến với FinGoal! 🎯\",\n    intro: \"Tôi là trợ lý tài chính AI của bạn, và tôi rất hào hứng được giúp bạn kiểm soát tài chính của mình.\",\n    explanation: \"Tôi sẽ hướng dẫn bạn thiết lập hồ sơ tài chính chỉ trong 4 bước đơn giản. Điều này sẽ giúp tôi cung cấp lời khuyên và thông tin cá nhân hóa phù hợp với tình huống độc đáo của bạn.\",\n    first_step: \"Hãy bắt đầu với các tài khoản tiền của bạn - hãy cho tôi biết về tài khoản ngân hàng, thẻ tín dụng và tiền mặt bạn có.\",\n    encouragement: \"Hãy dành thời gian và chia sẻ nhiều hoặc ít chi tiết tùy theo bạn cảm thấy thoải mái. Tôi ở đây để giúp đỡ! 💪\"\n  }\n};\n\nconst messages = welcomeMessages[language] || welcomeMessages.en;\nconst fullWelcomeMessage = `${messages.greeting}\\n\\n${messages.intro}\\n\\n${messages.explanation}\\n\\n${messages.first_step}\\n\\n${messages.encouragement}`;\n\n// Enhanced form section with comprehensive money account properties\nconst moneyAccountsSection = {\n  id: \"money_accounts\",\n  title: language === 'vi' ? \"Tài khoản tiền 💳\" : \"Money Accounts 💳\",\n  recommendedProperties: language === 'vi' ? [\n    \"Tài khoản ngân hàng (số dư hiện tại)\",\n    \"Thẻ tín dụng (hạn mức và dư nợ)\",\n    \"Tiền mặt (số tiền ước tính)\",\n    \"Tài khoản tiết kiệm (lãi suất và số dư)\",\n    \"Ví điện tử (MoMo, ZaloPay, etc.)\",\n    \"Tài khoản đầu tư (cổ phiếu, trái phiếu)\",\n    \"Tài khoản ngoại tệ\"\n  ] : [\n    \"Bank accounts (current balances)\",\n    \"Credit cards (limits and outstanding balances)\",\n    \"Cash holdings (estimated amounts)\",\n    \"Savings accounts (interest rates and balances)\",\n    \"Digital wallets (PayPal, Venmo, etc.)\",\n    \"Investment accounts (stocks, bonds)\",\n    \"Foreign currency accounts\"\n  ],\n  inputType: \"textarea\",\n  userInput: null\n};\n\n// Comprehensive onboarding response with progress tracking\nconst response = {\n  message: fullWelcomeMessage,\n  formData: {\n    sections: [moneyAccountsSection]\n  },\n  currentStep: \"money_accounts\",\n  nextStep: \"debts\",\n  progress: {\n    current: 1,\n    total: 4,\n    completed: [],\n    remaining: [\"money_accounts\", \"debts\", \"income\", \"goals\"]\n  },\n  onboardingFlow: {\n    isActive: true,\n    startTime: new Date().toISOString(),\n    language: language,\n    userId: userId\n  }\n};\n\nconsole.log('Enhanced Welcome Response Generated:', {\n  language,\n  userId,\n  messageLength: fullWelcomeMessage.length,\n  sectionProperties: moneyAccountsSection.recommendedProperties.length\n});\n\nreturn [{\n  json: response\n}];"
+            },
+            "id": "create-welcome-response",
+            "name": "Create Welcome Response",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                0,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT onboarding_step, completed_steps, language_preference, created_at, updated_at FROM users WHERE id = $1",
+                "additionalFields": {
+                    "queryReplacement": "={{ [$json.userId] }}"
+                },
+                "options": {}
+            },
+            "id": "get-user-progress",
+            "name": "Get User Progress",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                0,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Enhanced onboarding step logic with comprehensive flow management\nconst userContext = $json;\nconst userProgress = $('Get User Progress').item.json;\n\n// Determine current step and next actions\nconst currentStep = userContext.currentStep || userProgress.onboarding_step || 'money_accounts';\nconst completedSteps = userProgress.completed_steps ? JSON.parse(userProgress.completed_steps) : [];\nconst userMessage = userContext.userMessage;\nconst language = userContext.language || userProgress.language_preference || 'en';\n\n// Define comprehensive onboarding sequence\nconst onboardingSequence = {\n  money_accounts: {\n    next: 'debts',\n    order: 1,\n    dataType: 'money_accounts'\n  },\n  debts: {\n    next: 'income', \n    order: 2,\n    dataType: 'debts'\n  },\n  income: {\n    next: 'goals',\n    order: 3, \n    dataType: 'income'\n  },\n  goals: {\n    next: null,\n    order: 4,\n    dataType: 'financial_goals'\n  }\n};\n\n// Enhanced form section definitions\nconst formSections = {\n  debts: {\n    en: {\n      title: \"Debts & Liabilities 📋\",\n      properties: [\n        \"Credit card debts (balances and interest rates)\",\n        \"Personal loans (amounts and terms)\",\n        \"Mortgage or home loans\",\n        \"Student loans\",\n        \"Car loans or auto financing\",\n        \"Business loans\",\n        \"Money owed to family/friends\",\n        \"Other debts or liabilities\"\n      ]\n    },\n    vi: {\n      title: \"Nợ & Trách nhiệm tài chính 📋\",\n      properties: [\n        \"Nợ thẻ tín dụng (số dư và lãi suất)\",\n        \"Vay cá nhân (số tiền và điều khoản)\",\n        \"Vay mua nhà hoặc thế chấp\",\n        \"Vay học phí\",\n        \"Vay mua xe\",\n        \"Vay kinh doanh\",\n        \"Tiền nợ gia đình/bạn bè\",\n        \"Các khoản nợ hoặc trách nhiệm khác\"\n      ]\n    }\n  },\n  income: {\n    en: {\n      title: \"Income Sources 💰\",\n      properties: [\n        \"Primary salary/wages (monthly amount)\",\n        \"Secondary job income\",\n        \"Business or freelance income\",\n        \"Investment returns (dividends, interest)\",\n        \"Rental property income\",\n        \"Government benefits or pensions\",\n        \"Side hustle or gig work\",\n        \"Other income sources\"\n      ]\n    },\n    vi: {\n      title: \"Nguồn thu nhập 💰\",\n      properties: [\n        \"Lương chính (số tiền hàng tháng)\",\n        \"Thu nhập từ công việc thứ hai\",\n        \"Thu nhập kinh doanh hoặc freelance\",\n        \"Lợi nhuận đầu tư (cổ tức, lãi)\",\n        \"Thu nhập từ cho thuê nhà\",\n        \"Trợ cấp chính phủ hoặc lương hưu\",\n        \"Thu nhập phụ hoặc công việc bán thời gian\",\n        \"Các nguồn thu nhập khác\"\n      ]\n    }\n  },\n  goals: {\n    en: {\n      title: \"Financial Goals 🎯\",\n      properties: [\n        \"Emergency fund target (3-6 months expenses)\",\n        \"Short-term savings goals (1-2 years)\",\n        \"Medium-term goals (3-5 years)\",\n        \"Long-term goals (retirement, major purchases)\",\n        \"Debt payoff priorities\",\n        \"Investment objectives\",\n        \"Major life events (wedding, home, education)\",\n        \"Risk tolerance and preferences\"\n      ]\n    },\n    vi: {\n      title: \"Mục tiêu tài chính 🎯\",\n      properties: [\n        \"Quỹ khẩn cấp mục tiêu (3-6 tháng chi phí)\",\n        \"Mục tiêu tiết kiệm ngắn hạn (1-2 năm)\",\n        \"Mục tiêu trung hạn (3-5 năm)\",\n        \"Mục tiêu dài hạn (nghỉ hưu, mua sắm lớn)\",\n        \"Ưu tiên trả nợ\",\n        \"Mục tiêu đầu tư\",\n        \"Sự kiện lớn trong cuộc sống (cưới, nhà, giáo dục)\",\n        \"Khả năng chấp nhận rủi ro và sở thích\"\n      ]\n    }\n  }\n};\n\n// Enhanced response preparation\nconst stepInfo = onboardingSequence[currentStep];\nconst isComplete = currentStep === 'goals' && userMessage.trim().length > 0;\n\nlet responseData = {\n  userId: userContext.userId,\n  currentStep: currentStep,\n  userMessage: userMessage,\n  language: language,\n  stepInfo: stepInfo,\n  completedSteps: completedSteps,\n  hasUserInput: userMessage.trim().length > 0,\n  isComplete: isComplete,\n  processingContext: {\n    timestamp: new Date().toISOString(),\n    userAgent: userContext.userAgent || 'unknown'\n  }\n};\n\n// Add next form section if not complete\nif (!isComplete && stepInfo && stepInfo.next) {\n  const nextStep = stepInfo.next;\n  const sectionData = formSections[nextStep][language] || formSections[nextStep]['en'];\n  \n  responseData.nextFormSection = {\n    id: nextStep,\n    title: sectionData.title,\n    recommendedProperties: sectionData.properties,\n    inputType: \"textarea\",\n    userInput: null\n  };\n}\n\nconsole.log('Onboarding Step Processing:', {\n  currentStep, \n  nextStep: stepInfo?.next,\n  hasInput: responseData.hasUserInput,\n  isComplete,\n  language\n});\n\nreturn [{\n  json: responseData\n}];"
+            },
+            "id": "process-onboarding-step",
+            "name": "Process Onboarding Step",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                200,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "=User ID: {{ $json.userId }}\nUser Email: {{ $('Extract Request Context').item.json.userEmail }}\nLanguage: {{ $json.language }}\nCurrent Step: {{ $json.currentStep }}\nUser Message: {{ $json.userMessage }}\nCompleted Steps: {{ JSON.stringify($json.completedSteps) }}\nHas User Input: {{ $json.hasUserInput }}\nIs Onboarding Complete: {{ $json.isComplete }}\nNext Form Section: {{ JSON.stringify($json.nextFormSection) }}",
+                "options": {
+                    "systemMessage": "You are the FinGoal Intake Agent, an expert AI financial advisor specialized in comprehensive onboarding and data extraction. Your core responsibilities:\n\n🎯 **PRIMARY FUNCTIONS:**\n1. **Financial Data Extraction**: Parse natural language responses to extract structured financial information\n2. **Intelligent Conversation Flow**: Guide users through the 4-step onboarding process with personalized responses\n3. **Data Validation & Storage**: Ensure extracted data is accurate and properly formatted for database storage\n4. **Multi-language Communication**: Provide fluent, culturally appropriate responses in English or Vietnamese\n\n📋 **ONBOARDING SEQUENCE:**\n1. **Money Accounts** → Extract account types, balances, limits, and financial institutions\n2. **Debts & Liabilities** → Identify debt types, amounts, interest rates, and payment terms\n3. **Income Sources** → Parse salary, business income, investments, and other revenue streams\n4. **Financial Goals** → Understand short/medium/long-term objectives and risk tolerance\n\n🔄 **RESPONSE WORKFLOW:**\nWhen user provides input for current step:\n1. **Extract & Validate**: Parse financial data from natural language\n2. **Structure Data**: Format as JSONB-compatible objects for database storage\n3. **Provide Feedback**: Acknowledge their input with encouraging, personalized response\n4. **Present Next Step**: Show next form section with relevant properties\n5. **Update Progress**: Track completion and guide toward next phase\n\n📊 **DATA EXTRACTION PATTERNS:**\n- **Money Accounts**: `{account_type, institution, balance, currency, account_number_masked}`\n- **Debts**: `{debt_type, creditor, balance, interest_rate, minimum_payment, due_date}`\n- **Income**: `{income_type, source, amount, frequency, currency, tax_status}`\n- **Goals**: `{goal_type, target_amount, timeline, priority_level, risk_tolerance}`\n\n💬 **COMMUNICATION GUIDELINES:**\n- **English**: Professional, encouraging, clear financial guidance\n- **Vietnamese**: Use respectful pronouns (\"bạn\"), natural expressions, financial terminology\n- **Tone**: Supportive, knowledgeable, non-judgmental, optimistic about their financial future\n- **Personalization**: Reference their specific situation, use their provided details\n\n🎯 **RESPONSE FORMAT (JSON):**\n```json\n{\n  \"message\": \"Personalized response in user's language\",\n  \"formData\": {\n    \"sections\": [next_form_section_object]\n  },\n  \"currentStep\": \"current_step_name\",\n  \"nextStep\": \"next_step_name_or_null\",\n  \"progress\": {\n    \"current\": step_number,\n    \"total\": 4,\n    \"completed\": [\"completed_steps_array\"]\n  },\n  \"extractedData\": {\n    \"step_name\": [structured_data_objects],\n    \"metadata\": {\"extraction_confidence\", \"data_quality_score\"}\n  },\n  \"recommendations\": [\"personalized_financial_tips\"]\n}\n```\n\n🔧 **ADVANCED CAPABILITIES:**\n- **Smart Data Parsing**: Handle conversational, incomplete, or ambiguous financial information\n- **Contextual Validation**: Cross-reference user inputs for consistency and reasonableness\n- **Progressive Enhancement**: Build comprehensive financial profile across all steps\n- **Error Recovery**: Gracefully handle unclear inputs with clarifying questions\n- **Financial Education**: Provide helpful tips and explanations throughout the process\n\n🛡️ **SECURITY & PRIVACY:**\n- Never store sensitive account numbers (use masked versions)\n- Validate all financial amounts for reasonableness\n- Ensure data extraction respects user privacy preferences\n- Maintain professional confidentiality standards\n\n💡 **SUCCESS METRICS:**\n- Complete data extraction with high confidence scores\n- Positive user experience with encouraging feedback\n- Successful progression through all onboarding steps\n- Properly formatted data ready for database storage\n\nYour goal is to make financial onboarding feel conversational, supportive, and valuable while extracting comprehensive, structured data that enables personalized financial guidance."
+                }
+            },
+            "id": "intake-ai-agent",
+            "name": "Intake AI Agent",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1.6,
+            "position": [
+                400,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Store structured financial data extracted from user responses in the flexible JSONB data storage system. Creates entries in data_metadata for schema definitions and data_rows for actual data.\n\nUsage Examples:\n1. Money Accounts: INSERT INTO data_rows (user_id, data_type, data_content, created_at) VALUES ($1, 'money_accounts', $2, NOW())\n2. Debts: INSERT INTO data_rows (user_id, data_type, data_content, created_at) VALUES ($1, 'debts', $2, NOW())\n3. Income: INSERT INTO data_rows (user_id, data_type, data_content, created_at) VALUES ($1, 'income_sources', $2, NOW())\n4. Goals: INSERT INTO data_rows (user_id, data_type, data_content, created_at) VALUES ($1, 'financial_goals', $2, NOW())\n\nData Content Format (JSONB):\n- Always include: user_id, extraction_timestamp, data_quality_score\n- Financial amounts should include currency\n- Sensitive data should be masked or hashed\n- Include metadata like confidence_level and source_step",
+                "operation": "executeQuery",
+                "query": "{{ $fromAI('sql_query') }}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.5,
+            "id": "store-financial-data",
+            "name": "Store Financial Data",
+            "position": [
+                600,
+                320
+            ]
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Update user's onboarding progress, current step, and completion status. Maintains comprehensive tracking of the user's journey through financial setup.\n\nUsage Examples:\n1. Progress Update: UPDATE users SET onboarding_step = $1, completed_steps = $2, onboarding_progress = $3, updated_at = NOW() WHERE id = $4\n2. Language Preference: UPDATE users SET language_preference = $1, updated_at = NOW() WHERE id = $2\n3. Completion Status: UPDATE users SET onboarding_completed = true, onboarding_completed_at = NOW(), updated_at = NOW() WHERE id = $1\n\nParameters:\n- user_id: UUID of the authenticated user\n- onboarding_step: Current step name (money_accounts, debts, income, goals)\n- completed_steps: JSON array of completed step names\n- onboarding_progress: Percentage completion (0-100)\n- language_preference: User's preferred language (en, vi)",
+                "operation": "executeQuery",
+                "query": "{{ $fromAI('sql_query') }}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.5,
+            "id": "update-user-progress",
+            "name": "Update User Progress",
+            "position": [
+                720,
+                320
+            ]
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Store intelligent agent memory about user's financial situation, preferences, and conversation context for future personalized interactions.\n\nUsage Examples:\n1. Financial Context: INSERT INTO memories (user_id, agent_id, memory_type, content, importance_score, created_at) VALUES ($1, 'intake_agent', 'financial_context', $2, $3, NOW())\n2. User Preferences: INSERT INTO memories (user_id, agent_id, memory_type, content, importance_score, created_at) VALUES ($1, 'intake_agent', 'user_preferences', $2, $3, NOW())\n3. Communication Style: INSERT INTO memories (user_id, agent_id, memory_type, content, importance_score, created_at) VALUES ($1, 'intake_agent', 'communication_style', $2, $3, NOW())\n\nMemory Types:\n- financial_context: Key financial situation insights\n- user_preferences: Language, communication style, risk tolerance\n- goal_priorities: User's stated financial priorities and motivations\n- behavioral_patterns: Spending habits, financial behaviors observed\n- milestone_achievements: Onboarding completion, data quality milestones\n\nContent should be JSONB with structured insights for future agent use.",
+                "operation": "executeQuery",
+                "query": "{{ $fromAI('sql_query') }}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.5,
+            "id": "store-agent-memory",
+            "name": "Store Agent Memory",
+            "position": [
+                840,
+                320
+            ]
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Validate and verify the quality of extracted financial data before storage. Performs consistency checks, reasonableness validation, and data integrity verification.\n\nUsage Examples:\n1. Data Validation: SELECT CASE WHEN $1::numeric > 0 AND $1::numeric < 10000000 THEN 'valid' ELSE 'invalid' END as amount_validation\n2. Consistency Check: SELECT COUNT(*) as duplicate_count FROM data_rows WHERE user_id = $1 AND data_type = $2 AND data_content->>'account_type' = $3\n3. Completeness Check: SELECT onboarding_step, completed_steps FROM users WHERE id = $1\n\nValidation Rules:\n- Financial amounts should be reasonable (>0, <realistic maximums)\n- Required fields should not be null or empty\n- Data types should match expected formats\n- Cross-reference against user's existing data for consistency",
+                "operation": "executeQuery",
+                "query": "{{ $fromAI('sql_query') }}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.5,
+            "id": "validate-financial-data",
+            "name": "Validate Financial Data",
+            "position": [
+                960,
+                320
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Enhanced response formatting with comprehensive data processing\nconst aiResponse = $json.output;\n\n// Enhanced AI response parsing with error handling\nlet responseData;\ntry {\n  // Handle both string and object responses from AI\n  responseData = typeof aiResponse === 'string' ? JSON.parse(aiResponse) : aiResponse;\n  \n  // Validate required response structure\n  if (!responseData.message) {\n    throw new Error('Missing required message field');\n  }\n} catch (error) {\n  console.error('AI Response Parsing Error:', error);\n  \n  // Fallback response with error context\n  responseData = {\n    message: typeof aiResponse === 'string' ? aiResponse : \"Thank you for your response. I'm processing your information.\",\n    error: {\n      type: 'response_parsing_error',\n      details: error.message,\n      originalResponse: aiResponse\n    }\n  };\n}\n\n// Enhanced response validation and enrichment\nconst formattedResponse = {\n  message: responseData.message || \"Thank you for sharing your financial information.\",\n  formData: responseData.formData || null,\n  currentStep: responseData.currentStep || null,\n  nextStep: responseData.nextStep || null,\n  progress: responseData.progress || {\n    current: 1,\n    total: 4,\n    completed: []\n  },\n  extractedData: responseData.extractedData || null,\n  recommendations: responseData.recommendations || [],\n  \n  // Enhanced metadata\n  metadata: {\n    timestamp: new Date().toISOString(),\n    processingTime: Date.now() - ($('Process Onboarding Step').item.json.processingContext?.timestamp ? new Date($('Process Onboarding Step').item.json.processingContext.timestamp).getTime() : Date.now()),\n    language: $('Process Onboarding Step').item.json.language || 'en',\n    userId: $('Process Onboarding Step').item.json.userId,\n    agentVersion: '2.0.0',\n    responseQuality: responseData.extractedData ? 'high' : 'standard'\n  },\n  \n  // Error handling\n  ...(responseData.error && { error: responseData.error })\n};\n\n// Enhanced logging for monitoring and debugging\nconsole.log('Enhanced Response Formatting:', {\n  messageLength: formattedResponse.message.length,\n  hasFormData: !!formattedResponse.formData,\n  hasExtractedData: !!formattedResponse.extractedData,\n  recommendationsCount: formattedResponse.recommendations.length,\n  processingTime: formattedResponse.metadata.processingTime,\n  responseQuality: formattedResponse.metadata.responseQuality\n});\n\nreturn [{\n  json: formattedResponse\n}];"
+            },
+            "id": "format-response",
+            "name": "Format Response",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                600,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {
+                    "responseCode": 200,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "name": "X-Agent-Version",
+                                "value": "intake-agent-v2.0.0"
+                            },
+                            {
+                                "name": "X-Processing-Time",
+                                "value": "={{ $json.metadata.processingTime }}ms"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "respond-success",
+            "name": "Respond Success",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                800,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { \"error\": \"Unauthorized\", \"message\": \"Valid JWT token required for financial onboarding\", \"code\": \"AUTH_REQUIRED\" } }}",
+                "options": {
+                    "responseCode": 401,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "name": "X-Agent-Version",
+                                "value": "intake-agent-v2.0.0"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "respond-unauthorized",
+            "name": "Respond Unauthorized",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                -400,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Enhanced error handling with comprehensive error context and recovery\nconst error = $input.first().json;\nconst requestContext = $('Extract Request Context').item?.json || {};\n\n// Categorize error types for better handling\nlet errorCategory = 'unknown';\nlet errorMessage = 'An unexpected error occurred during onboarding';\nlet recoveryAction = 'Please try again or contact support';\n\nif (error.message) {\n  if (error.message.includes('database') || error.message.includes('SQL')) {\n    errorCategory = 'database_error';\n    errorMessage = 'We encountered a database issue while saving your information';\n    recoveryAction = 'Your data is safe. Please try submitting again.';\n  } else if (error.message.includes('AI') || error.message.includes('parsing')) {\n    errorCategory = 'ai_processing_error';\n    errorMessage = 'We had trouble understanding your response';\n    recoveryAction = 'Could you please rephrase your financial information?';\n  } else if (error.message.includes('network') || error.message.includes('timeout')) {\n    errorCategory = 'network_error';\n    errorMessage = 'Connection issue occurred';\n    recoveryAction = 'Please check your internet connection and try again.';\n  }\n}\n\n// Multi-language error messages\nconst language = requestContext.language || 'en';\nconst errorMessages = {\n  en: {\n    title: \"Oops! Something went wrong\",\n    message: errorMessage,\n    recovery: recoveryAction,\n    support: \"If this continues, please contact our support team.\"\n  },\n  vi: {\n    title: \"Oops! Có lỗi xảy ra\",\n    message: errorMessage === 'An unexpected error occurred during onboarding' ? \n      'Đã xảy ra lỗi không mong muốn trong quá trình thiết lập' : errorMessage,\n    recovery: recoveryAction === 'Please try again or contact support' ? \n      'Vui lòng thử lại hoặc liên hệ hỗ trợ' : recoveryAction,\n    support: \"Nếu vấn đề tiếp tục, vui lòng liên hệ đội ngũ hỗ trợ của chúng tôi.\"\n  }\n};\n\nconst localizedError = errorMessages[language] || errorMessages.en;\n\nconst errorResponse = {\n  error: true,\n  errorCategory: errorCategory,\n  message: `${localizedError.title}\\n\\n${localizedError.message}\\n\\n${localizedError.recovery}\\n\\n${localizedError.support}`,\n  details: {\n    originalError: error.message || 'Unknown error',\n    timestamp: new Date().toISOString(),\n    userId: requestContext.userId || 'unknown',\n    currentStep: requestContext.currentStep || 'unknown',\n    language: language,\n    userAgent: requestContext.userAgent || 'unknown'\n  },\n  recovery: {\n    canRetry: true,\n    suggestedAction: localizedError.recovery,\n    supportContact: 'support@fingoal.ai'\n  }\n};\n\n// Enhanced error logging for monitoring\nconsole.error('Intake Agent Enhanced Error:', {\n  category: errorCategory,\n  userId: requestContext.userId,\n  step: requestContext.currentStep,\n  language: language,\n  originalError: error.message,\n  timestamp: new Date().toISOString()\n});\n\nreturn [{\n  json: errorResponse\n}];"
+            },
+            "id": "handle-error",
+            "name": "Handle Error",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                400,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {
+                    "responseCode": 500,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "name": "X-Agent-Version",
+                                "value": "intake-agent-v2.0.0"
+                            },
+                            {
+                                "name": "X-Error-Category",
+                                "value": "={{ $json.errorCategory }}"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "respond-error",
+            "name": "Respond Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                600,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Comprehensive workflow monitoring and analytics\nconst requestContext = $('Extract Request Context').item?.json || {};\nconst processingStep = $('Process Onboarding Step').item?.json || {};\nconst aiResponse = $('Format Response').item?.json || {};\n\n// Collect comprehensive metrics\nconst analytics = {\n  workflow: {\n    name: 'Intake Agent',\n    version: '2.0.0',\n    execution_id: $executionId,\n    timestamp: new Date().toISOString()\n  },\n  user: {\n    id: requestContext.userId || 'unknown',\n    language: requestContext.language || 'en',\n    is_initial_request: requestContext.isInitialRequest || false,\n    from_router: requestContext.fromRouter || false\n  },\n  onboarding: {\n    current_step: processingStep.currentStep || 'unknown',\n    completed_steps: processingStep.completedSteps || [],\n    has_user_input: processingStep.hasUserInput || false,\n    is_complete: processingStep.isComplete || false\n  },\n  performance: {\n    processing_time_ms: aiResponse.metadata?.processingTime || 0,\n    response_quality: aiResponse.metadata?.responseQuality || 'unknown',\n    message_length: aiResponse.message?.length || 0,\n    has_extracted_data: !!aiResponse.extractedData,\n    recommendations_count: aiResponse.recommendations?.length || 0\n  },\n  technical: {\n    user_agent: requestContext.userAgent || 'unknown',\n    workflow_execution_time: new Date().toISOString()\n  }\n};\n\n// Log for monitoring dashboard\nconsole.log('Intake Agent Analytics:', JSON.stringify(analytics, null, 2));\n\n// Store analytics in database for reporting\nconst analyticsQuery = `\n  INSERT INTO workflow_analytics (workflow_name, user_id, execution_data, created_at) \n  VALUES ('intake_agent', $1, $2, NOW())\n`;\n\nreturn [{\n  json: {\n    analytics: analytics,\n    sql_query: analyticsQuery,\n    query_params: [requestContext.userId, JSON.stringify(analytics)]\n  }\n}];"
+            },
+            "id": "collect-analytics",
+            "name": "Collect Analytics",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                800,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "={{ $json.sql_query }}",
+                "additionalFields": {
+                    "queryReplacement": "={{ $json.query_params }}"
+                },
+                "options": {}
+            },
+            "id": "store-analytics",
+            "name": "Store Analytics",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                1000,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+            "typeVersion": 1,
+            "position": [
+                280,
+                320
+            ],
+            "id": "google-gemini-model",
+            "name": "Google Gemini Model"
+        }
+    ],
+    "connections": {
+        "Intake Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Execute Auth Middleware",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Execute Auth Middleware": {
+            "main": [
+                [
+                    {
+                        "node": "Check Authentication",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Authentication": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Request Context",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Respond Unauthorized",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Request Context": {
+            "main": [
+                [
+                    {
+                        "node": "Check Request Type",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Request Type": {
+            "main": [
+                [
+                    {
+                        "node": "Create Welcome Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Get User Progress",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create Welcome Response": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Success",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get User Progress": {
+            "main": [
+                [
+                    {
+                        "node": "Process Onboarding Step",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Process Onboarding Step": {
+            "main": [
+                [
+                    {
+                        "node": "Intake AI Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Intake AI Agent": {
+            "main": [
+                [
+                    {
+                        "node": "Format Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Handle Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Response": {
+            "main": [
+                [
+                    {
+                        "node": "Collect Analytics",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Respond Success",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Handle Error": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Collect Analytics": {
+            "main": [
+                [
+                    {
+                        "node": "Store Analytics",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Store Financial Data": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Intake AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update User Progress": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Intake AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Store Agent Memory": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Intake AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Financial Data": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Intake AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Google Gemini Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Intake AI Agent",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "templateCredsSetupCompleted": false,
+        "instanceId": "fingoal-ai-intake-agent-workflow-v2"
+    }
+}

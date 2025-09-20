@@ -1,0 +1,651 @@
+{
+    "name": "Interaction Agent",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "interaction",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "interaction-webhook",
+            "name": "Interaction Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                -800,
+                200
+            ],
+            "webhookId": "interaction-webhook-id"
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "auth-middleware-workflow-id",
+                    "mode": "list"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "authHeader": "={{ $json.headers.authorization }}"
+                    }
+                },
+                "options": {
+                    "waitForSubWorkflow": true
+                }
+            },
+            "id": "execute-auth-middleware",
+            "name": "Execute Auth Middleware",
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.2,
+            "position": [
+                -600,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-authenticated",
+                            "leftValue": "={{ $json.authenticated }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "check-authentication",
+            "name": "Check Authentication",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -400,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "user_id",
+                            "value": "={{ $json.payload.userId }}"
+                        },
+                        {
+                            "name": "user_email",
+                            "value": "={{ $json.payload.email }}"
+                        },
+                        {
+                            "name": "text_input",
+                            "value": "={{ $('Interaction Webhook').item.json.body.text || '' }}"
+                        },
+                        {
+                            "name": "image_data",
+                            "value": "={{ $('Interaction Webhook').item.json.body.image || '' }}"
+                        },
+                        {
+                            "name": "language",
+                            "value": "={{ $('Interaction Webhook').item.json.body.language || 'en' }}"
+                        },
+                        {
+                            "name": "request_timestamp",
+                            "value": "={{ $now() }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "prepare-transaction-context",
+            "name": "Prepare Transaction Context",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3,
+            "position": [
+                -200,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-text-exists",
+                            "leftValue": "={{ $json.text_input }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "notEmpty"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "validate-input-data",
+            "name": "Validate Input Data",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                0,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "=User ID: {{ $json.user_id }}\nUser Email: {{ $json.user_email }}\nText Input: {{ $json.text_input }}\nImage Data: {{ $json.image_data ? 'Image provided' : 'No image' }}\nLanguage: {{ $json.language }}\nTimestamp: {{ $json.request_timestamp }}",
+                "options": {
+                    "systemMessage": "You are a specialized financial transaction processing AI. Your job is to extract structured transaction data from user input.\n\n**CAPABILITIES:**\n1. **Text Analysis**: Parse natural language descriptions of transactions\n2. **Amount Detection**: Extract monetary amounts in various formats (VND, USD, Vietnamese expressions)\n3. **Category Classification**: Map descriptions to spending categories\n4. **Merchant Identification**: Extract merchant/vendor names\n5. **Date Processing**: Handle transaction dates and timing\n\n**SUPPORTED FORMATS:**\n- Vietnamese: \"1 triệu VND cho ăn uống\", \"500k đồng xăng xe\", \"2tr5 điện thoại\"\n- English: \"$50 for groceries\", \"25 USD coffee\", \"1M VND food\"\n- Mixed: \"Spent 1,500,000 VND at Starbucks for coffee\"\n\n**EXTRACTION RULES:**\n1. **Amount**: Always convert to decimal format (e.g., 1500000.00)\n2. **Currency**: Detect VND, USD, or default to user's currency preference\n3. **Category**: Map to standard categories (Food & Dining, Transportation, etc.)\n4. **Merchant**: Extract business/vendor name if mentioned\n5. **Description**: Clean, standardized description\n6. **Confidence**: Rate extraction confidence (0.0-1.0)\n\n**CATEGORY MAPPING:**\n- Food/eating/restaurant/cafe → Food & Dining\n- Gas/fuel/transport/taxi/grab → Transportation\n- Rent/utilities/electricity → Housing/Utilities\n- Shopping/clothes/electronics → Shopping\n- Medical/doctor/pharmacy → Healthcare\n- Entertainment/movie/game → Entertainment\n- Education/course/book → Education\n- Travel/hotel/flight → Travel\n- Other unspecified → Other\n\n**OUTPUT FORMAT:**\nAlways respond with JSON:\n```json\n{\n  \"extracted_data\": {\n    \"amount\": 1500000.00,\n    \"currency\": \"VND\",\n    \"category\": \"Food & Dining\",\n    \"merchant_name\": \"Starbucks\",\n    \"description\": \"Coffee purchase\",\n    \"confidence\": 0.95\n  },\n  \"processing_notes\": \"Successfully extracted transaction details\",\n  \"requires_clarification\": false\n}\n```\n\n**ERROR HANDLING:**\nIf data is unclear or missing:\n```json\n{\n  \"extracted_data\": null,\n  \"processing_notes\": \"Unable to extract amount from input\",\n  \"requires_clarification\": true,\n  \"clarification_needed\": \"Please specify the amount and what you purchased\"\n}\n```\n\nProcess the provided input and extract transaction details accurately."
+                }
+            },
+            "id": "transaction-extraction-ai",
+            "name": "Transaction Extraction AI",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1.6,
+            "position": [
+                200,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+            "typeVersion": 1,
+            "position": [
+                200,
+                400
+            ],
+            "id": "google-gemini-model",
+            "name": "Google Gemini Model"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Parse AI response and validate extracted data\nconst aiOutput = $input.first().json.output;\nlet extractedData = null;\nlet processingResult = {\n  success: false,\n  error: null,\n  data: null,\n  requires_clarification: false\n};\n\ntry {\n  // Try to parse JSON response from AI\n  const parsed = typeof aiOutput === 'string' ? JSON.parse(aiOutput) : aiOutput;\n  \n  if (parsed.extracted_data && !parsed.requires_clarification) {\n    extractedData = parsed.extracted_data;\n    \n    // Validate required fields\n    if (extractedData.amount && extractedData.amount > 0) {\n      processingResult = {\n        success: true,\n        data: {\n          amount: parseFloat(extractedData.amount),\n          currency: extractedData.currency || 'VND',\n          category: extractedData.category || 'Other',\n          merchant_name: extractedData.merchant_name || null,\n          description: extractedData.description || 'Transaction',\n          confidence: extractedData.confidence || 0.8,\n          transaction_date: new Date().toISOString().split('T')[0],\n          transaction_type: 'expense'\n        },\n        requires_clarification: false\n      };\n    } else {\n      processingResult = {\n        success: false,\n        error: 'Invalid or missing amount',\n        requires_clarification: true,\n        clarification_needed: 'Please specify the transaction amount'\n      };\n    }\n  } else {\n    processingResult = {\n      success: false,\n      error: parsed.processing_notes || 'Failed to extract transaction data',\n      requires_clarification: parsed.requires_clarification || true,\n      clarification_needed: parsed.clarification_needed || 'Please provide more details about your transaction'\n    };\n  }\n} catch (error) {\n  processingResult = {\n    success: false,\n    error: 'Failed to parse AI response: ' + error.message,\n    requires_clarification: true,\n    clarification_needed: 'Please provide clearer transaction details'\n  };\n}\n\n// Include original context\nconst context = $('Prepare Transaction Context').first().json;\nprocessingResult.user_id = context.user_id;\nprocessingResult.language = context.language;\nprocessingResult.original_text = context.text_input;\nprocessingResult.has_image = !!context.image_data;\n\nreturn [processingResult];"
+            },
+            "id": "process-extraction-result",
+            "name": "Process Extraction Result",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                400,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-extraction-success",
+                            "leftValue": "={{ $json.success }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "check-extraction-success",
+            "name": "Check Extraction Success",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                600,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Get user's default account and category ID for the transaction\nWITH user_account AS (\n  SELECT id as account_id FROM money_accounts \n  WHERE user_id = '{{ $json.user_id }}' AND is_active = true \n  ORDER BY created_at ASC LIMIT 1\n),\ncategory_lookup AS (\n  SELECT id as category_id FROM spending_categories \n  WHERE (user_id = '{{ $json.user_id }}' OR user_id IS NULL) \n    AND LOWER(name) LIKE LOWER('%{{ $json.data.category }}%')\n  ORDER BY user_id DESC NULLS LAST LIMIT 1\n)\nSELECT \n  ua.account_id,\n  COALESCE(cl.category_id, (\n    SELECT id FROM spending_categories \n    WHERE user_id IS NULL AND name = 'Other' LIMIT 1\n  )) as category_id\nFROM user_account ua\nCROSS JOIN category_lookup cl;",
+                "options": {}
+            },
+            "id": "lookup-account-category",
+            "name": "Lookup Account & Category",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                800,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-connection"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Insert new transaction record\nINSERT INTO transactions (\n  user_id,\n  account_id,\n  category_id,\n  amount,\n  currency,\n  description,\n  transaction_date,\n  transaction_type,\n  merchant_name,\n  receipt_url,\n  notes,\n  created_at\n) VALUES (\n  '{{ $json.user_id }}',\n  '{{ $('Lookup Account & Category').item.json.account_id }}',\n  '{{ $('Lookup Account & Category').item.json.category_id }}',\n  {{ $json.data.amount }},\n  '{{ $json.data.currency }}',\n  '{{ $json.data.description }}',\n  '{{ $json.data.transaction_date }}',\n  '{{ $json.data.transaction_type }}',\n  '{{ $json.data.merchant_name }}',\n  '{{ $json.has_image ? \"Image provided\" : null }}',\n  '{{ $json.original_text }}',\n  NOW()\n) RETURNING id, amount, currency, description, transaction_date, merchant_name;",
+                "options": {}
+            },
+            "id": "insert-transaction",
+            "name": "Insert Transaction",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                1000,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-connection"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Update budget spending for the category\nUPDATE budgets \nSET updated_at = NOW()\nWHERE user_id = '{{ $json.user_id }}' \n  AND category_id = '{{ $('Lookup Account & Category').item.json.category_id }}' \n  AND is_active = true\n  AND (end_date IS NULL OR end_date >= CURRENT_DATE)\nRETURNING id, name, amount as budget_amount, currency;",
+                "options": {}
+            },
+            "id": "update-budget",
+            "name": "Update Budget",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                1200,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-connection"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Get current spending vs budget for confirmation message\nWITH current_spending AS (\n  SELECT \n    COALESCE(SUM(t.amount), 0) as total_spent\n  FROM transactions t\n  WHERE t.user_id = '{{ $json.user_id }}' \n    AND t.category_id = '{{ $('Lookup Account & Category').item.json.category_id }}'\n    AND t.transaction_date >= DATE_TRUNC('month', CURRENT_DATE)\n    AND t.transaction_type = 'expense'\n),\nbudget_info AS (\n  SELECT \n    b.amount as budget_amount,\n    b.currency,\n    sc.name as category_name\n  FROM budgets b\n  JOIN spending_categories sc ON b.category_id = sc.id\n  WHERE b.user_id = '{{ $json.user_id }}' \n    AND b.category_id = '{{ $('Lookup Account & Category').item.json.category_id }}' \n    AND b.is_active = true\n    AND (b.end_date IS NULL OR b.end_date >= CURRENT_DATE)\n  LIMIT 1\n)\nSELECT \n  cs.total_spent,\n  COALESCE(bi.budget_amount, 0) as budget_amount,\n  COALESCE(bi.currency, 'VND') as currency,\n  COALESCE(bi.category_name, 'Other') as category_name,\n  CASE \n    WHEN bi.budget_amount > 0 THEN ROUND((cs.total_spent / bi.budget_amount) * 100, 1)\n    ELSE 0 \n  END as budget_utilization_percent\nFROM current_spending cs\nLEFT JOIN budget_info bi ON true;",
+                "options": {}
+            },
+            "id": "calculate-budget-impact",
+            "name": "Calculate Budget Impact",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                1400,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "postgres-connection"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Generate confirmation message based on language and transaction data\nconst transactionResult = $('Insert Transaction').first().json;\nconst budgetResult = $('Calculate Budget Impact').first().json;\nconst extractionData = $('Process Extraction Result').first().json;\nconst language = extractionData.language || 'en';\n\n// Format amount with proper currency\nconst formatAmount = (amount, currency) => {\n  if (currency === 'VND') {\n    return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';\n  } else {\n    return new Intl.NumberFormat('en-US', { \n      style: 'currency', \n      currency: currency || 'USD' \n    }).format(amount);\n  }\n};\n\n// Generate confirmation message\nlet confirmationMessage = '';\nconst amount = formatAmount(transactionResult.amount, transactionResult.currency);\nconst merchant = transactionResult.merchant_name ? ` at ${transactionResult.merchant_name}` : '';\nconst category = budgetResult.category_name || 'Other';\n\nif (language === 'vi') {\n  confirmationMessage = `✅ Đã ghi nhận giao dịch ${amount}${merchant} cho ${category}.`;\n  \n  if (budgetResult.budget_amount && budgetResult.budget_utilization_percent) {\n    const budgetAmount = formatAmount(budgetResult.budget_amount, budgetResult.currency);\n    const percentage = budgetResult.budget_utilization_percent;\n    \n    if (percentage >= 100) {\n      confirmationMessage += ` ⚠️ Bạn đã vượt ngân sách ${category} (${percentage}% của ${budgetAmount}).`;\n    } else if (percentage >= 80) {\n      confirmationMessage += ` ⚠️ Bạn đã sử dụng ${percentage}% ngân sách ${category} (${budgetAmount}).`;\n    } else {\n      confirmationMessage += ` Còn lại ${100 - percentage}% ngân sách ${category}.`;\n    }\n  }\n} else {\n  confirmationMessage = `✅ Got it! I've logged a ${amount} transaction${merchant} for ${category}.`;\n  \n  if (budgetResult.budget_amount && budgetResult.budget_utilization_percent) {\n    const budgetAmount = formatAmount(budgetResult.budget_amount, budgetResult.currency);\n    const percentage = budgetResult.budget_utilization_percent;\n    \n    if (percentage >= 100) {\n      confirmationMessage += ` ⚠️ You've exceeded your ${category} budget (${percentage}% of ${budgetAmount}).`;\n    } else if (percentage >= 80) {\n      confirmationMessage += ` ⚠️ You've used ${percentage}% of your ${category} budget (${budgetAmount}).`;\n    } else {\n      confirmationMessage += ` You have ${100 - percentage}% of your ${category} budget remaining.`;\n    }\n  }\n}\n\nreturn [{\n  success: true,\n  message: confirmationMessage,\n  transaction_id: transactionResult.id,\n  amount: transactionResult.amount,\n  currency: transactionResult.currency,\n  category: category,\n  merchant: transactionResult.merchant_name,\n  budget_utilization: budgetResult.budget_utilization_percent || 0,\n  language: language\n}];"
+            },
+            "id": "generate-confirmation",
+            "name": "Generate Confirmation",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1600,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ {\n  \"success\": $json.success,\n  \"message\": $json.message,\n  \"transaction\": {\n    \"id\": $json.transaction_id,\n    \"amount\": $json.amount,\n    \"currency\": $json.currency,\n    \"category\": $json.category,\n    \"merchant\": $json.merchant,\n    \"budget_utilization\": $json.budget_utilization\n  }\n} }}",
+                "options": {
+                    "responseCode": 200,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "respond-success",
+            "name": "Respond Success",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1800,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { \n  \"error\": \"Unauthorized\", \n  \"message\": \"Valid JWT token required for transaction processing\" \n} }}",
+                "options": {
+                    "responseCode": 401,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "respond-unauthorized",
+            "name": "Respond Unauthorized",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                -200,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Generate clarification request message\nconst extractionResult = $input.first().json;\nconst language = extractionResult.language || 'en';\n\nlet message = '';\nif (language === 'vi') {\n  message = `❓ ${extractionResult.clarification_needed || 'Tôi cần thêm thông tin về giao dịch này. Vui lòng cho biết số tiền và mục đích chi tiêu.'}`;\n} else {\n  message = `❓ ${extractionResult.clarification_needed || 'I need more information about this transaction. Please specify the amount and what you purchased.'}`;\n}\n\nreturn [{\n  success: false,\n  requires_clarification: true,\n  message: message,\n  error: extractionResult.error,\n  language: language\n}];"
+            },
+            "id": "generate-clarification-request",
+            "name": "Generate Clarification Request",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                600,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ {\n  \"success\": $json.success,\n  \"requires_clarification\": $json.requires_clarification,\n  \"message\": $json.message,\n  \"error\": $json.error\n} }}",
+                "options": {
+                    "responseCode": 400,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "respond-clarification-needed",
+            "name": "Respond Clarification Needed",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                800,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Generate missing input error message\nconst context = $input.first().json;\nconst language = context.language || 'en';\n\nlet message = '';\nif (language === 'vi') {\n  message = '❌ Vui lòng cung cấp thông tin về giao dịch (văn bản hoặc hình ảnh) để tôi có thể ghi nhận.';\n} else {\n  message = '❌ Please provide transaction information (text or image) so I can log it for you.';\n}\n\nreturn [{\n  success: false,\n  error: 'Missing transaction data',\n  message: message,\n  language: language\n}];"
+            },
+            "id": "generate-missing-input-error",
+            "name": "Generate Missing Input Error",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                0,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ {\n  \"success\": $json.success,\n  \"error\": $json.error,\n  \"message\": $json.message\n} }}",
+                "options": {
+                    "responseCode": 400,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "respond-missing-input",
+            "name": "Respond Missing Input",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                200,
+                400
+            ]
+        }
+    ],
+    "connections": {
+        "Interaction Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Execute Auth Middleware",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Execute Auth Middleware": {
+            "main": [
+                [
+                    {
+                        "node": "Check Authentication",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Authentication": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare Transaction Context",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Respond Unauthorized",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare Transaction Context": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Input Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Input Data": {
+            "main": [
+                [
+                    {
+                        "node": "Transaction Extraction AI",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Generate Missing Input Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Transaction Extraction AI": {
+            "main": [
+                [
+                    {
+                        "node": "Process Extraction Result",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Process Extraction Result": {
+            "main": [
+                [
+                    {
+                        "node": "Check Extraction Success",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Extraction Success": {
+            "main": [
+                [
+                    {
+                        "node": "Lookup Account & Category",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Generate Clarification Request",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Lookup Account & Category": {
+            "main": [
+                [
+                    {
+                        "node": "Insert Transaction",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Insert Transaction": {
+            "main": [
+                [
+                    {
+                        "node": "Update Budget",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update Budget": {
+            "main": [
+                [
+                    {
+                        "node": "Calculate Budget Impact",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Calculate Budget Impact": {
+            "main": [
+                [
+                    {
+                        "node": "Generate Confirmation",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate Confirmation": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Success",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate Clarification Request": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Clarification Needed",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate Missing Input Error": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Missing Input",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Google Gemini Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Transaction Extraction AI",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "templateCredsSetupCompleted": false,
+        "instanceId": "fingoal-ai-interaction-agent-workflow"
+    }
+}
