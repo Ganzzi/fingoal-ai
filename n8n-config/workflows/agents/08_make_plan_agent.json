@@ -1,0 +1,1377 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "=**FINANCIAL PLANNING CONTEXT:**\nUser Information: {{ $('When Executed by Another Workflow').first().json.user_info.toJsonString() }}\nUser Message: {{ $('Validate Input Data').first().json.user_message }}\nSession State: {{ $('Validate Input Data').first().json.session_state.toJsonString() }}\nTimestamp: {{ $('Validate Input Data').first().json.timestamp }}\n\n{{ $json.memory_msg }}\n\n**TASK:** Create comprehensive financial plans and budgets tailored to the user's goals, situation, and timeline. Develop actionable strategies with clear implementation steps and progress tracking.",
+                "hasOutputParser": true,
+                "options": {
+                    "systemMessage": "You are FinGoal AI Financial Planner, an expert interactive financial planning specialist focused on creating comprehensive, actionable financial plans through active user collaboration. Your role is to engage users in creating personalized budgets and achieving their financial goals through systematic planning and ongoing adjustments.\n\n**CORE MISSION:**\n- Conduct interactive financial planning sessions with active user engagement\n- Create comprehensive budgets tailored to user spending desires and financial strategy\n- Develop goal-based financial plans with user collaboration on priorities and timelines\n- Actively clarify and adjust plans based on user feedback and preferences\n- Create and modify budgets for various timeframes (weekly, monthly, quarterly, yearly)\n- Help users understand their financial situation and make informed decisions\n\n**INTERACTIVE PLANNING METHODOLOGY:**\n1. **Financial Situation Analysis:** Thoroughly analyze current financial data using comprehensive tools\n2. **Active Collaboration:** Engage users in detailed discussions about spending priorities, lifestyle goals, and financial constraints\n3. **Budget Co-Creation:** Work with users to create budgets that reflect their values and spending desires while maintaining financial health\n4. **Goal Setting & Prioritization:** Collaboratively establish and prioritize financial goals with realistic timelines\n5. **Plan Customization:** Adjust strategies based on user feedback and changing circumstances\n6. **Implementation Guidance:** Provide clear, actionable steps with user-specific customization\n\n**CORE PLANNING EXPERTISE:**\n- Interactive budget creation and optimization using proven frameworks with user input\n- Goal-based financial planning with timeline projections and user-driven milestone tracking\n- Collaborative debt payoff strategy development (avalanche/snowball methods)\n- Personalized retirement planning with tax-advantaged account optimization\n- Custom emergency fund planning and cash flow management\n- User-driven savings goal prioritization and achievement strategies\n\n**BUDGET PLANNING FRAMEWORK:**\n**50/30/20 Rule Implementation:**\n- **50% Needs:** Housing, utilities, groceries, minimum debt payments, insurance, transportation\n- **30% Wants:** Entertainment, dining out, hobbies, subscriptions, discretionary spending\n- **20% Savings & Extra Debt Payments:** Emergency fund, retirement, goals, accelerated debt payoff\n\n**Budget Category Optimization:**\n- **Housing (25-30%):** Rent/mortgage, utilities, maintenance, property taxes\n- **Transportation (10-15%):** Car payment, insurance, gas, maintenance, public transit\n- **Food (10-15%):** Groceries, dining out, meal planning optimization\n- **Insurance (5-10%):** Health, life, disability, property coverage\n- **Debt Payments (5-20%):** Minimum payments plus acceleration strategies\n- **Savings (10-20%):** Emergency fund, retirement, short/long-term goals\n\n**SAVINGS GOAL PLANNING:**\n**Emergency Fund Strategy:**\n- Target: 3-6 months of essential expenses\n- High-yield savings account placement for liquidity\n- Build gradually: Start with $1,000, then increase monthly\n- Higher targets for irregular income or job insecurity\n\n**Goal-Based Savings Framework:**\n- **Short-term (1-2 years):** Vacation, minor home improvements, car maintenance fund\n- **Medium-term (2-5 years):** Home down payment, major purchases, education funding\n- **Long-term (5+ years):** Retirement, children's education, major life changes\n\n**Compound Interest Calculations:**\n```\nFuture Value = Present Value × (1 + annual_return)^years\nMonthly Savings Required = Goal Amount / ((1 + monthly_rate)^months - 1) / monthly_rate\n```\n\n**DEBT PAYOFF OPTIMIZATION:**\n**Debt Avalanche Method (Mathematically Optimal):**\n- Pay minimums on all debts\n- Focus extra payments on highest interest rate debt first\n- Maximize total interest savings over time\n\n**Debt Snowball Method (Psychological Motivation):**\n- Pay minimums on all debts\n- Focus extra payments on smallest balance first\n- Build momentum through quick wins and psychological victories\n\n**Debt Consolidation Analysis:**\n- Compare interest rates and terms\n- Calculate total payoff costs under different scenarios\n- Consider balance transfer options and personal loan consolidation\n\n**RETIREMENT PLANNING FRAMEWORK:**\n**Retirement Needs Calculation:**\n- **4% Withdrawal Rule:** Annual expenses × 25 = retirement savings target\n- **Income Replacement:** 70-90% of pre-retirement income needed\n- **Inflation Adjustment:** Factor 2-3% annual inflation into projections\n\n**Tax-Advantaged Account Prioritization:**\n1. **401(k) Match:** Always contribute enough to get full employer match\n2. **High-Yield Debt:** Pay off credit cards and high-interest loans\n3. **IRA/Roth IRA:** Additional retirement savings with tax benefits\n4. **Additional 401(k):** Max out employer plan contributions\n5. **Taxable Investments:** After maximizing tax-advantaged options\n\n**Roth vs. Traditional IRA Decision Matrix:**\n- **Choose Roth:** Young investors, expect higher future tax rates, want tax-free growth\n- **Choose Traditional:** Higher current income, expect lower retirement tax rates, need current deduction\n\n**FINANCIAL CALCULATION FORMULAS:**\n**Compound Growth Projections:**\n```javascript\n// Future value of regular monthly contributions\nFV = PMT × (((1 + r)^n - 1) / r)\n// Where: PMT = monthly payment, r = monthly rate, n = number of months\n\n// Time to reach financial goal\nTime = log(FV/PV) / log(1 + r)\n// Where: FV = future value target, PV = present value, r = annual return rate\n```\n\n**Debt Payoff Calculations:**\n```javascript\n// Monthly payment for fixed-rate loan\nPayment = Principal × (r × (1 + r)^n) / ((1 + r)^n - 1)\n// Where: r = monthly interest rate, n = number of payments\n\n// Payoff acceleration analysis\nInterest_Savings = Original_Total_Interest - Accelerated_Total_Interest\nTime_Savings = Original_Months - Accelerated_Months\n```\n\n**PLAN VISUALIZATION AND FORMATTING:**\n**Text-Based Progress Charts:**\n```\nEmergency Fund Progress:\n▓▓▓▓▓▓▓░░░ 70% Complete ($7,000 / $10,000)\nTarget Date: March 2026 | Monthly Goal: $500\n\nDebt Payoff Timeline:\nCredit Card 1: ████████░░ 80% paid ($2,000 remaining)\nStudent Loan: ███░░░░░░░ 30% paid ($14,000 remaining)\nCar Loan:     ██████░░░░ 60% paid ($8,000 remaining)\n```\n\n**Budget Allocation Visualization:**\n```\nMonthly Budget ($5,000):\n■■■■■■■■■■■■■■■ 50% Needs ($2,500)\n■■■■■■■■■ 30% Wants ($1,500)\n■■■■■ 20% Savings/Debt ($1,000)\n```\n\n**PLAN IMPLEMENTATION GUIDANCE:**\n**Action Item Structure:**\n- **Priority Level:** High/Medium/Low based on impact and urgency\n- **Timeline:** Specific dates and milestones for implementation\n- **Steps:** Detailed, actionable instructions for each recommendation\n- **Success Metrics:** Measurable outcomes and progress indicators\n- **Review Schedule:** Regular check-ins and plan adjustment intervals\n\n**Plan Version Control:**\n- Track changes over time with version history\n- Compare different scenarios and strategy adjustments\n- Document reasoning for major plan modifications\n- Maintain audit trail for progress tracking and accountability\n\n**RISK MANAGEMENT IN PLANNING:**\n- **Income Disruption:** Plan for job loss or income reduction scenarios\n- **Market Volatility:** Conservative projections with stress testing\n- **Life Changes:** Marriage, children, health issues, career changes\n- **Inflation Impact:** Factor inflation into long-term projections\n- **Regulatory Changes:** Tax law modifications and retirement account rules\n\nYour goal is to create comprehensive, actionable financial plans that provide clear roadmaps for achieving user goals while maintaining flexibility for life changes and market conditions."
+                }
+            },
+            "id": "d6fc7ac6-b274-4cf6-a8bf-81303c1869cb",
+            "name": "Financial Planning AI Agent",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1.6,
+            "position": [
+                32,
+                -160
+            ]
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query user's complete financial profile, goals, and preferences for comprehensive plan development.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "users",
+                    "mode": "list",
+                    "cachedResultName": "users"
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "email",
+                        "name",
+                        "language",
+                        "timezone",
+                        "currency",
+                        "is_active",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                -144,
+                176
+            ],
+            "id": "8e9fee1f-74c7-43a0-9cd7-f5b0b56ddd39",
+            "name": "Query User Profile",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query current account balances and asset positions for net worth calculation and cash flow analysis.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "money_accounts",
+                    "mode": "list",
+                    "cachedResultName": "money_accounts"
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "user_id",
+                        "name",
+                        "account_type",
+                        "institution_name",
+                        "balance",
+                        "currency",
+                        "is_active",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                -48,
+                32
+            ],
+            "id": "91a4d2ed-d303-4238-84cd-308b6bf1bdd8",
+            "name": "Query Accounts & Assets",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query transaction history to analyze income patterns, expense categories, and spending trends for budget creation.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "transactions",
+                    "mode": "list",
+                    "cachedResultName": "transactions"
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "user_id",
+                        "account_id",
+                        "category_id",
+                        "amount",
+                        "currency",
+                        "description",
+                        "transaction_date",
+                        "transaction_type",
+                        "merchant_name",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                32,
+                176
+            ],
+            "id": "605af281-6a02-4213-8e98-e1d0563dfa2b",
+            "name": "Query Income & Expenses",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query existing budgets and spending limits to understand current budget structure and performance.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "budgets",
+                    "mode": "list",
+                    "cachedResultName": "budgets"
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "user_id",
+                        "category_id",
+                        "name",
+                        "amount",
+                        "currency",
+                        "period",
+                        "start_date",
+                        "end_date",
+                        "is_active",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                112,
+                32
+            ],
+            "id": "4c92e03a-39e1-436a-82aa-e54d92e1be9f",
+            "name": "Query Existing Budgets",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query goals, debts, and complex financial data for comprehensive planning analysis and strategy development.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "data_rows",
+                    "mode": "list",
+                    "cachedResultName": "data_rows"
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "user_id",
+                        "metadata_id",
+                        "data",
+                        "status",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                208,
+                176
+            ],
+            "id": "0ab7211d-01b9-4531-8e64-d381afa84c35",
+            "name": "Query Goals & Debts",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Execute advanced financial calculations for plan projections, compound interest calculations, and scenario modeling.",
+                "operation": "executeQuery",
+                "query": "{{ $fromAI('sql_query') }}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                272,
+                32
+            ],
+            "id": "cf14d813-5913-4e11-9a5d-34d2f259ee93",
+            "name": "Execute Planning Calculations",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Create new budgets for specific categories and time periods (weekly, monthly, quarterly, yearly). Use this tool to implement budget plans by creating individual budget entries. Provide parameters: user_id, category_id, name, amount, currency, period, start_date, end_date, is_active.",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "budgets",
+                    "mode": "list",
+                    "cachedResultName": "budgets"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_id": "={{ $fromAI('user_id') }}",
+                        "category_id": "={{ $fromAI('category_id') }}",
+                        "name": "={{ $fromAI('name') }}",
+                        "amount": "={{ $fromAI('amount') }}",
+                        "currency": "={{ $fromAI('currency') }}",
+                        "period": "={{ $fromAI('period') }}",
+                        "start_date": "={{ $fromAI('start_date') }}",
+                        "end_date": "={{ $fromAI('end_date') }}",
+                        "is_active": "={{ $fromAI('is_active') }}"
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "category_id",
+                            "displayName": "category_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "name",
+                            "displayName": "name",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "amount",
+                            "displayName": "amount",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "number",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "currency",
+                            "displayName": "currency",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "period",
+                            "displayName": "period",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "start_date",
+                            "displayName": "start_date",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "date",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "end_date",
+                            "displayName": "end_date",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "date",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "is_active",
+                            "displayName": "is_active",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "boolean",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "created_at",
+                            "displayName": "created_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                352,
+                32
+            ],
+            "id": "04a2937e-40b5-4454-be06-8a09eef19368",
+            "name": "Create Budget Entries",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Update existing budget entries with new amounts, periods, or dates. Use this tool to modify existing budgets based on user preferences or plan adjustments. Provide budget_id and fields to update.",
+                "operation": "update",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "budgets",
+                    "mode": "list",
+                    "cachedResultName": "budgets"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "name": "={{ $fromAI('name') }}",
+                        "amount": "={{ $fromAI('amount') }}",
+                        "period": "={{ $fromAI('period') }}",
+                        "start_date": "={{ $fromAI('start_date') }}",
+                        "end_date": "={{ $fromAI('end_date') }}",
+                        "is_active": "={{ $fromAI('is_active') }}"
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "name",
+                            "displayName": "name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "amount",
+                            "displayName": "amount",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "number",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "period",
+                            "displayName": "period",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "start_date",
+                            "displayName": "start_date",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "date",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "end_date",
+                            "displayName": "end_date",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "date",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "is_active",
+                            "displayName": "is_active",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "boolean",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                432,
+                32
+            ],
+            "id": "3ff2f50b-7d56-454d-b614-7a64ac5cf181",
+            "name": "Update Budget Entries",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query spending categories to understand what budget categories are available for budget creation. Use this to see existing categories before creating budgets.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "spending_categories",
+                    "mode": "list",
+                    "cachedResultName": "spending_categories"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "user_id",
+                            "value": "={{ $('Validate Input Data').item.json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "user_id",
+                        "name",
+                        "description",
+                        "color",
+                        "icon",
+                        "is_system",
+                        "is_active"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                512,
+                32
+            ],
+            "id": "eab6d35c-8b12-443d-8d53-675378ad1794",
+            "name": "Query Spending Categories",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Create new spending categories for budget organization. Use this when user wants custom budget categories that don't exist yet. Provide parameters: user_id, name, description, color, icon, is_system, is_active.",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "spending_categories",
+                    "mode": "list",
+                    "cachedResultName": "spending_categories"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_id": "={{ $fromAI('user_id') }}",
+                        "name": "={{ $fromAI('name') }}",
+                        "description": "={{ $fromAI('description') }}",
+                        "color": "={{ $fromAI('color') }}",
+                        "icon": "={{ $fromAI('icon') }}",
+                        "is_system": "={{ $fromAI('is_system') }}",
+                        "is_active": "={{ $fromAI('is_active') }}"
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "name",
+                            "displayName": "name",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "description",
+                            "displayName": "description",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "color",
+                            "displayName": "color",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "icon",
+                            "displayName": "icon",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "is_system",
+                            "displayName": "is_system",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "boolean",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "is_active",
+                            "displayName": "is_active",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "boolean",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "created_at",
+                            "displayName": "created_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                592,
+                32
+            ],
+            "id": "c2703f32-3de8-4172-a405-763377d50ad2",
+            "name": "Create Spending Categories",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Create or update financial goals in the data_rows table. Use this to store user's financial goals with amounts, timelines, and priorities. First create metadata schema if needed, then store goal data as JSON.",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "data_rows",
+                    "mode": "list",
+                    "cachedResultName": "data_rows"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_id": "={{ $fromAI('user_id') }}",
+                        "metadata_id": "={{ $fromAI('metadata_id') }}",
+                        "data": "={{ $fromAI('data') }}",
+                        "status": "={{ $fromAI('status') }}"
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "metadata_id",
+                            "displayName": "metadata_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "data",
+                            "displayName": "data",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "json",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "status",
+                            "displayName": "status",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "created_at",
+                            "displayName": "created_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                672,
+                32
+            ],
+            "id": "e52880ac-1499-4fa0-b4bb-829a971ad070",
+            "name": "Create Financial Goals",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "schemaType": "manual",
+                "inputSchema": "{\n  \"$id\": \"https://fingoal.ai/schemas/financial-planning.json\",\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"memory\": {\n      \"type\": \"string\",\n      \"description\": \"Memory updates for planning agent: user goals, plan versions, budget preferences, progress tracking data\"\n    },\n    \"financialPlanResult\": {\n      \"type\": \"object\",\n      \"description\": \"Comprehensive interactive financial planning response\",\n      \"properties\": {\n        \"message\": {\n          \"type\": \"string\",\n          \"maxLength\": 2000,\n          \"description\": \"Main interactive planning message to user\"\n        },\n        \"plan_type\": {\n          \"type\": \"string\",\n          \"enum\": [\"budget_creation\", \"budget_adjustment\", \"goal_planning\", \"debt_strategy\", \"comprehensive_plan\", \"consultation_required\"]\n        },\n        \"planning_phase\": {\n          \"type\": \"string\",\n          \"enum\": [\"discovery\", \"collaborative_design\", \"implementation\", \"adjustment\", \"monitoring\"]\n        },\n        \"interactive_elements\": {\n          \"type\": \"object\",\n          \"$ref\": \"#/$defs/interactive_session\"\n        },\n        \"budget_framework\": {\n          \"type\": \"object\",\n          \"$ref\": \"#/$defs/budget_structure\"\n        },\n        \"financial_goals\": {\n          \"type\": \"array\",\n          \"maxItems\": 10,\n          \"items\": {\n            \"$ref\": \"#/$defs/financial_goal\"\n          }\n        },\n        \"debt_strategy\": {\n          \"type\": \"object\",\n          \"$ref\": \"#/$defs/debt_payoff\"\n        },\n        \"implementation_plan\": {\n          \"type\": \"object\",\n          \"$ref\": \"#/$defs/implementation\"\n        },\n        \"budget_adjustments\": {\n          \"type\": \"object\",\n          \"$ref\": \"#/$defs/adjustments\"\n        },\n        \"progress_tracking\": {\n          \"type\": \"object\",\n          \"$ref\": \"#/$defs/tracking\"\n        },\n        \"user_collaboration\": {\n          \"type\": \"object\",\n          \"$ref\": \"#/$defs/collaboration\"\n        }\n      },\n      \"required\": [\"message\", \"plan_type\", \"planning_phase\"]\n    }\n  },\n  \"required\": [\"financialPlanResult\"],\n  \"$defs\": {\n    \"interactive_session\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"clarification_questions\": {\n          \"type\": \"array\",\n          \"maxItems\": 5,\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"question\": {\"type\": \"string\", \"maxLength\": 200},\n              \"category\": {\"type\": \"string\", \"enum\": [\"spending_priorities\", \"income_stability\", \"goal_timeline\", \"risk_tolerance\", \"lifestyle_preferences\"]},\n              \"importance\": {\"type\": \"string\", \"enum\": [\"critical\", \"important\", \"helpful\"]}\n            },\n            \"required\": [\"question\", \"category\"]\n          }\n        },\n        \"user_preferences_collected\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"spending_style\": {\"type\": \"string\", \"enum\": [\"conservative\", \"moderate\", \"flexible\", \"lifestyle_focused\"]},\n            \"budget_frequency\": {\"type\": \"string\", \"enum\": [\"weekly\", \"monthly\", \"quarterly\", \"yearly\"]},\n            \"priority_goals\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n            \"risk_comfort\": {\"type\": \"string\", \"enum\": [\"low\", \"moderate\", \"high\"]}\n          }\n        },\n        \"collaboration_needed\": {\n          \"type\": \"boolean\",\n          \"description\": \"Whether further user input is needed before finalizing plan\"\n        }\n      }\n    },\n    \"budget_structure\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"framework_type\": {\n          \"type\": \"string\",\n          \"enum\": [\"50_30_20\", \"zero_based\", \"envelope\", \"custom\"]\n        },\n        \"total_monthly_income\": {\"type\": \"number\", \"minimum\": 0},\n        \"allocation_strategy\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"needs_percentage\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100},\n            \"wants_percentage\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100},\n            \"savings_percentage\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100}\n          }\n        },\n        \"budget_categories\": {\n          \"type\": \"array\",\n          \"maxItems\": 20,\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"category_name\": {\"type\": \"string\", \"maxLength\": 100},\n              \"category_type\": {\"type\": \"string\", \"enum\": [\"need\", \"want\", \"savings\", \"debt\"]},\n              \"allocated_amount\": {\"type\": \"number\", \"minimum\": 0},\n              \"period\": {\"type\": \"string\", \"enum\": [\"weekly\", \"monthly\", \"quarterly\", \"yearly\"]},\n              \"flexibility\": {\"type\": \"string\", \"enum\": [\"fixed\", \"adjustable\", \"optional\"]},\n              \"priority\": {\"type\": \"string\", \"enum\": [\"high\", \"medium\", \"low\"]}\n            },\n            \"required\": [\"category_name\", \"category_type\", \"allocated_amount\"]\n          }\n        },\n        \"budget_timeline\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"start_date\": {\"type\": \"string\", \"format\": \"date\"},\n            \"review_frequency\": {\"type\": \"string\", \"enum\": [\"weekly\", \"monthly\", \"quarterly\"]},\n            \"adjustment_schedule\": {\"type\": \"string\"}\n          }\n        }\n      },\n      \"required\": [\"framework_type\"]\n    },\n    \"financial_goal\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"goal_name\": {\"type\": \"string\", \"maxLength\": 100},\n        \"category\": {\"type\": \"string\", \"enum\": [\"emergency_fund\", \"retirement\", \"home_purchase\", \"education\", \"vacation\", \"debt_payoff\", \"investment\", \"custom\"]},\n        \"target_amount\": {\"type\": \"number\", \"minimum\": 0},\n        \"current_progress\": {\"type\": \"number\", \"minimum\": 0},\n        \"monthly_contribution\": {\"type\": \"number\", \"minimum\": 0},\n        \"target_date\": {\"type\": \"string\", \"format\": \"date\"},\n        \"priority_level\": {\"type\": \"string\", \"enum\": [\"critical\", \"high\", \"medium\", \"low\"]},\n        \"funding_strategy\": {\"type\": \"string\", \"maxLength\": 200},\n        \"milestone_tracker\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"milestone\": {\"type\": \"string\"},\n              \"target_amount\": {\"type\": \"number\"},\n              \"target_date\": {\"type\": \"string\", \"format\": \"date\"}\n            }\n          }\n        }\n      },\n      \"required\": [\"goal_name\", \"target_amount\", \"priority_level\"]\n    },\n    \"debt_payoff\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"strategy_type\": {\"type\": \"string\", \"enum\": [\"avalanche\", \"snowball\", \"hybrid\", \"custom\"]},\n        \"total_debt_amount\": {\"type\": \"number\", \"minimum\": 0},\n        \"monthly_payment_capacity\": {\"type\": \"number\", \"minimum\": 0},\n        \"debt_schedule\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"debt_name\": {\"type\": \"string\"},\n              \"current_balance\": {\"type\": \"number\"},\n              \"interest_rate\": {\"type\": \"number\"},\n              \"minimum_payment\": {\"type\": \"number\"},\n              \"recommended_payment\": {\"type\": \"number\"},\n              \"payoff_order\": {\"type\": \"number\"},\n              \"projected_payoff_date\": {\"type\": \"string\", \"format\": \"date\"}\n            }\n          }\n        },\n        \"projected_outcomes\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"total_interest_saved\": {\"type\": \"number\"},\n            \"debt_free_date\": {\"type\": \"string\", \"format\": \"date\"},\n            \"monthly_cash_flow_increase\": {\"type\": \"number\"}\n          }\n        }\n      }\n    },\n    \"implementation\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"immediate_actions\": {\n          \"type\": \"array\",\n          \"maxItems\": 8,\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"action\": {\"type\": \"string\", \"maxLength\": 150},\n              \"category\": {\"type\": \"string\", \"enum\": [\"budget_setup\", \"goal_creation\", \"debt_management\", \"account_optimization\", \"tracking_setup\"]},\n              \"priority\": {\"type\": \"string\", \"enum\": [\"critical\", \"high\", \"medium\", \"low\"]},\n              \"timeline\": {\"type\": \"string\", \"maxLength\": 50},\n              \"expected_impact\": {\"type\": \"string\", \"maxLength\": 100},\n              \"resources_needed\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}}\n            },\n            \"required\": [\"action\", \"priority\"]\n          }\n        },\n        \"budget_setup_steps\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"step\": {\"type\": \"string\"},\n              \"details\": {\"type\": \"string\"},\n              \"estimated_time\": {\"type\": \"string\"}\n            }\n          }\n        },\n        \"goal_implementation\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"goal_name\": {\"type\": \"string\"},\n              \"setup_actions\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n              \"automation_options\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}}\n            }\n          }\n        }\n      }\n    },\n    \"adjustments\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"recommended_changes\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"area\": {\"type\": \"string\", \"enum\": [\"budget_allocation\", \"goal_timeline\", \"debt_strategy\", \"category_amounts\"]},\n              \"current_value\": {\"type\": \"string\"},\n              \"recommended_value\": {\"type\": \"string\"},\n              \"reason\": {\"type\": \"string\", \"maxLength\": 200},\n              \"impact\": {\"type\": \"string\", \"maxLength\": 150}\n            }\n          }\n        },\n        \"user_feedback_integration\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"preferences_updated\": {\"type\": \"boolean\"},\n            \"plan_modifications\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}}\n          }\n        }\n      }\n    },\n    \"tracking\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"monitoring_schedule\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"budget_reviews\": {\"type\": \"string\"},\n            \"goal_check_ins\": {\"type\": \"string\"},\n            \"plan_adjustments\": {\"type\": \"string\"}\n          }\n        },\n        \"success_metrics\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"metric\": {\"type\": \"string\"},\n              \"target\": {\"type\": \"string\"},\n              \"measurement_frequency\": {\"type\": \"string\"}\n            }\n          }\n        },\n        \"plan_version\": {\n          \"type\": \"string\",\n          \"description\": \"Version identifier for tracking plan changes over time\"\n        }\n      }\n    },\n    \"collaboration\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"user_input_needed\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"input_type\": {\"type\": \"string\", \"enum\": [\"preference_clarification\", \"goal_refinement\", \"budget_adjustment\", \"timeline_confirmation\"]},\n              \"description\": {\"type\": \"string\", \"maxLength\": 200},\n              \"importance\": {\"type\": \"string\", \"enum\": [\"critical\", \"important\", \"optional\"]}\n            }\n          }\n        },\n        \"next_session_focus\": {\n          \"type\": \"string\",\n          \"maxLength\": 300,\n          \"description\": \"What to focus on in the next planning session\"\n        },\n        \"plan_readiness\": {\n          \"type\": \"string\",\n          \"enum\": [\"ready_for_implementation\", \"needs_user_input\", \"requires_more_planning\", \"ready_for_consultation\"]\n        }\n      }\n    }\n  }\n}",
+                "autoFix": true
+            },
+            "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+            "typeVersion": 1.3,
+            "position": [
+                368,
+                176
+            ],
+            "id": "48b2e84f-2aec-4b06-bead-37b9568a8d7a",
+            "name": "Structured Output Parser"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "final-success",
+                            "name": "success",
+                            "value": true,
+                            "type": "boolean"
+                        },
+                        {
+                            "id": "final-agent",
+                            "name": "agent",
+                            "value": "Make_Plan_Agent",
+                            "type": "string"
+                        },
+                        {
+                            "id": "final-response-type",
+                            "name": "response_type",
+                            "value": "financial_plan",
+                            "type": "string"
+                        },
+                        {
+                            "id": "final-content",
+                            "name": "content",
+                            "value": "={{ $json.output.financialPlanResult }}",
+                            "type": "object"
+                        },
+                        {
+                            "id": "final-timestamp",
+                            "name": "timestamp",
+                            "value": "={{ new Date().toISOString() }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                416,
+                -96
+            ],
+            "id": "3ef4135f-ea9e-47af-8e03-fa375c2756cf",
+            "name": "Format Final Response"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "memory-content-field",
+                            "name": "memory",
+                            "value": "={{ $json.output.memory }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "agent-type-field",
+                            "name": "agent_type",
+                            "value": "={{ $('Validate Input Data').item.json.agent_type }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                416,
+                -224
+            ],
+            "id": "ec889eba-fb1e-46a3-be9c-8f5ab1333d63",
+            "name": "Prepare Memory Update"
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "CD8W2iWJNWd1GY70",
+                    "mode": "list",
+                    "cachedResultName": "MemoryUpdaterAgent"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "memory": "={{ $json.memory }}",
+                        "agent_type": "={{ $json.agent_type }}"
+                    }
+                },
+                "options": {
+                    "waitForSubWorkflow": false
+                }
+            },
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.2,
+            "position": [
+                592,
+                -224
+            ],
+            "id": "f15e8002-a716-4c6b-a2a4-5e3a3da2d4eb",
+            "name": "Call MemoryUpdaterAgent"
+        },
+        {
+            "parameters": {
+                "workflowInputs": {
+                    "values": [
+                        {
+                            "name": "user_message"
+                        },
+                        {
+                            "name": "intent"
+                        },
+                        {
+                            "name": "session_state",
+                            "type": "object"
+                        },
+                        {
+                            "name": "user_info",
+                            "type": "object"
+                        }
+                    ]
+                }
+            },
+            "id": "998a3628-cf1a-44bd-87de-35e6fe29385f",
+            "typeVersion": 1.1,
+            "name": "When Executed by Another Workflow",
+            "type": "n8n-nodes-base.executeWorkflowTrigger",
+            "position": [
+                -672,
+                -160
+            ]
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "input-validation-message",
+                            "name": "user_message",
+                            "value": "={{ $json.user_message }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "input-validation-intent",
+                            "name": "intent",
+                            "value": "={{ $json.intent }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "input-validation-session",
+                            "name": "session_state",
+                            "value": "={{ $json.session_state }}",
+                            "type": "object"
+                        },
+                        {
+                            "id": "agent-type-field",
+                            "name": "agent_type",
+                            "value": "consult_customer_agent",
+                            "type": "string"
+                        },
+                        {
+                            "id": "f647f8dd-6978-41a5-8d4b-769834e6fc4e",
+                            "name": "user_id",
+                            "value": "={{ $json.user_info.id }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "07eee8b2-affa-4937-8c7b-77cdf550abc3",
+                            "name": "timestamp",
+                            "value": "={{ $now }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                -496,
+                -160
+            ],
+            "id": "af080de9-ec1c-4bf9-8b30-b4775b10e110",
+            "name": "Validate Input Data"
+        },
+        {
+            "parameters": {
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "memories",
+                    "mode": "list",
+                    "cachedResultName": "memories"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "agent_type",
+                            "value": "={{ $('Validate Input Data').item.json.agent_type }}"
+                        },
+                        {
+                            "column": "user_id",
+                            "value": "={{ $('Validate Input Data').item.json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "memory_type",
+                        "content",
+                        "importance_score",
+                        "last_accessed_at",
+                        "id"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                -320,
+                -160
+            ],
+            "id": "8789032d-6283-4fef-8cc6-abce46213380",
+            "name": "Get Memories",
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const memories = $input.all();\n\nif (memories.length == 1 && Object.keys(memories[0].json).length == 0) {\n  return [{ memory_msg: \"You have no memory.\" }];\n}\n\nlet memory_msg = \"## Your memories\\n\";\nfor (const memory of memories) {\n  if (memory.json.memory_type && memory.json.content && memory.json.content.message) {\n    memory_msg += `- ${memory.json.memory_type}: ${memory.json.content.message} (Importance: ${memory.json.importance_score})\\n`;\n  }\n}\nreturn [{ memory_msg }];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -160,
+                -160
+            ],
+            "id": "9b1fcf8d-8456-4484-b78c-2e9e757fbd71",
+            "name": "Prepare memories"
+        },
+        {
+            "parameters": {
+                "model": {
+                    "__rl": true,
+                    "value": "openai/gpt-5-mini-2025-08-07",
+                    "mode": "list",
+                    "cachedResultName": "openai/gpt-5-mini-2025-08-07"
+                },
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+            "typeVersion": 1.2,
+            "position": [
+                -288,
+                96
+            ],
+            "id": "e04362a9-0a88-493f-aafd-5c04433b8e14",
+            "name": "OpenAI Chat Model",
+            "credentials": {
+                "openAiApi": {
+                    "id": "xtqRzHCLYFCOKzvo",
+                    "name": "nebius"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Financial Planning AI Agent": {
+            "main": [
+                [
+                    {
+                        "node": "Format Final Response",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Prepare Memory Update",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query User Profile": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Planning AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Accounts & Assets": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Planning AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Income & Expenses": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Planning AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Existing Budgets": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Planning AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Goals & Debts": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Planning AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Execute Planning Calculations": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Planning AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create Budget Entries": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Planning AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update Budget Entries": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Planning AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Spending Categories": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Planning AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create Spending Categories": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Planning AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create Financial Goals": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Planning AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Structured Output Parser": {
+            "ai_outputParser": [
+                [
+                    {
+                        "node": "Financial Planning AI Agent",
+                        "type": "ai_outputParser",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare Memory Update": {
+            "main": [
+                [
+                    {
+                        "node": "Call MemoryUpdaterAgent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "When Executed by Another Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Input Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Input Data": {
+            "main": [
+                [
+                    {
+                        "node": "Get Memories",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Memories": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare memories",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare memories": {
+            "main": [
+                [
+                    {
+                        "node": "Financial Planning AI Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "OpenAI Chat Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Financial Planning AI Agent",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    },
+                    {
+                        "node": "Structured Output Parser",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {
+        "When Executed by Another Workflow": [
+            {
+                "user_message": "I want to invest $10,000 in stocks",
+                "intent": "request_consultation",
+                "session_state": {
+                    "in_active_session": false
+                },
+                "user_info": {
+                    "id": "6d736e3f-4f52-43a7-a555-e10b9c1c5272",
+                    "email": "testuser123@example.com",
+                    "name": "Test User",
+                    "language": "en",
+                    "timezone": "UTC",
+                    "currency": "USD"
+                }
+            }
+        ]
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "8f73175c8cfc4e9b66eecf1cdc8ab8fdf6289436294741f796d676a38d70095e"
+    }
+}

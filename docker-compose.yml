@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: tensorchord/vchord-suite:pg17-latest
+    container_name: fingoal-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fingoal_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your_secure_password_here}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    networks:
+      - fingoal-network
+    restart: unless-stopped
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: fingoal-n8n
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-admin}
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-fingoal_db}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER:-postgres}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD:-your_secure_password_here}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-your_encryption_key_here}
+      - WEBHOOK_URL=http://localhost:5678/
+      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_key_here}
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./n8n-config:/home/node/.n8n
+    depends_on:
+      - postgres
+    networks:
+      - fingoal-network
+    restart: unless-stopped
+
+networks:
+  fingoal-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  n8n_data:

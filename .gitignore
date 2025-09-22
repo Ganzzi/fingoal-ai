@@ -1,0 +1,47 @@
+# Environment and dependency files
+.env
+venv/
+.envrc
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Flutter specific
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.packages
+app/.dart_tool/
+app/build/
+app/android/app/build/
+app/ios/Flutter/Flutter.framework
+app/ios/Flutter/Flutter.podspec
+app/ios/Pods/
+app/ios/.symlinks/
+app/ios/Flutter/Generated.xcconfig
+app/ios/Flutter/app.flx
+app/ios/Flutter/app.zip
+app/.metadata
+app/.idea/
+app/*.iml
+app/coverage/
+app/test-results/
+
+# N8N specific
+n8n-config/*.log
+n8n-config/.n8n/
+n8n-config/database.sqlite
+
+# Project specific
+.bmad-core/
+.github/
+.claude/
+.roomodes
+CLAUDE.md
+
+.vscode/
+md_explode.py

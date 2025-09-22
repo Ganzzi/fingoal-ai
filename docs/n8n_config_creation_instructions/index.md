@@ -1,0 +1,17 @@
+# N8N Workflow Configuration Template and Instructions for AI
+
+- [Overview](./overview.md)
+- [1. TRIGGER NODES (Workflow Entry Points)](./1-trigger-nodes-workflow-entry-points.md)
+- [2. DATA MANIPULATION NODES](./2-data-manipulation-nodes.md)
+- [3. LOGIC AND CONTROL NODES](./3-logic-and-control-nodes.md)
+- [4. DATA PROCESSING NODES](./4-data-processing-nodes.md)
+- [5. HTTP AND API NODES](./5-http-and-api-nodes.md)
+- [6. UTILITY NODES](./6-utility-nodes.md)
+- [7. POPULAR INTEGRATION NODES](./7-popular-integration-nodes.md)
+- [8. AUTHENTICATION AND CRYPTO NODES](./8-authentication-and-crypto-nodes.md)
+- [DATABASE SCHEME INITIALIZATION WORKFLOW EXAMPLE](./database-scheme-initialization-workflow-example.md)
+- [AUTHENTICATION LOGIN REGISTER LOGOUT JWT WORKFLOW EXAMPLE](./authentication-login-register-logout-jwt-workflow-example.md)
+- [AUTHENTICATION JWT MIDDLEWARE WORKFLOW EXAMPLE](./authentication-jwt-middleware-workflow-example.md)
+- [AI AGENT CHAT API WORKFLOW EXAMPLE](./ai-agent-chat-api-workflow-example.md)
+- [Connection Structure](./connection-structure.md)
+- [AI Instructions for Creating N8N Workflows](./ai-instructions-for-creating-n8n-workflows.md)

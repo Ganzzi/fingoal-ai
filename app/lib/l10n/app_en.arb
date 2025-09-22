@@ -1,0 +1,187 @@
+{
+  "@@locale": "en",
+  "appTitle": "FinGoal AI",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "appTagline": "Your Smart Financial Assistant",
+  "@appTagline": {
+    "description": "The tagline of the application"
+  },
+  "welcomeBack": "Welcome Back",
+  "@welcomeBack": {
+    "description": "Welcome message on login screen"
+  },
+  "signInToContinue": "Sign in to continue to your account",
+  "@signInToContinue": {
+    "description": "Subtitle on login screen"
+  },
+  "email": "Email",
+  "@email": {
+    "description": "Email field label"
+  },
+  "password": "Password",
+  "@password": {
+    "description": "Password field label"
+  },
+  "signIn": "Sign In",
+  "@signIn": {
+    "description": "Sign in button text"
+  },
+  "demoMode": "Demo Mode",
+  "@demoMode": {
+    "description": "Demo mode indicator"
+  },
+  "demoModeDescription": "Use any email and password to continue",
+  "@demoModeDescription": {
+    "description": "Demo mode explanation"
+  },
+  "chat": "Chat",
+  "@chat": {
+    "description": "Chat navigation label"
+  },
+  "dashboard": "Dashboard",
+  "@dashboard": {
+    "description": "Dashboard navigation label"
+  },
+  "profile": "Profile",
+  "@profile": {
+    "description": "Profile navigation label and screen title"
+  },
+  "aiChatAssistant": "AI Chat Assistant",
+  "@aiChatAssistant": {
+    "description": "Chat screen title"
+  },
+  "aiAssistantDescription": "Your AI financial assistant will appear here",
+  "@aiAssistantDescription": {
+    "description": "Chat screen description"
+  },
+  "smartFinancialInsights": "Smart Financial Insights",
+  "@smartFinancialInsights": {
+    "description": "Chat feature description"
+  },
+  "personalAssistant247": "24/7 Personal Assistant",
+  "@personalAssistant247": {
+    "description": "Chat feature description"
+  },
+  "multiLanguageSupport": "Multi-Language Support",
+  "@multiLanguageSupport": {
+    "description": "Chat feature description"
+  },
+  "financialDashboard": "Financial Dashboard",
+  "@financialDashboard": {
+    "description": "Dashboard screen title"
+  },
+  "financialOverviewDescription": "Your financial overview will appear here",
+  "@financialOverviewDescription": {
+    "description": "Dashboard screen description"
+  },
+  "accountBalance": "Account\nBalance",
+  "@accountBalance": {
+    "description": "Dashboard feature label"
+  },
+  "spendingTrends": "Spending\nTrends",
+  "@spendingTrends": {
+    "description": "Dashboard feature label"
+  },
+  "budgetTracking": "Budget\nTracking",
+  "@budgetTracking": {
+    "description": "Dashboard feature label"
+  },
+  "financialInsights": "Financial\nInsights",
+  "@financialInsights": {
+    "description": "Dashboard feature label"
+  },
+  "realtimeAnalytics": "Real-time financial analytics and personalized recommendations",
+  "@realtimeAnalytics": {
+    "description": "Dashboard feature description"
+  },
+  "comingSoon": "Coming Soon",
+  "@comingSoon": {
+    "description": "Coming soon badge text"
+  },
+  "edit": "Edit",
+  "@edit": {
+    "description": "Edit button text"
+  },
+  "manage": "Manage",
+  "@manage": {
+    "description": "Manage button text"
+  },
+  "spendingCategories": "Spending Categories",
+  "@spendingCategories": {
+    "description": "Spending categories section title"
+  },
+  "tapToManageCategory": "Tap to manage category",
+  "@tapToManageCategory": {
+    "description": "Category item subtitle"
+  },
+  "foodDining": "Food & Dining",
+  "@foodDining": {
+    "description": "Spending category name"
+  },
+  "transportation": "Transportation",
+  "@transportation": {
+    "description": "Spending category name"
+  },
+  "shopping": "Shopping",
+  "@shopping": {
+    "description": "Spending category name"
+  },
+  "entertainment": "Entertainment",
+  "@entertainment": {
+    "description": "Spending category name"
+  },
+  "utilities": "Utilities",
+  "@utilities": {
+    "description": "Spending category name"
+  },
+  "healthcare": "Healthcare",
+  "@healthcare": {
+    "description": "Spending category name"
+  },
+  "education": "Education",
+  "@education": {
+    "description": "Spending category name"
+  },
+  "housing": "Housing",
+  "@housing": {
+    "description": "Spending category name"
+  },
+  "language": "Language",
+  "@language": {
+    "description": "Language section title"
+  },
+  "selectLanguage": "Select Language",
+  "@selectLanguage": {
+    "description": "Language selector label"
+  },
+  "english": "English",
+  "@english": {
+    "description": "English language name"
+  },
+  "vietnamese": "Tiếng Việt",
+  "@vietnamese": {
+    "description": "Vietnamese language name"
+  },
+  "languageChanged": "Language changed to English",
+  "@languageChanged": {
+    "description": "Language change confirmation message"
+  },
+  "pleaseEnterEmail": "Please enter your email",
+  "@pleaseEnterEmail": {
+    "description": "Email validation error"
+  },
+  "pleaseEnterValidEmail": "Please enter a valid email",
+  "@pleaseEnterValidEmail": {
+    "description": "Email format validation error"
+  },
+  "pleaseEnterPassword": "Please enter your password",
+  "@pleaseEnterPassword": {
+    "description": "Password validation error"
+  },
+  "passwordTooShort": "Password must be at least 6 characters",
+  "@passwordTooShort": {
+    "description": "Password length validation error"
+  }
+}

@@ -2,23 +2,22 @@
 
 ## Core Features Included
 *   **Authentication:** Google OAuth integration with JWT tokens via n8n Login API
-*   **Multi-Agent AI System:** 9 specialized agents with persistent memory and context awareness
-*   **Chat Interface:** Multi-modal input (text, voice, images) with intelligent agent routing
+*   **Multi-Agent AI System:** 7 specialized agents with session state management and workflow orchestration
+*   **Chat Interface:** Multi-modal input (text, voice, images) with intelligent intent detection and agent coordination
+*   **Session Management:** Persistent session states with context continuity across conversations
 *   **Flexible Data Storage:** JSONB schemas for complex financial data alongside structured tables
-*   **Financial Analysis:** Spending analysis, budget tracking, and personalized recommendations
-*   **Monitoring System:** Weekly scheduled monitoring with alert generation
-*   **Memory System:** Each agent maintains 5-7 relevant memories for contextual responses
+*   **Financial Analysis:** Comprehensive consultation, planning, and change impact analysis
+*   **Real-time Notifications:** Proactive monitoring and alert system via Socket.io integration
+*   **Agent Memory System:** Persistent memory across all agents for contextual responses and session continuity
 
 ## Included AI Agents
-1. **Router AI** - Message analysis and agent routing
-2. **Data Collector AI** - Input processing and data extraction  
-3. **Analyzer AI** - Financial analysis and calculations
-4. **Planner AI** - Budget and savings plan creation
-5. **Educator AI** - Financial education and explanations
-6. **Monitor AI** - Weekly goal tracking and alerts
-7. **Consultant AI** - Investment and insurance advice
-8. **Compliance Checker AI** - Response validation and regulatory compliance
-9. **Memory Updater AI** - Cross-agent memory management
+1. **Intent and Session Agent** - Message analysis, intent detection, and session state management
+2. **Orchestrator Agent** - Central coordination, task delegation, and final response compilation
+3. **Collect and Create Data Agent** - Multi-modal data parsing, validation, and structured storage
+4. **Consult Customer Agent** - Investment and insurance consultation with scenario modeling
+5. **Make Plan Agent** - Financial planning, budgeting, and goal-based projections
+6. **Add Changes Agent** - Data updates, change impact analysis, and recalculations
+7. **Educate Customer Agent** - Financial literacy education with personalized examples
 
 ## Infrastructure Components
 *   **Database:** PostgreSQL with UUID v7, structured tables, and JSONB flexibility

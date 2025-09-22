@@ -1,0 +1,394 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "refresh",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "d00fa38d-dca9-46ad-8202-6702f2d27c9c",
+            "name": "Refresh Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                4128,
+                592
+            ],
+            "webhookId": "refresh-webhook"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract Authorization header from refresh request\nconst headers = $input.first().json.headers || {};\nconst authHeader = headers.authorization || headers.Authorization || '';\n\nif (!authHeader) {\n  return [{\n    json: {\n      error: true,\n      status: 401,\n      message: 'Authorization header missing for token refresh'\n    }\n  }];\n}\n\n// Check if header starts with 'Bearer '\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      error: true,\n      status: 401,\n      message: 'Invalid authorization format for token refresh'\n    }\n  }];\n}\n\n// Extract token\nconst token = authHeader.substring(7);\n\nif (!token) {\n  return [{\n    json: {\n      error: true,\n      status: 401,\n      message: 'JWT token missing for refresh'\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    token: token,\n    valid: true\n  }\n}];"
+            },
+            "id": "53ec2578-46a2-4bd5-bf03-b6e5b525b523",
+            "name": "Extract Refresh Token",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                4352,
+                592
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "verify",
+                "token": "={{$json.token}}",
+                "options": {}
+            },
+            "id": "63c2f522-68b0-474f-b31f-5e6b2e5581e1",
+            "name": "Verify Current Token",
+            "type": "n8n-nodes-base.jwt",
+            "typeVersion": 1,
+            "position": [
+                4800,
+                688
+            ],
+            "credentials": {
+                "jwtAuth": {
+                    "id": "oOaAzR6thOsg7HXV",
+                    "name": "JWT Auth account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT id, email, name, created_at FROM users WHERE id = '{{ $json.payload.userId }}' AND email = '{{ $json.payload.email }}'",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                4992,
+                688
+            ],
+            "id": "c6345374-c9a1-4a9a-aad7-cc1ff0239e99",
+            "name": "Verify User Exists",
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "leftValue": "={{ $json.id }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "notEmpty"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                5200,
+                688
+            ],
+            "id": "8c85e79d-1c05-47ad-a3d9-d165328688ff",
+            "name": "Check User Valid"
+        },
+        {
+            "parameters": {
+                "useJson": true,
+                "claimsJson": "={\n  \"expiresIn\": \"24h\",\n  \"userId\": \"{{ $json.id }}\",\n  \"email\": \"{{ $json.email }}\"\n}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.jwt",
+            "typeVersion": 1,
+            "position": [
+                5392,
+                672
+            ],
+            "id": "d1b48d3a-bbf5-4c7a-998f-dc8c40a71196",
+            "name": "Generate New JWT",
+            "credentials": {
+                "jwtAuth": {
+                    "id": "oOaAzR6thOsg7HXV",
+                    "name": "JWT Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "mode": "raw",
+                "jsonOutput": "={\n  \"success\": true,\n  \"token\": \"{{ $json.token }}\",\n  \"user\": {\n    \"id\": \"{{ $('Check User Valid').item.json.id }}\",\n    \"email\": \"{{ $('Check User Valid').item.json.email }}\",\n    \"name\": \"{{ $('Check User Valid').item.json.name }}\",\n    \"created_at\": \"{{ $('Check User Valid').item.json.created_at }}\"\n  },\n  \"message\": \"Token refreshed successfully\"\n}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                5568,
+                672
+            ],
+            "id": "ffb6bbc3-9857-4f03-b3e6-e1e1835af040",
+            "name": "Format Refresh Response"
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{$json}}",
+                "options": {}
+            },
+            "id": "a1f385f1-5c59-4c62-973e-03aac9ebad46",
+            "name": "Refresh Success Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                5744,
+                672
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { success: false, error: $json.message || 'Token extraction failed' } }}",
+                "options": {
+                    "responseCode": "={{$json.status || 401}}"
+                }
+            },
+            "id": "b0235a6a-05f9-4351-bbe0-6d300130904e",
+            "name": "Token Error Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                4800,
+                496
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { success: false, error: 'Invalid or expired token' } }}",
+                "options": {
+                    "responseCode": 401
+                }
+            },
+            "id": "6902da19-c993-44dc-a188-6bef15a72b4a",
+            "name": "Token Invalid Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                4992,
+                832
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { success: false, error: 'Database error during refresh' } }}",
+                "options": {
+                    "responseCode": 500
+                }
+            },
+            "id": "fb5eb4ea-1963-455a-9a55-08e4547f5bca",
+            "name": "Database Error Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                5200,
+                832
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "leftValue": "={{ $json.error }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "6f57e5bb-7de3-4685-95a3-727764c0a47a",
+            "name": "Check Token Extraction1",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                4576,
+                592
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { success: false, error: 'User not found or inactive' } }}",
+                "options": {
+                    "responseCode": 404
+                }
+            },
+            "id": "946b45cb-3cb3-4c4a-bf86-ab6b29078164",
+            "name": "User Not Found Error1",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                5392,
+                832
+            ]
+        }
+    ],
+    "connections": {
+        "Refresh Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Refresh Token",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Refresh Token": {
+            "main": [
+                [
+                    {
+                        "node": "Check Token Extraction1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Verify Current Token": {
+            "main": [
+                [
+                    {
+                        "node": "Verify User Exists",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Token Invalid Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Verify User Exists": {
+            "main": [
+                [
+                    {
+                        "node": "Check User Valid",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Database Error Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check User Valid": {
+            "main": [
+                [
+                    {
+                        "node": "Generate New JWT",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "User Not Found Error1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate New JWT": {
+            "main": [
+                [
+                    {
+                        "node": "Format Refresh Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Refresh Response": {
+            "main": [
+                [
+                    {
+                        "node": "Refresh Success Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Token Extraction1": {
+            "main": [
+                [
+                    {
+                        "node": "Token Error Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Verify Current Token",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {
+        "Verify Current Token": [
+            {
+                "payload": {
+                    "expiresIn": "24h",
+                    "userId": "0b1ef5fa-8511-4546-b134-8e6d9c708009",
+                    "email": "test@example.com",
+                    "iat": 1758272990
+                }
+            }
+        ]
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "8f73175c8cfc4e9b66eecf1cdc8ab8fdf6289436294741f796d676a38d70095e"
+    }
+}

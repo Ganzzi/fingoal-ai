@@ -1,9 +1,12 @@
 # Security and Performance
 
 ## Security Requirements
-*   **Authentication:** All requests to the Router Agent (post-MVP) must contain a valid JWT from Firebase Auth. The Router Agent will be the single point of validation.
-*   **Secrets Management:** All credentials (PostgreSQL connection string, LLM API key) will be managed securely within the n8n credentials store, NOT in the workflow JSON files.
-*   **Input Validation:** The n8n agent workflows are responsible for validating and sanitizing all incoming data from the Flutter app before database insertion.
+*   **Authentication:** All protected requests must contain a valid JWT token issued by the n8n auth system. JWT tokens expire after 24 hours and use HMAC SHA-256 signing.
+*   **Password Security:** User passwords are hashed using SHA-256 with input validation (8+ characters, mixed case, numbers required).
+*   **Token Management:** JWT tokens are stored securely in Flutter SharedPreferences with automatic refresh via `/webhook/refresh` endpoint.
+*   **Authorization:** JWT middleware workflow validates tokens and extracts user context for all protected endpoints.
+*   **Secrets Management:** All credentials (PostgreSQL connection string, LLM API keys) are managed securely within the n8n credentials store, NOT in workflow JSON files.
+*   **Input Validation:** n8n agent workflows validate and sanitize all incoming data before database operations.
 
 ## Performance Optimization
 *   **Frontend:** Use `ListView.builder` for all lists to ensure efficient rendering. Implement local caching for dashboard data to reduce API calls.

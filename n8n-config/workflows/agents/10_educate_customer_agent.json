@@ -1,0 +1,680 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "=**FINANCIAL EDUCATION CONTEXT:**\nUser Information: {{ $('When Executed by Another Workflow').first().json.user_info.toJsonString() }}\nUser Message: {{ $('Validate Input Data').first().json.user_message }}\nSession State: {{ $('Validate Input Data').first().json.session_state.toJsonString() }}\nTimestamp: {{ $('Validate Input Data').first().json.timestamp }}\n\n{{ $json.memory_msg }}\n\n**TASK:** Provide personalized financial education tailored to the user's knowledge level and financial situation. Create clear explanations, relevant examples, and engaging learning content that builds financial literacy progressively.",
+                "hasOutputParser": true,
+                "options": {
+                    "systemMessage": "You are FinGoal AI Financial Educator, a certified financial literacy specialist focused on delivering personalized financial education that adapts to each user's knowledge level, learning style, and financial situation.\n\n**CORE EDUCATIONAL MISSION:**\n- Deliver clear, engaging financial education tailored to individual needs and understanding levels\n- Use personalized examples from the user's actual financial situation for maximum relevance\n- Build financial literacy progressively through structured learning paths and knowledge reinforcement\n- Make complex financial concepts accessible through practical applications and real-world scenarios\n- Foster confident financial decision-making through comprehensive understanding and skill development\n\n**EDUCATIONAL CONTENT FRAMEWORK:**\n**Knowledge Level Adaptation:**\n\n**Beginner Level (Financial Literacy Foundations):**\n- **Core Concepts:** Budgeting, saving, compound interest, basic banking, debt fundamentals\n- **Teaching Style:** Simple explanations, step-by-step guidance, basic examples, foundational building blocks\n- **Content Focus:** Practical immediate applications, safety and security, building good habits\n- **Examples:** \"If you save $100/month at 3% interest, after 1 year you'll have $1,236\"\n\n**Intermediate Level (Strategic Financial Planning):**\n- **Core Concepts:** Investment basics, retirement planning, tax strategies, insurance optimization, goal-based planning\n- **Teaching Style:** Comparative analysis, strategy discussions, moderate complexity, decision frameworks\n- **Content Focus:** Strategic thinking, optimization techniques, balancing competing priorities\n- **Examples:** \"Compare 401(k) vs Roth IRA: Traditional saves taxes now, Roth saves taxes in retirement\"\n\n**Advanced Level (Sophisticated Financial Strategies):**\n- **Core Concepts:** Advanced investing, estate planning, tax optimization, alternative investments, business finance\n- **Teaching Style:** Complex analysis, nuanced strategies, sophisticated concepts, expert-level considerations\n- **Content Focus:** Advanced optimization, complex scenarios, sophisticated planning techniques\n- **Examples:** \"Tax-loss harvesting: Sell losing investments before year-end to offset capital gains taxes\"\n\n**TOPIC EXPERTISE AREAS:**\n\n**1. BUDGETING AND CASH FLOW MANAGEMENT:**\n**50/30/20 Rule Education:**\n```\nThe 50/30/20 Framework:\n■■■■■■■■■■■■■■■ 50% Needs (Essential expenses)\n■■■■■■■■■ 30% Wants (Discretionary spending)\n■■■■■ 20% Savings & Debt Payoff\n\nPersonalized Example for User:\n\"With your $5,000 monthly income:\n• $2,500 for needs (rent, utilities, groceries)\n• $1,500 for wants (entertainment, dining out)\n• $1,000 for savings and extra debt payments\"\n```\n\n**Cash Flow Optimization:**\n- **Income Maximization:** Career development, skill building, side hustles, passive income streams\n- **Expense Optimization:** Needs vs wants analysis, subscription audits, lifestyle inflation awareness\n- **Timing Strategies:** Bill consolidation, payment scheduling, seasonal expense planning\n\n**2. COMPOUND INTEREST AND SAVINGS:**\n**The Power of Compound Interest:**\n```javascript\n// Compound Interest Formula Explanation\nFuture Value = Present Value × (1 + interest_rate)^years\n\n// Personalized Example:\n\"Your $10,000 emergency fund goal:\n• At 4% interest, saving $400/month: 24 months to reach goal\n• Total contributed: $9,600\n• Interest earned: $400\n• The earlier you start, the more compound interest works for you!\"\n```\n\n**Emergency Fund Strategy:**\n- **Target Amount:** 3-6 months essential expenses (personalized calculation)\n- **Building Strategy:** Start with $1,000, then build gradually with automatic transfers\n- **Account Selection:** High-yield savings for liquidity and growth\n- **Milestone Celebrations:** Recognition of progress and motivation maintenance\n\n**3. INVESTMENT EDUCATION:**\n**Investment Fundamentals:**\n- **Risk vs Return:** Higher potential returns require accepting higher risk levels\n- **Diversification:** \"Don't put all eggs in one basket\" - spread risk across investments\n- **Time Horizon:** Longer investment periods allow for more aggressive growth strategies\n- **Cost Awareness:** Expense ratios, fees, and trading costs impact long-term returns\n\n**Asset Class Education:**\n```\nInvestment Types by Risk Level:\n🔴 High Risk/High Return: Individual stocks, growth funds, emerging markets\n🟡 Moderate Risk/Return: Diversified stock funds, balanced funds, REITs\n🟢 Low Risk/Low Return: Bonds, CDs, money market funds, savings accounts\n\nAge-Based Allocation Example:\n\"At age 30: Consider 70% stocks, 30% bonds for long-term growth\nAt age 50: Consider 50% stocks, 50% bonds for balanced approach\nAt age 65: Consider 30% stocks, 70% bonds for capital preservation\"\n```\n\n**4. DEBT MANAGEMENT EDUCATION:**\n**Debt Payoff Strategies:**\n\n**Debt Avalanche (Mathematical Optimal):**\n```\nYour Debt Priority Order (Highest Interest First):\n1. Credit Card A: 22.99% APR → Pay extra here first\n2. Credit Card B: 18.99% APR → Pay minimum until #1 is gone\n3. Car Loan: 5.99% APR → Pay minimum until others are gone\n4. Student Loan: 3.99% APR → Pay minimum (may be tax-deductible)\n\nTotal Interest Savings: $3,247 over debt snowball method\n```\n\n**Debt Snowball (Psychological Motivation):**\n```\nYour Debt Priority Order (Smallest Balance First):\n1. Store Card: $500 balance → Quick win motivation\n2. Medical Bill: $1,200 balance → Build momentum\n3. Car Loan: $8,000 balance → Major milestone\n4. Student Loan: $25,000 balance → Final challenge\n\nPsychological Benefits: Quick wins, visible progress, sustained motivation\n```\n\n**5. RETIREMENT PLANNING EDUCATION:**\n**Retirement Savings Fundamentals:**\n```javascript\n// 4% Withdrawal Rule Explanation\nRetirement_Savings_Needed = Annual_Expenses × 25\n\n// Personalized Calculation:\n\"To maintain your current $60,000 annual expenses in retirement:\n• Target retirement savings: $60,000 × 25 = $1,500,000\n• At age 30, saving $500/month at 7% return: $1,480,000 by age 65\n• You're on track to meet your retirement goal!\"\n```\n\n**Tax-Advantaged Account Education:**\n- **401(k) Employer Match:** \"Free money\" - always contribute enough to get full match\n- **Roth vs Traditional IRA:** Tax treatment differences and decision factors\n- **HSA Triple Tax Advantage:** Deductible contributions, tax-free growth, tax-free qualified withdrawals\n\n**6. INSURANCE EDUCATION:**\n**Insurance Needs Analysis:**\n```\nLife Insurance Calculation:\n\"Based on your $75,000 salary and family situation:\n• Income replacement: $75,000 × 10 years = $750,000\n• Outstanding debts: $200,000 mortgage + $25,000 other = $225,000\n• Children's education fund: $100,000\n• Final expenses: $25,000\n• Total life insurance need: $1,100,000\n• Term life insurance cost: ~$50/month for 20-year term\"\n```\n\n**7. TAX OPTIMIZATION EDUCATION:**\n**Tax-Efficient Strategies:**\n- **Tax-Deferred Growth:** 401(k), Traditional IRA contributions reduce current taxes\n- **Tax-Free Growth:** Roth accounts, HSAs provide tax-free retirement income\n- **Tax-Loss Harvesting:** Offset investment gains with investment losses\n- **Asset Location:** Hold tax-inefficient investments in tax-advantaged accounts\n\n**PERSONALIZED LEARNING TECHNIQUES:**\n\n**1. Real-World Examples Using User Data:**\n```javascript\n// Generate personalized examples\nfunction createPersonalizedExample(userProfile, concept) {\n  if (concept === 'emergency_fund') {\n    const monthlyExpenses = userProfile.average_monthly_expenses;\n    const targetFund = monthlyExpenses * 6;\n    const currentSavings = userProfile.savings_balance;\n    const monthlyCapacity = userProfile.monthly_surplus;\n    \n    return `Your Emergency Fund Plan:\n    • Target: $${targetFund.toLocaleString()} (6 months expenses)\n    • Current: $${currentSavings.toLocaleString()}\n    • Gap: $${(targetFund - currentSavings).toLocaleString()}\n    • Timeline: ${Math.ceil((targetFund - currentSavings) / monthlyCapacity)} months at $${monthlyCapacity}/month`;\n  }\n}\n```\n\n**2. Interactive Learning Elements:**\n```\nKnowledge Check: Emergency Fund\n❓ Question: \"You have $2,000 saved and spend $3,000/month. What's your emergency fund coverage?\"\n\n✅ Correct Answer: \"2/3 months = 0.67 months of expenses covered\"\n💡 Learning Point: \"Aim for 3-6 months. You need $7,000-$16,000 more.\"\n🎯 Action Item: \"Start saving $500/month to reach 3-month goal in 14 months.\"\n```\n\n**3. Progressive Skill Building:**\n```\nLearning Path: Investment Basics → Portfolio Construction\n\nPrerequisites Check:\n□ Understanding of risk vs return ✓\n□ Knowledge of asset classes ✓\n□ Emergency fund established ✓\n□ High-interest debt paid off ✓\n\nReady for: \"Advanced Portfolio Diversification Strategies\"\n```\n\n**ENGAGEMENT AND MOTIVATION:**\n\n**Progress Tracking:**\n```\nFinancial Literacy Progress:\n📚 Budgeting: ████████████ 100% Complete\n💰 Saving: ████████░░░░ 75% Complete\n📈 Investing: ████░░░░░░░░ 40% Complete\n🏠 Insurance: ██░░░░░░░░░░ 20% Complete\n\nNext Lesson: \"Understanding Investment Risk Tolerance\"\n```\n\n**Gamification Elements:**\n- **Achievement Badges:** \"Emergency Fund Builder,\" \"Debt Destroyer,\" \"Investment Explorer\"\n- **Learning Streaks:** Consecutive days of financial education engagement\n- **Milestone Celebrations:** Recognition of knowledge and financial progress\n\n**ADAPTIVE CONTENT DELIVERY:**\n\n**Learning Style Accommodation:**\n- **Visual Learners:** Charts, graphs, infographics, progress bars\n- **Auditory Learners:** Explanations with verbal analogies and stories\n- **Kinesthetic Learners:** Interactive calculators, hands-on exercises, action items\n\n**Spaced Repetition:**\n- **Review Schedule:** Important concepts revisited at increasing intervals\n- **Knowledge Reinforcement:** Previous lessons integrated into new content\n- **Practical Application:** Regular opportunities to apply learned concepts\n\nYour goal is to build confident, financially literate users who can make informed decisions about their money through engaging, personalized education that meets them at their current knowledge level and grows with their understanding."
+                }
+            },
+            "id": "e7f1e411-67e8-4942-bd35-94f408dcabe7",
+            "name": "Financial Education AI Agent",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1.6,
+            "position": [
+                400,
+                48
+            ]
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query user profile and preferences to understand current knowledge level and personalize educational content.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "users",
+                    "mode": "list",
+                    "cachedResultName": "users"
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "email",
+                        "name",
+                        "language",
+                        "timezone",
+                        "currency",
+                        "is_active",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                256,
+                384
+            ],
+            "id": "ccf2a44a-08cc-41aa-9458-a6490a756d1b",
+            "name": "Query User Profile",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query user's financial situation (accounts, transactions, goals) to create personalized examples and relevant educational content.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "money_accounts",
+                    "mode": "list",
+                    "cachedResultName": "money_accounts"
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "user_id",
+                        "name",
+                        "account_type",
+                        "institution_name",
+                        "balance",
+                        "currency",
+                        "is_active",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                336,
+                240
+            ],
+            "id": "af4fbbf7-3b46-4e1b-8534-175c0884a84d",
+            "name": "Query Financial Situation",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query recent transactions to understand spending patterns and provide relevant budgeting and expense management education.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "transactions",
+                    "mode": "list",
+                    "cachedResultName": "transactions"
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "user_id",
+                        "account_id",
+                        "category_id",
+                        "amount",
+                        "currency",
+                        "description",
+                        "transaction_date",
+                        "transaction_type",
+                        "merchant_name",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                416,
+                384
+            ],
+            "id": "31774f94-e007-4e71-9505-17ec8678760d",
+            "name": "Query Spending Patterns",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query user goals and complex financial data to provide targeted education on goal achievement and financial planning strategies.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "data_rows",
+                    "mode": "list",
+                    "cachedResultName": "data_rows"
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "user_id",
+                        "metadata_id",
+                        "data",
+                        "status",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                496,
+                240
+            ],
+            "id": "b3752ef7-4337-4930-b435-e24169d90664",
+            "name": "Query Goals & Planning Data",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Execute complex financial calculations for educational examples, compound interest demonstrations, and scenario analysis.",
+                "operation": "executeQuery",
+                "query": "{{ $fromAI('sql_query') }}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                592,
+                384
+            ],
+            "id": "a6ee69b3-6967-4506-b47d-c5c439b49a4f",
+            "name": "Execute Educational Calculations",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+            "typeVersion": 1,
+            "position": [
+                192,
+                240
+            ],
+            "id": "532c737d-210a-45ff-85de-e1e473740662",
+            "name": "Google Gemini Chat Model",
+            "credentials": {
+                "googlePalmApi": {
+                    "id": "BtCIEg4EH9gc1bXj",
+                    "name": "Google Gemini(PaLM) Api account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "schemaType": "manual",
+                "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"memory\": {\n      \"type\": \"string\",\n      \"description\": \"Memory updates for education agent: learning progress, topic mastery, user preferences, completed lessons\"\n    },\n    \"educationalContent\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"lesson_topic\": {\n          \"type\": \"string\",\n          \"description\": \"Primary topic covered in this educational session\"\n        },\n        \"complexity_level\": {\n          \"type\": \"string\",\n          \"enum\": [\"beginner\", \"intermediate\", \"advanced\"]\n        },\n        \"main_explanation\": {\n          \"type\": \"string\",\n          \"description\": \"Core educational content with clear explanations of financial concepts\"\n        },\n        \"personalized_examples\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"example_type\": {\n                \"type\": \"string\",\n                \"enum\": [\"calculation\", \"scenario\", \"comparison\", \"case_study\"]\n              },\n              \"description\": {\"type\": \"string\"},\n              \"user_specific_data\": {\n                \"type\": \"object\",\n                \"description\": \"User's actual financial data used in the example\"\n              },\n              \"learning_outcome\": {\"type\": \"string\"}\n            },\n            \"required\": [\"example_type\", \"description\", \"learning_outcome\"]\n          }\n        },\n        \"interactive_elements\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"knowledge_check_questions\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"object\",\n                \"properties\": {\n                  \"question\": {\"type\": \"string\"},\n                  \"correct_answer\": {\"type\": \"string\"},\n                  \"explanation\": {\"type\": \"string\"}\n                }\n              }\n            },\n            \"practical_exercises\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"object\",\n                \"properties\": {\n                  \"exercise_name\": {\"type\": \"string\"},\n                  \"instructions\": {\"type\": \"string\"},\n                  \"expected_outcome\": {\"type\": \"string\"}\n                }\n              }\n            }\n          }\n        },\n        \"progress_tracking\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"topics_mastered\": {\n              \"type\": \"array\",\n              \"items\": {\"type\": \"string\"}\n            },\n            \"learning_progress_percentage\": {\n              \"type\": \"number\",\n              \"minimum\": 0,\n              \"maximum\": 100\n            },\n            \"next_recommended_topics\": {\n              \"type\": \"array\",\n              \"items\": {\"type\": \"string\"}\n            },\n            \"prerequisite_gaps\": {\n              \"type\": \"array\",\n              \"items\": {\"type\": \"string\"},\n              \"description\": \"Topics that should be learned before advancing to more complex concepts\"\n            }\n          }\n        },\n        \"action_items\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"action\": {\"type\": \"string\"},\n              \"priority\": {\n                \"type\": \"string\",\n                \"enum\": [\"high\", \"medium\", \"low\"]\n              },\n              \"timeline\": {\"type\": \"string\"},\n              \"learning_benefit\": {\"type\": \"string\"}\n            }\n          }\n        },\n        \"key_takeaways\": {\n          \"type\": \"array\",\n          \"items\": {\"type\": \"string\"},\n          \"description\": \"Most important points the user should remember from this lesson\"\n        },\n        \"educational_summary\": {\n          \"type\": \"string\",\n          \"description\": \"Comprehensive summary of the educational content delivered and learning outcomes achieved\"\n        }\n      },\n      \"required\": [\"lesson_topic\", \"complexity_level\", \"main_explanation\", \"key_takeaways\", \"educational_summary\"]\n    }\n  },\n  \"required\": [\"educationalContent\"]\n}"
+            },
+            "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+            "typeVersion": 1.3,
+            "position": [
+                656,
+                240
+            ],
+            "id": "47cfb2dd-b34f-4729-9cc5-d7a1db6de223",
+            "name": "Structured Output Parser"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "final-success",
+                            "name": "success",
+                            "value": true,
+                            "type": "boolean"
+                        },
+                        {
+                            "id": "final-agent",
+                            "name": "agent",
+                            "value": "Educate_Customer_Agent",
+                            "type": "string"
+                        },
+                        {
+                            "id": "final-response-type",
+                            "name": "response_type",
+                            "value": "educational_content",
+                            "type": "string"
+                        },
+                        {
+                            "id": "final-content",
+                            "name": "content",
+                            "value": "={{ $json.output.educationalContent }}",
+                            "type": "object"
+                        },
+                        {
+                            "id": "final-timestamp",
+                            "name": "timestamp",
+                            "value": "={{ new Date().toISOString() }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                768,
+                -32
+            ],
+            "id": "810ac272-4d2c-4907-b617-e2f98e6e4a63",
+            "name": "Format Final Response"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "memory-content-field",
+                            "name": "memory",
+                            "value": "={{ $json.output.memory }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "agent-type-field",
+                            "name": "agent_type",
+                            "value": "={{ $('Validate Input Data').item.json.agent_type }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                768,
+                128
+            ],
+            "id": "6b663015-a827-4476-be30-d25d9952bcbd",
+            "name": "Prepare Memory Update"
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "CD8W2iWJNWd1GY70",
+                    "mode": "list",
+                    "cachedResultName": "MemoryUpdaterAgent"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "memory": "={{ $json.memory }}",
+                        "agent_type": "={{ $json.agent_type }}"
+                    }
+                },
+                "options": {
+                    "waitForSubWorkflow": false
+                }
+            },
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.2,
+            "position": [
+                944,
+                128
+            ],
+            "id": "dd485ad3-b38c-4a62-aa03-9b6a17d27815",
+            "name": "Call MemoryUpdaterAgent"
+        },
+        {
+            "parameters": {
+                "workflowInputs": {
+                    "values": [
+                        {
+                            "name": "user_message"
+                        },
+                        {
+                            "name": "intent"
+                        },
+                        {
+                            "name": "session_state",
+                            "type": "object"
+                        },
+                        {
+                            "name": "user_info",
+                            "type": "object"
+                        }
+                    ]
+                }
+            },
+            "id": "eb351c00-e0f4-476b-825b-482c36421e60",
+            "typeVersion": 1.1,
+            "name": "When Executed by Another Workflow",
+            "type": "n8n-nodes-base.executeWorkflowTrigger",
+            "position": [
+                -272,
+                48
+            ]
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "input-validation-message",
+                            "name": "user_message",
+                            "value": "={{ $json.user_message }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "input-validation-intent",
+                            "name": "intent",
+                            "value": "={{ $json.intent }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "input-validation-session",
+                            "name": "session_state",
+                            "value": "={{ $json.session_state }}",
+                            "type": "object"
+                        },
+                        {
+                            "id": "agent-type-field",
+                            "name": "agent_type",
+                            "value": "consult_customer_agent",
+                            "type": "string"
+                        },
+                        {
+                            "id": "f647f8dd-6978-41a5-8d4b-769834e6fc4e",
+                            "name": "user_id",
+                            "value": "={{ $json.user_info.id }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "07eee8b2-affa-4937-8c7b-77cdf550abc3",
+                            "name": "timestamp",
+                            "value": "={{ $now }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                -96,
+                48
+            ],
+            "id": "b760534a-c235-4ea2-86e9-4e8f48783f3b",
+            "name": "Validate Input Data"
+        },
+        {
+            "parameters": {
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "memories",
+                    "mode": "list",
+                    "cachedResultName": "memories"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "agent_type",
+                            "value": "={{ $('Validate Input Data').item.json.agent_type }}"
+                        },
+                        {
+                            "column": "user_id",
+                            "value": "={{ $('Validate Input Data').item.json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "memory_type",
+                        "content",
+                        "importance_score",
+                        "last_accessed_at",
+                        "id"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                80,
+                48
+            ],
+            "id": "29074b30-47b9-41d2-8927-95790978b19a",
+            "name": "Get Memories",
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const memories = $input.all();\n\nif (memories.length == 1 && Object.keys(memories[0].json).length == 0) {\n  return [{ memory_msg: \"You have no memory.\" }];\n}\n\nlet memory_msg = \"## Your memories\\n\";\nfor (const memory of memories) {\n  if (memory.json.memory_type && memory.json.content && memory.json.content.message) {\n    memory_msg += `- ${memory.json.memory_type}: ${memory.json.content.message} (Importance: ${memory.json.importance_score})\\n`;\n  }\n}\nreturn [{ memory_msg }];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                240,
+                48
+            ],
+            "id": "94c440b1-6c25-4f05-bdbf-94e3aa6cfaaa",
+            "name": "Prepare memories"
+        }
+    ],
+    "connections": {
+        "Financial Education AI Agent": {
+            "main": [
+                [
+                    {
+                        "node": "Format Final Response",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Prepare Memory Update",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query User Profile": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Education AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Financial Situation": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Education AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Spending Patterns": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Education AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Goals & Planning Data": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Education AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Execute Educational Calculations": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Education AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Google Gemini Chat Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Financial Education AI Agent",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Structured Output Parser": {
+            "ai_outputParser": [
+                [
+                    {
+                        "node": "Financial Education AI Agent",
+                        "type": "ai_outputParser",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare Memory Update": {
+            "main": [
+                [
+                    {
+                        "node": "Call MemoryUpdaterAgent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "When Executed by Another Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Input Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Input Data": {
+            "main": [
+                [
+                    {
+                        "node": "Get Memories",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Memories": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare memories",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare memories": {
+            "main": [
+                [
+                    {
+                        "node": "Financial Education AI Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {
+        "When Executed by Another Workflow": [
+            {
+                "user_message": "I want to invest $10,000 in stocks",
+                "intent": "request_consultation",
+                "session_state": {
+                    "in_active_session": false
+                },
+                "user_info": {
+                    "id": "6d736e3f-4f52-43a7-a555-e10b9c1c5272",
+                    "email": "testuser123@example.com",
+                    "name": "Test User",
+                    "language": "en",
+                    "timezone": "UTC",
+                    "currency": "USD"
+                }
+            }
+        ]
+    },
+    "meta": {
+        "instanceId": "8f73175c8cfc4e9b66eecf1cdc8ab8fdf6289436294741f796d676a38d70095e"
+    }
+}

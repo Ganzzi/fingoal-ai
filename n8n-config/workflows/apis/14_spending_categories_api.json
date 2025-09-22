@@ -1,0 +1,927 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "path": "categories",
+                "authentication": "jwtAuth",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "24fc8643-4265-49e6-84a7-a40c2c5426e7",
+            "name": "Get Categories Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                -224,
+                1792
+            ],
+            "webhookId": "categories-get-webhook-id",
+            "credentials": {
+                "jwtAuth": {
+                    "id": "oOaAzR6thOsg7HXV",
+                    "name": "JWT Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "FFVCIbRv16oygx1i",
+                    "mode": "list",
+                    "cachedResultName": "Middleware"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "authHeader": "={{ $json.headers.authorization || $json.headers.Authorization }}"
+                    }
+                },
+                "options": {
+                    "waitForSubWorkflow": true
+                }
+            },
+            "id": "cd88dd2b-9a8e-4592-9a31-b0109961f343",
+            "name": "Execute Auth Middleware",
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.2,
+            "position": [
+                -16,
+                1792
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 1
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-authenticated",
+                            "leftValue": "={{ $json.authenticated }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "c1afb395-7da3-48c0-8df4-74f8c32d93b5",
+            "name": "Check Authentication",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                176,
+                1792
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract user context from JWT payload\nconst jwtPayload = $('Get Categories Webhook').item.json.jwtPayload || {};\nconst userId = jwtPayload.userId || jwtPayload.user_id;\nconst userEmail = jwtPayload.email;\n\nconsole.log('Categories API - GET Request:', {\n  userId,\n  userEmail,\n  timestamp: new Date().toISOString()\n});\n\nreturn [{\n  json: {\n    userId: userId,\n    userEmail: userEmail,\n    timestamp: new Date().toISOString()\n  }\n}];"
+            },
+            "id": "d7b7944b-f058-4952-af19-31e223b2a034",
+            "name": "Extract User Context",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                384,
+                1680
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "WITH user_categories AS (\n  SELECT \n    sc.id,\n    sc.name,\n    sc.icon,\n    sc.color,\n    sc.is_system,\n    COALESCE(b.amount, 0) as allocated_amount,\n    COALESCE(spent.total_spent, 0) as spent_amount,\n    sc.created_at,\n    sc.updated_at\n  FROM spending_categories sc\n  LEFT JOIN budgets b ON sc.id = b.category_id AND b.user_id = '{{ $('Extract User Context').item.json.userId }}'::UUID\n  LEFT JOIN (\n    SELECT \n      t.category_id,\n      SUM(ABS(t.amount)) as total_spent\n    FROM transactions t\n    WHERE t.user_id = '{{ $('Extract User Context').item.json.userId }}'::UUID\n      AND t.transaction_type = 'expense'\n      AND t.transaction_date >= CURRENT_DATE - INTERVAL '30 days'\n    GROUP BY t.category_id\n  ) spent ON sc.id = spent.category_id\n  WHERE sc.user_id = '{{ $('Extract User Context').item.json.userId }}'::UUID OR sc.is_system = false\n  ORDER BY sc.is_system DESC, sc.name ASC\n)\nSELECT \n  json_agg(\n    json_build_object(\n      'id', id,\n      'name', name,\n      'iconName', icon,\n      'colorHex', color,\n      'isDefault', is_system,\n      'allocatedAmount', allocated_amount,\n      'spentAmount', spent_amount,\n      'createdAt', created_at,\n      'updatedAt', updated_at\n    )\n  ) as categories\nFROM user_categories",
+                "options": {}
+            },
+            "id": "19254595-2310-4c46-8b13-814c8b62cd7a",
+            "name": "Fetch Categories",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                592,
+                1680
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Process and format the categories response\nconst queryResult = $json;\nconst categories = queryResult.categories || [];\n\n// Format response with proper structure\nconst response = {\n  success: true,\n  data: {\n    categories: categories,\n    totalCount: categories.length,\n    defaultCount: categories.filter(c => c.isDefault).length,\n    customCount: categories.filter(c => !c.isDefault).length\n  },\n  meta: {\n    timestamp: new Date().toISOString(),\n    version: '1.0.0',\n    endpoint: 'GET /categories'\n  }\n};\n\nconsole.log('Categories Response:', {\n  totalCategories: categories.length,\n  defaultCategories: response.data.defaultCount,\n  customCategories: response.data.customCount\n});\n\nreturn [{\n  json: response\n}];"
+            },
+            "id": "74d3c63b-2cf2-48d4-9468-28baefe6e57c",
+            "name": "Format Categories Response",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                784,
+                1600
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {
+                    "responseCode": 200,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "name": "X-API-Version",
+                                "value": "1.0.0"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "700c5922-bfd9-4017-a165-52e7fd9a25fb",
+            "name": "Respond Success",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                992,
+                1600
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { \"error\": \"Unauthorized\", \"message\": \"Valid JWT token required\" } }}",
+                "options": {
+                    "responseCode": 401,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "0872b307-78aa-4634-b5d8-8f653a059942",
+            "name": "Respond Unauthorized",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                384,
+                1856
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Handle database or processing errors\nconst error = $input.first().json || { message: 'Unknown error' };\n\nconst errorResponse = {\n  success: false,\n  error: {\n    type: 'database_error',\n    message: 'Failed to fetch spending categories',\n    details: error.message || 'Unknown database error',\n    timestamp: new Date().toISOString()\n  }\n};\n\nconsole.error('Categories API Error:', errorResponse);\n\nreturn [{\n  json: errorResponse\n}];"
+            },
+            "id": "7524f177-1f5b-4525-ada0-fb6616deae0d",
+            "name": "Handle Error",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                784,
+                1744
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {
+                    "responseCode": 500,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "b20c9fc6-e968-4a29-96a9-3f8e4c33cddd",
+            "name": "Respond Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                992,
+                1744
+            ]
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "categories",
+                "authentication": "jwtAuth",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "64fb643d-f14a-48f3-8073-ba093c9ebfaa",
+            "name": "Update Categories Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                -224,
+                2080
+            ],
+            "webhookId": "categories-post-webhook-id",
+            "credentials": {
+                "jwtAuth": {
+                    "id": "oOaAzR6thOsg7HXV",
+                    "name": "JWT Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "FFVCIbRv16oygx1i",
+                    "mode": "list",
+                    "cachedResultName": "Middleware"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "authHeader": "={{ $json.headers.authorization || $json.headers.Authorization }}"
+                    }
+                },
+                "options": {
+                    "waitForSubWorkflow": true
+                }
+            },
+            "id": "87e9b2f5-c9e7-4be2-9681-07f95a27dbb6",
+            "name": "Execute Auth Middleware POST",
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.2,
+            "position": [
+                -16,
+                2080
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-authenticated-post",
+                            "leftValue": "={{ $json.authenticated }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "a1e196cc-cbd2-44b1-a8fb-7114eabaa9b8",
+            "name": "Check Authentication POST",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                176,
+                2080
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract and validate POST request data\nconst requestBody = $('Update Categories Webhook').first().json.body || {};\nconst jwtPayload = $('Update Categories Webhook').first().json.jwtPayload || {};\n\nconst userId = jwtPayload.userId || jwtPayload.user_id;\nconst userEmail = jwtPayload.email;\n\n// Extract operation type and category data\nconst operation = requestBody.operation; // 'create', 'update', 'delete'\nconst categoryData = requestBody.category || {};\n\n// Validate required fields\nif (!operation) {\n  throw new Error('Missing required field: operation');\n}\n\nif (!categoryData.name && operation !== 'delete') {\n  throw new Error('Missing required field: category.name');\n}\n\nconst context = {\n  userId,\n  userEmail,\n  operation,\n  categoryData,\n  timestamp: new Date().toISOString()\n};\n\nconsole.log('Categories API - POST Request:', context);\n\nreturn [{\n  json: context\n}];"
+            },
+            "id": "b6d1faa7-1241-462a-b9e5-f71e15abaaa9",
+            "name": "Validate POST Request",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                384,
+                2000
+            ],
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 1
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-operation-type",
+                            "leftValue": "={{ $json.operation }}",
+                            "rightValue": "create",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "71113104-5275-4c5c-9954-503cf11afda1",
+            "name": "Check Operation",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                592,
+                1984
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  id, \n  user_id, \n  is_system,\n  name,\n  icon,\n  color,\n  created_at,\n  updated_at\nFROM spending_categories \nWHERE id = '{{ $('Validate POST Request').item.json.categoryData.id }}'::UUID",
+                "options": {}
+            },
+            "id": "8b05f7d5-8080-43ce-b465-6c2ba588e42a",
+            "name": "Check Category Exists",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                784,
+                2304
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Validate category exists and user has permission to update\nconst queryResult = $input.first().json;\nconst userId = $('Validate POST Request').first().json.userId;\n\n// Check if category was found\nif (!queryResult || Object.keys(queryResult).length === 0) {\n  return [{ message: 'Category not found', isError: true }];\n}\n\n// Check if user has permission (owns the category or it's not a system category)\nif (queryResult.user_id !== userId && queryResult.is_system === true) {\n  return [{ message: 'Cannot update system category.', isError: true }];\n}\n\n// Check if trying to update someone else's custom category\nif (queryResult.user_id !== userId && queryResult.is_system === false) {\n  return [{ message: 'Cannot update category belonging to another user', isError: true }];\n}\n\n// Return the existing category data for the update\nreturn [{\n  isError: false\n}];"
+            },
+            "id": "4afc2c37-3866-441c-9241-0b640ceaaf85",
+            "name": "Validate Category Permission",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                992,
+                2288
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "INSERT INTO spending_categories (id, user_id, name, icon, color, is_system, created_at, updated_at)\nVALUES (gen_random_uuid(), '{{ $('Update Categories Webhook').item.json.jwtPayload.userId }}', '{{ $('Validate POST Request').item.json.categoryData.name }}', '{{ $('Validate POST Request').item.json.categoryData.iconName || \"category\" }}', '{{ $('Validate POST Request').item.json.categoryData.colorHex || \"#2196F3\" }}', false, NOW(), NOW())\nRETURNING \n  id,\n  name,\n  icon,\n  color,\n  is_system,\n  created_at,\n  updated_at",
+                "options": {}
+            },
+            "id": "43b47c77-0da8-4a9d-ba07-61aa62feee91",
+            "name": "Create Category",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                784,
+                1872
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE spending_categories \nSET \n  name = '{{ $('Validate POST Request').item.json.categoryData.name }}',\n  icon = '{{ $('Validate POST Request').item.json.categoryData.iconName || \"category\" }}',\n  color = '{{ $('Validate POST Request').item.json.categoryData.colorHex || \"#2196F3\" }}',\n  updated_at = NOW()\nWHERE id = '{{ $('Validate POST Request').item.json.categoryData.id }}'::UUID\nRETURNING id, name, icon, color, is_system, created_at, updated_at",
+                "options": {}
+            },
+            "id": "d3ec5c52-5139-480f-85d1-2be60305f850",
+            "name": "Update Category",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                1344,
+                2304
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "INSERT INTO budgets (id, user_id, category_id, name, amount, currency, period, start_date, is_active, created_at, updated_at)\nSELECT gen_random_uuid(), '{{ $('Update Categories Webhook').item.json.jwtPayload.userId }}'::UUID, '{{ $(\"Create Category\").item.json.id }}'::UUID, '{{ $('Validate POST Request').item.json.categoryData.name }}', {{ $('Validate POST Request').item.json.categoryData.allocatedAmount || 0 }}, 'USD', 'monthly', CURRENT_DATE, true, NOW(), NOW()\nWHERE {{ $('Validate POST Request').item.json.categoryData.allocatedAmount || 0 }} > 0\nON CONFLICT (user_id, category_id) \nDO UPDATE SET \n    amount = EXCLUDED.amount,\n    name = EXCLUDED.name,\n    updated_at = NOW()\nRETURNING id, amount, 0 as spent_amount",
+                "options": {}
+            },
+            "id": "ea6cdcb6-718d-471a-ae36-d6637abf07c3",
+            "name": "Create/Update Budget",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                1008,
+                1856
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Format successful category operation response\nconst operation = $('Validate POST Request').first().json.operation;\nconst categoryResult = $input.first().json;\n\n// Only get budget result for create operations\nlet budgetResult = { amount: 0, spent_amount: 0 };\nif (operation === 'create') {\n  budgetResult = $('Create/Update Budget').item?.json || { amount: 0, spent_amount: 0 };\n}\n\nconst response = {\n  success: true,\n  data: {\n    category: {\n      id: categoryResult.id,\n      name: categoryResult.name,\n      iconName: categoryResult.icon,\n      colorHex: categoryResult.color,\n      isDefault: categoryResult.is_system,\n      allocatedAmount: budgetResult.amount || 0,\n      spentAmount: budgetResult.spent_amount || 0,\n      createdAt: categoryResult.created_at,\n      updatedAt: categoryResult.updated_at\n    },\n    operation: operation\n  },\n  meta: {\n    timestamp: new Date().toISOString(),\n    version: '1.0.0',\n    endpoint: 'POST /categories'\n  }\n};\n\nconsole.log('Category Operation Success:', {\n  operation,\n  categoryId: categoryResult.id,\n  categoryName: categoryResult.name\n});\n\nreturn [{\n  json: response\n}];"
+            },
+            "id": "f0262699-2cbe-4fc8-86c8-16eec807f12c",
+            "name": "Format POST Success",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1568,
+                1872
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {
+                    "responseCode": 201,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "name": "X-API-Version",
+                                "value": "1.0.0"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "932119d9-fbb1-443c-81f0-4d9fbcc27821",
+            "name": "Respond POST Success",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1760,
+                1872
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { \"error\": \"Unauthorized\", \"message\": \"Valid JWT token required\" } }}",
+                "options": {
+                    "responseCode": 401,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "3fc8f742-9f71-4fe1-81db-efa3b59ff88f",
+            "name": "Respond Unauthorized POST",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                384,
+                2192
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Handle POST operation errors\nconst error = $input.first().json || { message: 'Unknown error' };\nconst operation = $('Validate POST Request').first()?.json?.operation || 'unknown';\n\nconst errorResponse = {\n  success: false,\n  error: {\n    type: 'operation_error',\n    message: `Failed to ${operation} spending category`,\n    details: error.message || 'Unknown operation error',\n    operation: operation,\n    timestamp: new Date().toISOString()\n  }\n};\n\n\nreturn [{\n  json: errorResponse\n}];"
+            },
+            "id": "01ee875d-4d6d-4500-b34d-3b7397f2115c",
+            "name": "Handle POST Error",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1568,
+                2032
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {
+                    "responseCode": 500,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "f9a38be3-d59e-488d-9475-b4dca56f7149",
+            "name": "Respond POST Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1776,
+                2032
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "188390bb-2ac8-417c-809a-0578a4323a94",
+                            "leftValue": "={{ $json.isError }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                1168,
+                2288
+            ],
+            "id": "c3177caf-a4a6-4677-a64d-d1960d0a6e20",
+            "name": "If"
+        }
+    ],
+    "connections": {
+        "Get Categories Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Execute Auth Middleware",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Execute Auth Middleware": {
+            "main": [
+                [
+                    {
+                        "node": "Check Authentication",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Authentication": {
+            "main": [
+                [
+                    {
+                        "node": "Extract User Context",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Respond Unauthorized",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract User Context": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch Categories",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Categories": {
+            "main": [
+                [
+                    {
+                        "node": "Format Categories Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Handle Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Categories Response": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Success",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Handle Error": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update Categories Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Execute Auth Middleware POST",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Execute Auth Middleware POST": {
+            "main": [
+                [
+                    {
+                        "node": "Check Authentication POST",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Authentication POST": {
+            "main": [
+                [
+                    {
+                        "node": "Validate POST Request",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Respond Unauthorized POST",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate POST Request": {
+            "main": [
+                [
+                    {
+                        "node": "Check Operation",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Handle POST Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Operation": {
+            "main": [
+                [
+                    {
+                        "node": "Create Category",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Check Category Exists",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Category Exists": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Category Permission",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Handle POST Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Category Permission": {
+            "main": [
+                [
+                    {
+                        "node": "If",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create Category": {
+            "main": [
+                [
+                    {
+                        "node": "Create/Update Budget",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Handle POST Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update Category": {
+            "main": [
+                [
+                    {
+                        "node": "Format POST Success",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Handle POST Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create/Update Budget": {
+            "main": [
+                [
+                    {
+                        "node": "Format POST Success",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Handle POST Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format POST Success": {
+            "main": [
+                [
+                    {
+                        "node": "Respond POST Success",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Handle POST Error": {
+            "main": [
+                [
+                    {
+                        "node": "Respond POST Error",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "If": {
+            "main": [
+                [
+                    {
+                        "node": "Format POST Success",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Update Category",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {
+        "Update Categories Webhook": [
+            {
+                "headers": {
+                    "host": "localhost:5678",
+                    "user-agent": "curl/8.4.0",
+                    "accept": "*/*",
+                    "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVzSW4iOiIyNGgiLCJ1c2VySWQiOiIwYjFlZjVmYS04NTExLTQ1NDYtYjEzNC04ZTZkOWM3MDgwMDkiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJpYXQiOjE3NTgyNzczMzV9.1Ds4ouSfajFepoaUajeKYEuXZ8cmgbO2kYo16Sq8Wtc",
+                    "content-type": "application/json",
+                    "content-length": "134"
+                },
+                "params": {},
+                "query": {},
+                "body": {
+                    "operation": "create",
+                    "category": {
+                        "name": "Test Category",
+                        "iconName": "test_icon",
+                        "colorHex": "#FF5733",
+                        "allocatedAmount": 500
+                    }
+                },
+                "webhookUrl": "http://localhost:5678/webhook/categories",
+                "executionMode": "production",
+                "jwtPayload": {
+                    "expiresIn": "24h",
+                    "userId": "0b1ef5fa-8511-4546-b134-8e6d9c708009",
+                    "email": "test@example.com",
+                    "iat": 1758277335
+                }
+            }
+        ]
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "8f73175c8cfc4e9b66eecf1cdc8ab8fdf6289436294741f796d676a38d70095e"
+    }
+}

@@ -1,0 +1,1449 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "=**DATA COLLECTION CONTEXT:**\nUser Information: {{ $('When Executed by Another Workflow').first().json.user_info.toJsonString() }}\nUser Message: {{ $('Validate Input Data').first().json.user_message }}\nSession State: {{ $('Validate Input Data').first().json.session_state.toJsonString() }}\nTimestamp: {{ $('Validate Input Data').first().json.timestamp }}\n\n{{ $json.memory_msg }}\n\n**TASK:** Extract, validate, and structure financial information from the user's input. Parse financial data, categorize it appropriately, and assess profile completeness. Use available tools to store data and update the user's financial profile.",
+                "hasOutputParser": true,
+                "options": {
+                    "systemMessage": "You are FinGoal AI Data Collector, a specialized financial information gathering and profile building agent. Your role is to guide users through comprehensive financial data collection, assess profile completeness, and provide seamless handoffs to advisory services.\n\n**CORE MISSION:**\n- Guide users through systematic financial information gathering\n- Provide clear checklists and explanations of required information\n- Extract, validate, and structure financial data from user inputs\n- Assess financial profile completeness and identify gaps\n- Offer appropriate handoffs to consultation or planning services\n\n**INFORMATION GATHERING CHECKLIST:**\nGuide users through collecting these essential financial categories:\n\n**💰 INCOME INFORMATION:**\n- Primary salary/wages (monthly/annual amount, frequency)\n- Additional income sources (freelance, side jobs, rental income)\n- Investment income (dividends, interest, capital gains)\n- Government benefits or pension income\n- Irregular income (bonuses, commissions)\n\n**🏦 MONEY ACCOUNTS:**\n- Checking accounts (bank, balance, purpose)\n- Savings accounts (emergency fund, specific goals)\n- Investment accounts (401k, IRA, brokerage, robo-advisors)\n- Credit cards (limits, current balances, interest rates)\n- Other accounts (HSA, FSA, crypto, cash)\n\n**💸 MONTHLY EXPENSES:**\n- Housing (rent/mortgage, utilities, maintenance)\n- Transportation (car payment, insurance, gas, public transit)\n- Food & dining (groceries, restaurants)\n- Healthcare (insurance premiums, medical expenses)\n- Entertainment & lifestyle (subscriptions, hobbies, travel)\n- Debt payments (minimum payments, extra payments)\n\n**🏠 ASSETS & INVESTMENTS:**\n- Real estate (primary home, investment properties)\n- Investment portfolios (stocks, bonds, mutual funds, ETFs)\n- Retirement accounts (401k, IRA balances)\n- Business ownership or equity\n- Valuable personal property (vehicles, collectibles)\n\n**💳 DEBTS & LIABILITIES:**\n- Credit card debt (balances, minimum payments, APR)\n- Student loans (balances, payment amounts, interest rates)\n- Mortgage(s) (remaining balance, monthly payment, rate)\n- Auto loans (balance, payment, term remaining)\n- Personal loans or other debts\n\n**🎯 FINANCIAL GOALS:**\n- Emergency fund target (3-6 months expenses)\n- Short-term goals (vacation, car, home down payment)\n- Medium-term goals (home purchase, education funding)\n- Long-term goals (retirement, financial independence)\n- Goal amounts and target timelines\n\n**🛡️ INSURANCE COVERAGE:**\n- Health insurance (coverage, premiums, deductibles)\n- Life insurance (coverage amount, premiums, beneficiaries)\n- Disability insurance (coverage, waiting period)\n- Property insurance (auto, home/renters)\n- Professional or specialized insurance needs\n\n**💾 SPENDING CATEGORIES:**\n- Custom spending categories user wants to track\n- Category preferences and organizational structure\n- Special category modifications and icons\n\n**DATA COLLECTION APPROACH:**\n1. **Welcome & Overview:** Explain the information gathering process and its benefits\n2. **Prioritized Collection:** Start with most essential information (income, major accounts, debts)\n3. **Progressive Disclosure:** Ask for information in manageable chunks\n4. **Validation & Confirmation:** Confirm understanding of provided information\n5. **Gap Identification:** Identify missing critical information\n6. **Completeness Assessment:** Evaluate profile readiness for financial planning\n\n**EXTRACTION AND VALIDATION:**\n- Parse natural language financial information accurately\n- Validate currency amounts, dates, and account information\n- Cross-reference related data for consistency\n- Flag potentially incorrect or unusual information for confirmation\n- Structure data according to appropriate storage schemas\n\n**STORAGE STRATEGY:**\n- **Structured Data:** Use dedicated tables for accounts, transactions, categories\n- **Complex Data:** Use JSONB storage (data_metadata/data_rows) for investments, debts, goals, insurance\n- **Schema Management:** Create proper metadata schemas for each data type\n- **Data Relationships:** Maintain proper foreign key relationships\n\n**COMPLETENESS ASSESSMENT FRAMEWORK:**\nEvaluate profile completeness across key areas (0-100%):\n- **Income Sources (20%):** Primary income, additional sources, frequency patterns\n- **Expense Tracking (25%):** Monthly expenses by category, spending patterns\n- **Asset Overview (20%):** Bank accounts, investments, property, retirement savings\n- **Debt Management (20%):** All debts, payment schedules, interest rates\n- **Goal Setting (15%):** Financial objectives with amounts and timelines\n\n**PROGRESSIVE INFORMATION GATHERING:**\n- **Phase 1 (Essential - 40% complete):** Income, major accounts, critical debts, basic goals\n- **Phase 2 (Functional - 70% complete):** Detailed expenses, all accounts, comprehensive debt info\n- **Phase 3 (Comprehensive - 90%+ complete):** Insurance, detailed investments, refined goals, custom categories\n\n**HANDOFF DECISION LOGIC:**\nBased on profile completeness, offer appropriate next steps:\n- **< 40% Complete:** Continue data collection, focus on essential missing information\n- **40-70% Complete:** Offer basic consultation or planning, encourage more data collection\n- **70%+ Complete:** Offer comprehensive consultation or detailed financial planning\n- **90%+ Complete:** Offer advanced portfolio optimization or complex planning scenarios\n\n**HANDOFF MESSAGES:**\nProvide clear transition options:\n- \"Great progress! Would you like investment consultation based on your current profile?\"\n- \"Your profile is comprehensive enough for detailed financial planning. Shall we create your plan?\"\n- \"You have excellent financial data. Would you like advanced portfolio analysis or insurance optimization?\"\n- \"We can start with basic advice now, or gather more information for more personalized recommendations.\"\n\n**USER COMMUNICATION:**\n- Use encouraging, supportive tone throughout the process\n- Explain why each type of information is valuable for financial planning\n- Provide examples and context to help users understand what to share\n- Acknowledge progress and celebrate milestones in data collection\n- Be patient with users who need time to gather information\n\n**PRIVACY AND SECURITY:**\n- Emphasize data security and privacy protection\n- Never store full account numbers (use last 4 digits only)\n- Explain how information will be used for personalized advice\n- Respect user comfort levels with information sharing\n- Provide options for users who prefer not to share certain details\n\nYour goal is to make financial information gathering feel organized, valuable, and secure while building comprehensive profiles that enable exceptional personalized financial advice."
+                }
+            },
+            "id": "ef13e04e-ddfb-4dc4-8963-5fd020358336",
+            "name": "Data Collection AI Agent",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1.6,
+            "position": [
+                96,
+                -224
+            ]
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Insert money accounts (checking, savings, credit cards, investment accounts). Provide account details as parameters: user_id, name, account_type, institution_name, account_number, balance, currency, is_active.",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "money_accounts",
+                    "mode": "list",
+                    "cachedResultName": "money_accounts"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_id": "={{ $fromAI('user_id') }}",
+                        "name": "={{ $fromAI('name') }}",
+                        "account_type": "={{ $fromAI('account_type') }}",
+                        "institution_name": "={{ $fromAI('institution_name') }}",
+                        "account_number": "={{ $fromAI('account_number') }}",
+                        "balance": "={{ $fromAI('balance') }}",
+                        "currency": "={{ $fromAI('currency') }}",
+                        "is_active": "={{ $fromAI('is_active') }}"
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "name",
+                            "displayName": "name",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "account_type",
+                            "displayName": "account_type",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "institution_name",
+                            "displayName": "institution_name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "account_number",
+                            "displayName": "account_number",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "balance",
+                            "displayName": "balance",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "number",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "currency",
+                            "displayName": "currency",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "is_active",
+                            "displayName": "is_active",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "boolean",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "created_at",
+                            "displayName": "created_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                -64,
+                -32
+            ],
+            "id": "cd9ff973-f633-4cf9-8118-0100c4520fdf",
+            "name": "Store Money Accounts",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Insert financial transactions. Provide transaction details as parameters: user_id, account_id, category_id, amount, currency, description, transaction_date, transaction_type, merchant_name, location, tags, receipt_url, notes, is_recurring, recurring_id.",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "transactions",
+                    "mode": "list",
+                    "cachedResultName": "transactions"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_id": "={{ $fromAI('user_id') }}",
+                        "account_id": "={{ $fromAI('account_id') }}",
+                        "category_id": "={{ $fromAI('category_id') }}",
+                        "amount": "={{ $fromAI('amount') }}",
+                        "currency": "={{ $fromAI('currency') }}",
+                        "description": "={{ $fromAI('description') }}",
+                        "transaction_date": "={{ $fromAI('transaction_date') }}",
+                        "transaction_type": "={{ $fromAI('transaction_type') }}",
+                        "merchant_name": "={{ $fromAI('merchant_name') }}",
+                        "location": "={{ $fromAI('location') }}",
+                        "tags": "={{ $fromAI('tags') }}",
+                        "receipt_url": "={{ $fromAI('receipt_url') }}",
+                        "notes": "={{ $fromAI('notes') }}",
+                        "is_recurring": "={{ $fromAI('is_recurring') }}",
+                        "recurring_id": "={{ $fromAI('recurring_id') }}"
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "account_id",
+                            "displayName": "account_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "category_id",
+                            "displayName": "category_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "amount",
+                            "displayName": "amount",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "number",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "currency",
+                            "displayName": "currency",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "description",
+                            "displayName": "description",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "transaction_date",
+                            "displayName": "transaction_date",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "date",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "transaction_type",
+                            "displayName": "transaction_type",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "merchant_name",
+                            "displayName": "merchant_name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "location",
+                            "displayName": "location",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "json",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "tags",
+                            "displayName": "tags",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "receipt_url",
+                            "displayName": "receipt_url",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "notes",
+                            "displayName": "notes",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "is_recurring",
+                            "displayName": "is_recurring",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "boolean",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "recurring_id",
+                            "displayName": "recurring_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "created_at",
+                            "displayName": "created_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                80,
+                -32
+            ],
+            "id": "430a939e-8a69-4af1-b1c1-6abc93174baa",
+            "name": "Store Transactions",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Insert spending categories. Provide category details as parameters: user_id, name, description, color, icon, is_system, is_active.",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "spending_categories",
+                    "mode": "list",
+                    "cachedResultName": "spending_categories"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_id": "={{ $fromAI('user_id') }}",
+                        "name": "={{ $fromAI('name') }}",
+                        "description": "={{ $fromAI('description') }}",
+                        "color": "={{ $fromAI('color') }}",
+                        "icon": "={{ $fromAI('icon') }}",
+                        "is_system": "={{ $fromAI('is_system') }}",
+                        "is_active": "={{ $fromAI('is_active') }}"
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "name",
+                            "displayName": "name",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "description",
+                            "displayName": "description",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "color",
+                            "displayName": "color",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "icon",
+                            "displayName": "icon",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "is_system",
+                            "displayName": "is_system",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "boolean",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "is_active",
+                            "displayName": "is_active",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "boolean",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "created_at",
+                            "displayName": "created_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                240,
+                -32
+            ],
+            "id": "bd6f7341-6500-4bef-b284-2f9c9a137be8",
+            "name": "Store Spending Categories",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Insert data type metadata. Provide metadata parameters: user_id, data_type, schema_definition, version, is_active.",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "data_metadata",
+                    "mode": "list",
+                    "cachedResultName": "data_metadata"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_id": "={{ $fromAI('user_id') }}",
+                        "data_type": "={{ $fromAI('data_type') }}",
+                        "schema_definition": "={{ $fromAI('schema_definition') }}",
+                        "version": "={{ $fromAI('version') }}",
+                        "is_active": "={{ $fromAI('is_active') }}"
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "data_type",
+                            "displayName": "data_type",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "schema_definition",
+                            "displayName": "schema_definition",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "json",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "version",
+                            "displayName": "version",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "number",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "is_active",
+                            "displayName": "is_active",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "boolean",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "created_at",
+                            "displayName": "created_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                336,
+                80
+            ],
+            "id": "40b87949-29cc-4ec0-8cba-b5ddc5c35bea",
+            "name": "Store Data Metadata",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Insert flexible JSON data rows. Provide parameters: user_id, metadata_id, data as JSON object with structured financial data, status.",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "data_rows",
+                    "mode": "list",
+                    "cachedResultName": "data_rows"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_id": "={{ $fromAI('user_id') }}",
+                        "metadata_id": "={{ $fromAI('metadata_id') }}",
+                        "data": "={{ $fromAI('data') }}",
+                        "status": "={{ $fromAI('status') }}"
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "metadata_id",
+                            "displayName": "metadata_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "data",
+                            "displayName": "data",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "json",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "status",
+                            "displayName": "status",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "created_at",
+                            "displayName": "created_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                416,
+                -32
+            ],
+            "id": "08f56839-f9fc-43db-979d-601277e91604",
+            "name": "Store Data Rows",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query existing money accounts to assess profile completeness. Use this to check what accounts user already has before asking for more.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "money_accounts",
+                    "mode": "list",
+                    "cachedResultName": "money_accounts"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "user_id",
+                            "value": "={{ $('Validate Input Data').item.json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "user_id",
+                        "name",
+                        "account_type",
+                        "institution_name",
+                        "balance",
+                        "currency",
+                        "is_active",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                16,
+                80
+            ],
+            "id": "4bc4d61b-8724-4668-94e5-70422e9557a1",
+            "name": "Query Money Accounts",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query existing spending categories to check what categories user already has before creating new ones.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "spending_categories",
+                    "mode": "list",
+                    "cachedResultName": "spending_categories"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "user_id",
+                            "value": "={{ $('Validate Input Data').item.json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "user_id",
+                        "name",
+                        "icon",
+                        "color",
+                        "is_system",
+                        "is_active"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                -272,
+                224
+            ],
+            "id": "cebd3395-2926-4c8b-9e9a-c3885a2f1498",
+            "name": "Query Spending Categories",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query data metadata to see what complex financial data types (investments, debts, goals, insurance) user already has. Call this tool before querying data_rows to understand available schemas.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "data_metadata",
+                    "mode": "list",
+                    "cachedResultName": "data_metadata"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "user_id",
+                            "value": "={{ $('Validate Input Data').item.json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "user_id",
+                        "data_type",
+                        "schema_definition",
+                        "version",
+                        "is_active",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                16,
+                224
+            ],
+            "id": "11c1c0c8-bb15-4c96-9fbb-282e74aea432",
+            "name": "Query Data Metadata",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "# Financial Data Query Tool\n\nUse this tool to query complex financial data from the `data_rows` table. Each data type (investments, debts, goals, insurance) is stored as JSONB with schemas defined in `data_metadata`.\n\n**Instructions:**\n- Use this tool after querying `data_metadata` to understand available schemas\n- Query specific data types using metadata_id or join with data_metadata for all records of a type\n- Access JSONB fields using `data->>'key'` for text and `(data->>'key')::numeric` for numbers\n\n**Common Query Patterns:**\n\n**Query all investments for user:**\n```sql\nSELECT dr.id, dr.data, dm.data_type, dr.created_at\nFROM data_rows dr \nJOIN data_metadata dm ON dm.id = dr.metadata_id \nWHERE dr.user_id = 'user-uuid' AND dm.data_type = 'investment'\n```\n\n**Query all debts with balance > $1000:**\n```sql\nSELECT dr.id, \n  dr.data->>'name' as debt_name,\n  (dr.data->>'balance')::numeric as balance,\n  dr.data->>'type' as debt_type\nFROM data_rows dr \nJOIN data_metadata dm ON dm.id = dr.metadata_id \nWHERE dr.user_id = 'user-uuid' \n  AND dm.data_type = 'debt' \n  AND (dr.data->>'balance')::numeric > 1000\n```\n\n**Query financial goals by priority:**\n```sql\nSELECT \n  dr.data->>'name' as goal_name,\n  (dr.data->>'target_amount')::numeric as target,\n  dr.data->>'target_date' as deadline,\n  dr.data->>'priority' as priority\nFROM data_rows dr \nJOIN data_metadata dm ON dm.id = dr.metadata_id \nWHERE dr.user_id = 'user-uuid' AND dm.data_type = 'goal'\nORDER BY dr.data->>'priority'\n```\n\n**Available Data Types:**\n- 'investment' - stocks, bonds, mutual funds, retirement accounts\n- 'debt' - credit cards, loans, mortgages\n- 'goal' - financial objectives with amounts and timelines\n- 'insurance' - life, health, property, disability coverage\n- 'income' - salary, freelance, investment income sources\n- 'property' - real estate, vehicles, valuable assets",
+                "operation": "executeQuery",
+                "query": "{{ $fromAI('sql_query') }}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                160,
+                224
+            ],
+            "id": "11b421f1-10e7-41a9-8efb-66e599c32a0d",
+            "name": "Query Complex Financial Data",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "schemaType": "manual",
+                "inputSchema": "{\n  \"$id\": \"https://fingoal.ai/schemas/data-collection.json\",\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"dataCollectionResponse\": {\n      \"type\": \"object\",\n      \"description\": \"Comprehensive data collection and guidance response\",\n      \"properties\": {\n        \"message\": {\n          \"type\": \"string\",\n          \"maxLength\": 2000,\n          \"description\": \"Main response message to guide user through data collection\"\n        },\n        \"information_checklist\": {\n          \"type\": \"object\",\n          \"description\": \"Visual checklist of financial information categories\",\n          \"$ref\": \"#/$defs/checklist\"\n        },\n        \"profile_completeness\": {\n          \"type\": \"object\",\n          \"description\": \"Current profile completeness assessment\",\n          \"$ref\": \"#/$defs/completeness\"\n        },\n        \"data_updates\": {\n          \"type\": \"object\",\n          \"description\": \"Summary of data processing and updates made\",\n          \"$ref\": \"#/$defs/updates\"\n        },\n        \"next_steps\": {\n          \"type\": \"array\",\n          \"maxItems\": 5,\n          \"items\": {\n            \"type\": \"object\",\n            \"$ref\": \"#/$defs/action_item\"\n          },\n          \"description\": \"Prioritized next steps for information gathering\"\n        },\n        \"handoff_options\": {\n          \"type\": \"array\",\n          \"maxItems\": 3,\n          \"items\": {\n            \"type\": \"object\",\n            \"$ref\": \"#/$defs/handoff_option\"\n          },\n          \"description\": \"Available service handoff options based on current profile\"\n        },\n        \"collection_phase\": {\n          \"type\": \"string\",\n          \"enum\": [\"welcome\", \"essential\", \"detailed\", \"comprehensive\", \"complete\"],\n          \"description\": \"Current phase of information collection\"\n        },\n        \"user_guidance\": {\n          \"type\": \"array\",\n          \"maxItems\": 3,\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 200\n          },\n          \"description\": \"Helpful tips and guidance for providing information\"\n        }\n      },\n      \"required\": [\"message\", \"profile_completeness\", \"collection_phase\"]\n    },\n    \"memory\": {\n      \"type\": \"object\",\n      \"description\": \"Memory updates for data collection agent\",\n      \"properties\": {\n        \"progress_tracker\": {\n          \"type\": \"string\",\n          \"maxLength\": 1000,\n          \"description\": \"User's information gathering progress and patterns\"\n        },\n        \"data_quality\": {\n          \"type\": \"string\",\n          \"maxLength\": 500,\n          \"description\": \"Assessment of data quality and completeness\"\n        },\n        \"user_preferences\": {\n          \"type\": \"string\",\n          \"maxLength\": 500,\n          \"description\": \"User's information sharing preferences and comfort level\"\n        }\n      }\n    }\n  },\n  \"required\": [\"dataCollectionResponse\", \"memory\"],\n  \"$defs\": {\n    \"checklist\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"income\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"status\": {\"type\": \"string\", \"enum\": [\"complete\", \"partial\", \"missing\"]},\n            \"items\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n            \"priority\": {\"type\": \"string\", \"enum\": [\"high\", \"medium\", \"low\"]}\n          },\n          \"required\": [\"status\", \"priority\"]\n        },\n        \"accounts\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"status\": {\"type\": \"string\", \"enum\": [\"complete\", \"partial\", \"missing\"]},\n            \"items\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n            \"priority\": {\"type\": \"string\", \"enum\": [\"high\", \"medium\", \"low\"]}\n          },\n          \"required\": [\"status\", \"priority\"]\n        },\n        \"expenses\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"status\": {\"type\": \"string\", \"enum\": [\"complete\", \"partial\", \"missing\"]},\n            \"items\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n            \"priority\": {\"type\": \"string\", \"enum\": [\"high\", \"medium\", \"low\"]}\n          },\n          \"required\": [\"status\", \"priority\"]\n        },\n        \"debts\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"status\": {\"type\": \"string\", \"enum\": [\"complete\", \"partial\", \"missing\"]},\n            \"items\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n            \"priority\": {\"type\": \"string\", \"enum\": [\"high\", \"medium\", \"low\"]}\n          },\n          \"required\": [\"status\", \"priority\"]\n        },\n        \"goals\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"status\": {\"type\": \"string\", \"enum\": [\"complete\", \"partial\", \"missing\"]},\n            \"items\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n            \"priority\": {\"type\": \"string\", \"enum\": [\"high\", \"medium\", \"low\"]}\n          },\n          \"required\": [\"status\", \"priority\"]\n        },\n        \"investments\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"status\": {\"type\": \"string\", \"enum\": [\"complete\", \"partial\", \"missing\"]},\n            \"items\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n            \"priority\": {\"type\": \"string\", \"enum\": [\"high\", \"medium\", \"low\"]}\n          },\n          \"required\": [\"status\", \"priority\"]\n        },\n        \"insurance\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"status\": {\"type\": \"string\", \"enum\": [\"complete\", \"partial\", \"missing\"]},\n            \"items\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n            \"priority\": {\"type\": \"string\", \"enum\": [\"high\", \"medium\", \"low\"]}\n          },\n          \"required\": [\"status\", \"priority\"]\n        }\n      },\n      \"required\": [\"income\", \"accounts\", \"expenses\", \"debts\", \"goals\"]\n    },\n    \"completeness\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"overall_percentage\": {\n          \"type\": \"number\",\n          \"minimum\": 0,\n          \"maximum\": 100,\n          \"description\": \"Overall profile completeness percentage\"\n        },\n        \"phase\": {\n          \"type\": \"string\",\n          \"enum\": [\"essential\", \"functional\", \"comprehensive\"],\n          \"description\": \"Current completeness phase\"\n        },\n        \"category_scores\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"income\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100},\n            \"accounts\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100},\n            \"expenses\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100},\n            \"debts\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100},\n            \"goals\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100},\n            \"investments\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100},\n            \"insurance\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100}\n          },\n          \"required\": [\"income\", \"accounts\", \"expenses\", \"debts\", \"goals\"]\n        },\n        \"readiness_assessment\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"consultation_ready\": {\"type\": \"boolean\"},\n            \"planning_ready\": {\"type\": \"boolean\"},\n            \"optimization_ready\": {\"type\": \"boolean\"}\n          },\n          \"required\": [\"consultation_ready\", \"planning_ready\"]\n        }\n      },\n      \"required\": [\"overall_percentage\", \"phase\", \"category_scores\", \"readiness_assessment\"]\n    },\n    \"updates\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"accounts_added\": {\"type\": \"number\", \"minimum\": 0},\n        \"categories_added\": {\"type\": \"number\", \"minimum\": 0},\n\n        \"complex_data_added\": {\"type\": \"number\", \"minimum\": 0},\n        \"schemas_created\": {\"type\": \"number\", \"minimum\": 0},\n        \"processing_summary\": {\n          \"type\": \"string\",\n          \"maxLength\": 300,\n          \"description\": \"Summary of what was processed and stored\"\n        }\n      },\n      \"required\": [\"processing_summary\"]\n    },\n    \"action_item\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"action\": {\n          \"type\": \"string\",\n          \"maxLength\": 100,\n          \"description\": \"Specific action for user to take\"\n        },\n        \"category\": {\n          \"type\": \"string\",\n          \"enum\": [\"income\", \"accounts\", \"expenses\", \"debts\", \"goals\", \"investments\", \"insurance\"]\n        },\n        \"priority\": {\n          \"type\": \"string\",\n          \"enum\": [\"high\", \"medium\", \"low\"]\n        },\n        \"impact\": {\n          \"type\": \"string\",\n          \"maxLength\": 150,\n          \"description\": \"Why this action is important\"\n        },\n        \"examples\": {\n          \"type\": \"array\",\n          \"maxItems\": 3,\n          \"items\": {\"type\": \"string\", \"maxLength\": 50}\n        }\n      },\n      \"required\": [\"action\", \"category\", \"priority\"]\n    },\n    \"handoff_option\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"service\": {\n          \"type\": \"string\",\n          \"enum\": [\"consultation\", \"planning\", \"education\", \"continue_collection\"]\n        },\n        \"title\": {\n          \"type\": \"string\",\n          \"maxLength\": 60,\n          \"description\": \"Display title for the service option\"\n        },\n        \"description\": {\n          \"type\": \"string\",\n          \"maxLength\": 200,\n          \"description\": \"Description of what this service provides\"\n        },\n        \"readiness_level\": {\n          \"type\": \"string\",\n          \"enum\": [\"ready\", \"partial\", \"recommended\"]\n        },\n        \"estimated_time\": {\n          \"type\": \"string\",\n          \"description\": \"Estimated time for this service (e.g., '10-15 minutes')\"\n        }\n      },\n      \"required\": [\"service\", \"title\", \"description\", \"readiness_level\"]\n    }\n  }\n}",
+                "autoFix": true
+            },
+            "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+            "typeVersion": 1.3,
+            "position": [
+                496,
+                80
+            ],
+            "id": "d3040e72-2a8e-443f-b8ec-2ca16b73a9b0",
+            "name": "Structured Output Parser"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "final-success",
+                            "name": "success",
+                            "value": true,
+                            "type": "boolean"
+                        },
+                        {
+                            "id": "final-agent",
+                            "name": "agent",
+                            "value": "DataCollectorAgent",
+                            "type": "string"
+                        },
+                        {
+                            "id": "final-response-type",
+                            "name": "response_type",
+                            "value": "data_collection_guidance",
+                            "type": "string"
+                        },
+                        {
+                            "id": "final-content",
+                            "name": "content",
+                            "value": "={{ $json.output.dataCollectionResponse }}",
+                            "type": "object"
+                        },
+                        {
+                            "id": "final-timestamp",
+                            "name": "timestamp",
+                            "value": "={{ new Date().toISOString() }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                480,
+                -160
+            ],
+            "id": "036d5c65-44bc-438f-a05e-e698b951d72f",
+            "name": "Format Final Response"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "memory-content-field",
+                            "name": "memory",
+                            "value": "={{ JSON.stringify($json.output.memory) }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "agent-type-field",
+                            "name": "agent_type",
+                            "value": "={{ $('Validate Input Data').item.json.agent_type }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                480,
+                -304
+            ],
+            "id": "3740461e-d663-450e-929d-a0c73182c086",
+            "name": "Prepare Memory Update"
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "CD8W2iWJNWd1GY70",
+                    "mode": "list",
+                    "cachedResultName": "MemoryUpdaterAgent"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "memory": "={{ $json.memory }}",
+                        "agent_type": "={{ $json.agent_type }}"
+                    }
+                },
+                "options": {
+                    "waitForSubWorkflow": false
+                }
+            },
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.2,
+            "position": [
+                688,
+                -304
+            ],
+            "id": "6d515b99-8533-493a-9872-d014f7c1e2a1",
+            "name": "Call MemoryUpdaterAgent"
+        },
+        {
+            "parameters": {
+                "workflowInputs": {
+                    "values": [
+                        {
+                            "name": "user_message"
+                        },
+                        {
+                            "name": "intent"
+                        },
+                        {
+                            "name": "session_state",
+                            "type": "object"
+                        },
+                        {
+                            "name": "user_info",
+                            "type": "object"
+                        }
+                    ]
+                }
+            },
+            "id": "756766df-e47d-42b7-9f92-6e1e74b73997",
+            "typeVersion": 1.1,
+            "name": "When Executed by Another Workflow",
+            "type": "n8n-nodes-base.executeWorkflowTrigger",
+            "position": [
+                -592,
+                -224
+            ]
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "input-validation-message",
+                            "name": "user_message",
+                            "value": "={{ $json.user_message }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "input-validation-intent",
+                            "name": "intent",
+                            "value": "={{ $json.intent }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "input-validation-session",
+                            "name": "session_state",
+                            "value": "={{ $json.session_state }}",
+                            "type": "object"
+                        },
+                        {
+                            "id": "agent-type-field",
+                            "name": "agent_type",
+                            "value": "data_collector_agent",
+                            "type": "string"
+                        },
+                        {
+                            "id": "f647f8dd-6978-41a5-8d4b-769834e6fc4e",
+                            "name": "user_id",
+                            "value": "={{ $json.user_info.id }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "07eee8b2-affa-4937-8c7b-77cdf550abc3",
+                            "name": "timestamp",
+                            "value": "={{ $now }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                -416,
+                -224
+            ],
+            "id": "ff352519-30d2-4703-a189-f349bce62cc2",
+            "name": "Validate Input Data"
+        },
+        {
+            "parameters": {
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "memories",
+                    "mode": "list",
+                    "cachedResultName": "memories"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "agent_type",
+                            "value": "={{ $('Validate Input Data').item.json.agent_type }}"
+                        },
+                        {
+                            "column": "user_id",
+                            "value": "={{ $('Validate Input Data').item.json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "memory_type",
+                        "content",
+                        "importance_score",
+                        "last_accessed_at",
+                        "id"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                -240,
+                -224
+            ],
+            "id": "aacbf529-4154-40d5-b981-db671e09739e",
+            "name": "Get Memories",
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const memories = $input.all();\n\nif (memories.length == 1 && Object.keys(memories[0].json).length == 0) {\n  return [{ memory_msg: \"You have no memory.\" }];\n}\n\nlet memory_msg = \"## Your memories\\n\";\nfor (const memory of memories) {\n  if (memory.json.memory_type && memory.json.content && memory.json.content.message) {\n    memory_msg += `- ${memory.json.memory_type}: ${memory.json.content.message} (Importance: ${memory.json.importance_score})\\n`;\n  }\n}\nreturn [{ memory_msg }];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -80,
+                -224
+            ],
+            "id": "5d473746-b668-4fc9-8061-da75e88e281e",
+            "name": "Prepare memories"
+        },
+        {
+            "parameters": {
+                "model": {
+                    "__rl": true,
+                    "value": "openai/gpt-oss-120b",
+                    "mode": "list",
+                    "cachedResultName": "openai/gpt-oss-120b"
+                },
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+            "typeVersion": 1.2,
+            "position": [
+                -256,
+                0
+            ],
+            "id": "865db17e-82f5-45ad-9a28-f4d75835046f",
+            "name": "OpenAI Chat Model",
+            "credentials": {
+                "openAiApi": {
+                    "id": "xtqRzHCLYFCOKzvo",
+                    "name": "nebius"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Data Collection AI Agent": {
+            "main": [
+                [
+                    {
+                        "node": "Format Final Response",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Prepare Memory Update",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Store Money Accounts": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Data Collection AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Store Transactions": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Data Collection AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Store Spending Categories": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Data Collection AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Store Data Metadata": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Data Collection AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Store Data Rows": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Data Collection AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Money Accounts": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Data Collection AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Spending Categories": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Data Collection AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Data Metadata": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Data Collection AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Complex Financial Data": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Data Collection AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Structured Output Parser": {
+            "ai_outputParser": [
+                [
+                    {
+                        "node": "Data Collection AI Agent",
+                        "type": "ai_outputParser",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare Memory Update": {
+            "main": [
+                [
+                    {
+                        "node": "Call MemoryUpdaterAgent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "When Executed by Another Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Input Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Input Data": {
+            "main": [
+                [
+                    {
+                        "node": "Get Memories",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Memories": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare memories",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare memories": {
+            "main": [
+                [
+                    {
+                        "node": "Data Collection AI Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "OpenAI Chat Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Data Collection AI Agent",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    },
+                    {
+                        "node": "Structured Output Parser",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {
+        "When Executed by Another Workflow": [
+            {
+                "user_message": "I want to invest $10,000 in stocks",
+                "intent": "request_consultation",
+                "session_state": {
+                    "in_active_session": false
+                },
+                "user_info": {
+                    "id": "6d736e3f-4f52-43a7-a555-e10b9c1c5272",
+                    "email": "testuser123@example.com",
+                    "name": "Test User",
+                    "language": "en",
+                    "timezone": "UTC",
+                    "currency": "USD"
+                }
+            }
+        ]
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "8f73175c8cfc4e9b66eecf1cdc8ab8fdf6289436294741f796d676a38d70095e"
+    }
+}

@@ -1,12 +1,15 @@
 # **FinGoal AI Fullstack Architecture Document**
 
+- [📊 Implementation Overview (Current Status)](./implementation-overview.md)
 - [Introduction](./introduction.md)
-- [High Level Architecture (Auth refactor: n8n handles Google OAuth)](./high-level-architecture-auth-refactor-n8n-handles-google-oauth.md)
+- [High Level Architecture](./high-level-architecture-auth-refactor-n8n-handles-google-oauth.md)
 - [Tech Stack](./tech-stack.md)
 - [API Specification](./api-specification.md)
+- [API Endpoints Documentation](./api-endpoints.md)
+- [🔐 Authentication & Authorization](./authentication.md)
 - [Components](./components.md)
 - [Core Workflows](./core-workflows.md)
-- [Database Schema](./database-schema.md)
+- [🗄️ Database Schema](./database-schema.md)
 - [Unified Project Structure](./unified-project-structure.md)
 - [Development Workflow](./development-workflow.md)
 - [Future Features & Extensions](./future-features-extensions.md)

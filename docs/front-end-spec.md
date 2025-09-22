@@ -6,10 +6,11 @@ This document defines the user experience goals, information architecture, user 
 The frontend integrates with a sophisticated multi-agent AI backend through n8n workflows, requiring specialized handling for Google OAuth authentication, JWT tokens, and contextual agent responses.
 
 ### Architecture Integration
-*   **Authentication:** Google OAuth via n8n Login API with JWT token management
-*   **Backend Communication:** RESTful APIs through n8n webhooks with specialized agent routing
-*   **Multi-Agent Responses:** Dynamic UI adaptation based on different AI agent response types
-*   **Real-time Features:** Prepared for Socket.io integration for future push notifications
+*   **Authentication:** Email/password authentication via n8n `/webhook/auth` and `/webhook/refresh` with JWT token management, 24-hour token expiration, and automatic refresh
+*   **Backend Communication:** RESTful APIs through n8n webhooks with 8 specialized AI agents (Intent/Session, Orchestrator, Data Collector, Consultant, Plan Maker, Change Adder, Educator, Memory Updater)
+*   **Multi-Agent Responses:** Dynamic UI adaptation supporting structured responses with suggested actions, educational tips, disclaimers, and visualizations
+*   **State Management:** Provider pattern with persistent local storage and robust error handling
+*   **Real-time Features:** Local notifications implemented; Socket.io integration ready for future push notifications
 
 
 ### Overall UX Goals & Principles
@@ -51,13 +52,13 @@ graph TD
 
 ## User Flows
 
-### Google OAuth Authentication Flow
+### Email/Password Authentication Flow
 
-**User Goal:** To securely authenticate with Google and access the AI financial advisor.
+**User Goal:** To securely register or authenticate with email/password and access the AI financial advisor.
 
-**Entry Points:** App launch or when JWT token expires.
+**Entry Points:** App launch, new user registration, or when JWT token expires.
 
-**Success Criteria:** User successfully authenticates via Google OAuth and receives a valid JWT token for API access.
+**Success Criteria:** User successfully registers/authenticates via email/password and receives a valid JWT token for API access.
 
 **Flow Diagram:**
 
@@ -250,16 +251,19 @@ sequenceDiagram
 
 ### Key Screen Layouts
 
-**1. Login Screen (Google OAuth)**
-*   **Purpose:** To provide secure Google OAuth authentication integrated with n8n backend.
-*   **Layout:** Centered vertically and horizontally on the screen.
+**1. Login Screen (Email/Password Authentication)**
+*   **Purpose:** To provide secure email/password authentication with user registration integrated with n8n backend.
+*   **Layout:** Scrollable centered form with responsive design for different screen sizes.
 *   **Key Elements:**
-    *   `App Logo`: FinGoal AI branding at the top.
-    *   `Welcome Message`: "Secure financial guidance powered by AI" 
-    *   **`Sign in with Google Button`**: Official Google Sign-In button that initiates OAuth flow in external browser.
-    *   `Loading State`: Shows progress during authentication and JWT token exchange.
-    *   `Error Handling`: Displays authentication errors with retry option.
-*   **Authentication Flow:** Google OAuth → Authorization Code → n8n Login API → JWT Token → Main App
+    *   `App Logo`: FinGoal AI branding with wallet icon at the top.
+    *   `Welcome Message`: Dynamic text based on mode ("Welcome Back" or "Create Account")
+    *   `Mode Toggle`: Switch between login and registration with "Don't have an account? Register" link
+    *   `Form Fields`: Email, password (plus name and confirm password for registration)
+    *   `Password Validation`: Real-time validation with strength requirements (8+ chars, upper/lower/number)
+    *   `Loading State`: Button loading indicator during authentication
+    *   `Error Handling`: SnackBar error messages with user-friendly text
+    *   `Demo Mode Note`: Footer explaining this is a hackathon demo
+*   **Authentication Flow:** Email/Password → n8n `/webhook/auth` → JWT Token (24h) → AuthWrapper → Main App
 
 **2. Main Navigation Shell**
 *   **Purpose:** To host the primary Chat and Dashboard views and allow seamless navigation between them.

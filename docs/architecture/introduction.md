@@ -11,5 +11,8 @@ N/A - This is a greenfield project. The architecture will be designed from scrat
 
 | Date       | Version | Description      | Author    |
 | :--------- | :------ | :--------------- | :-------- |
+| 2025-09-20 | 3.1     | Updated to 7-agent system: Intent and Session Agent + Orchestrator Agent + 5 specialized agents with session state management | System   |
+| 2025-09-20 | 3.0     | Major architecture refactor: Epic-aligned multi-agent system, dynamic form rendering, real-time notifications with Node.js server | System   |
+| 2025-09-16 | 2.1     | Added comprehensive n8n workflow development references and documentation links | System   |
 | 2025-09-14 | 2.0     | Major architecture update: 9 AI agents, new database schema, API restructure, future Socket.io integration | System   |
 | [Previous] | 1.1     | Use n8n for Google OAuth flows (login & refresh) | Winston   |

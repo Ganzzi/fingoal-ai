@@ -14,4 +14,5 @@ The proposed solution is a chat-centric mobile application that connects users t
 
 | Date       | Version | Description      | Author |
 | :--------- | :------ | :--------------- | :----- |
+| 2025-09-16 | 1.1     | Corrected database schema references (removed financial_data table, added data_metadata/data_rows) and added n8n documentation references | System |
 | [Current Date] | 1.0     | Initial Draft    | John   |

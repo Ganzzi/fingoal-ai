@@ -1,7 +1,7 @@
 # High Level Architecture (Auth refactor: n8n handles Google OAuth)
 
 ## Technical Summary
-n8n acts as the complete backend system, providing REST-like APIs through webhook endpoints for all mobile app interactions including login, token refresh, profile management, chat, and dashboard data. The authentication flow works as follows:
+n8n acts as the complete backend system, providing REST-like APIs through webhook endpoints for all mobile app interactions including authentication, chat messaging, dynamic form rendering, dashboard data, and notification triggers. The authentication flow works as follows:
 
 - Mobile app initiates Google OAuth and receives authorization code
 - Mobile app calls n8n login API with the authorization code
@@ -9,16 +9,24 @@ n8n acts as the complete backend system, providing REST-like APIs through webhoo
 - n8n issues JWT session token to mobile app for subsequent API calls
 - For token refresh, mobile app calls n8n refresh API, which handles Google token renewal
 
-The system uses a multi-agent AI architecture with 9 specialized agents, each with persistent memory stored in PostgreSQL. User data is flexibly stored using JSONB schemas for complex financial information while maintaining structured tables for core entities.
+The system uses a specialized 7-agent AI architecture with dual-entry coordination: Intent and Session Agent handles message analysis and session management, while the Orchestrator Agent coordinates 5 specialized agents (Collect/Create Data, Consult Customer, Make Plan, Add Changes, Educate Customer), each with persistent memory stored in PostgreSQL. The architecture supports:
+
+- **Chat Interface & Messaging**: Real-time communication with AI agents through a central Router Agent
+- **Dynamic Form Rendering**: JSON-driven form generation for flexible data collection within chat conversations
+- **Financial Dashboard**: Comprehensive data visualization with specialized Dashboard API
+- **Real-time Notifications**: Standalone Node.js Socket.IO server for immediate alerts triggered by n8n workflows
+
+User data is flexibly stored using JSONB schemas for complex financial information while maintaining structured tables for core entities.
 
 ## Platform and Infrastructure Choice
-*   Platform: n8n Cloud + External PostgreSQL + Future Socket.io Server
-    *   Rationale: n8n serves as the complete backend, providing REST APIs via webhooks, orchestrating multi-agent AI workflows, and managing all data persistence.
+*   Platform: n8n Cloud + External PostgreSQL + Node.js Socket.IO Server
+    *   Rationale: n8n serves as the complete backend, providing REST APIs via webhooks, orchestrating multi-agent AI workflows, and managing all data persistence. Node.js server handles real-time notifications.
 *   Key Services:
-    *   n8n Cloud: Workflow execution, webhook-based API endpoints, HTTP request nodes, scheduled monitoring, multi-agent orchestration
-    *   PostgreSQL: Structured data storage (users, accounts, transactions) + flexible JSONB storage for complex financial data + agent memory system
-    *   LLM Provider: OpenAI/Grok for AI agent interactions
-    *   Future: Node.js Socket.io server for real-time push notifications and bank integration alerts
+    *   **n8n Cloud**: Workflow execution, webhook-based API endpoints, HTTP request nodes, scheduled monitoring, multi-agent orchestration, dynamic form generation
+    *   **PostgreSQL**: Structured data storage (users, accounts, transactions) + flexible JSONB storage for complex financial data + agent memory system + form schemas
+    *   **LLM Provider**: OpenAI/Gemini for AI agent interactions and natural language processing
+    *   **Node.js Socket.IO Server**: Real-time notification delivery, user session management, offline message queuing
+    *   **Flutter**: Cross-platform mobile app with dynamic form rendering, chat interface, dashboard visualization
 
 ## Auth Design Details
 - Authentication Agent (n8n) responsibilities:
@@ -34,14 +42,14 @@ The system uses a multi-agent AI architecture with 9 specialized agents, each wi
   - Encrypt tokens at rest and restrict DB access.
 - Client flow (recommended):
   1. Flutter initiates Google OAuth in external browser with PKCE, redirect URI points to a lightweight redirect handler (deep link) that returns an auth code.
-  2. Flutter sends auth code to Router Agent /n8n webhook for "auth/exchange".
+  2. Flutter sends auth code to Router Agent /n8n-config webhook for "auth/exchange".
   3. n8n Authentication Agent exchanges code, stores tokens, returns app JWT to Flutter.
   4. When access_token expires, Flutter calls /auth/refresh; n8n uses stored refresh_token to refresh with Google and returns new app JWT.
 
 ## Repository Structure
 *   Structure: Monorepo
     *   Rationale: Keeps Flutter app, n8n workflow exports, and future Socket.io server together.
-    *   Package Organization: `/app` for Flutter, `/n8n` for exported workflows, `/server` for future Socket.io server, shared environment template.
+    *   Package Organization: `/app` for Flutter, `/n8n-config` for exported workflows, `/server` for future Socket.io server, shared environment template.
 
 ## High Level Architecture Diagram
 ```mermaid
@@ -51,14 +59,19 @@ graph TD
     end
 
     subgraph n8n Cloud
-        R[Router Agent - Webhook API Gateway]
-        Auth[Authentication Agent - OAuth Exchange & Refresh]
-        D[Intake Agent Workflow]
-        F[Analysis Agent Workflow]
-        G[Interaction Agent Workflow]
-        H[Dashboard Agent Workflow]
-        I[Monitoring Agent Workflow]
+        IS[Intent and Session Agent - Message Analysis]
+        OR[Orchestrator Agent - Coordination Hub]
+        CC[Collect/Create Data Agent]
+        CS[Consult Customer Agent]
+        MP[Make Plan Agent]
+        AC[Add Changes Agent]
+        EC[Educate Customer Agent]
         J[DB Init Workflow]
+    end
+
+    subgraph Node.js Server
+        NS[Socket.IO Notification Server]
+        Queue[Message Queue for Offline Users]
     end
 
     subgraph Google
@@ -74,25 +87,26 @@ graph TD
         L[PostgreSQL Database]
     end
 
+    A -- Chat Messages --> IS
+    IS -- Intent Analysis --> OR
+    OR -- Task Delegation --> CC
+    OR -- Task Delegation --> CS
+    OR -- Task Delegation --> MP
+    OR -- Task Delegation --> AC
+    OR -- Task Delegation --> EC
+    OR -- Compiled Response --> A
     A -- Opens Google Consent (PKCE) --> U
-    U -- Redirect with auth code --> A
-    A -- Calls --> R
-    R --> Auth
-    Auth -- HTTP POST --> O
-    O -- Returns tokens --> Auth
-    Auth --> L
-    Auth -- Issues app JWT --> A
-
-    A -- API requests with app JWT --> R
-    R -- Dispatches to --> D
-    D --> L
-    D --> K
+    NS -- Real-time notification --> A
 ```
 
 ## Architectural Patterns
-*   Multi-Agent Architecture: 9 specialized AI agents with persistent memory and specific responsibilities
-*   API Gateway Pattern: Router AI centralizes all mobile app requests and routes to appropriate agents
-*   Hybrid Data Storage: Structured tables for core entities + flexible JSONB for complex financial schemas
-*   Memory-Driven Intelligence: Each agent maintains 5-7 relevant memories for context-aware responses
-*   Serverless Workflows: n8n orchestrates all external calls (Google OAuth, LLM, future bank APIs)
-*   Event-Driven Monitoring: Scheduled workflows for goal tracking and real-time alerts
+*   **7-Agent Architecture**: Dual-entry system with Intent and Session Agent + Orchestrator Agent coordinating 5 specialized agents (Collect/Create Data, Consult Customer, Make Plan, Add Changes, Educate Customer) with persistent memory and specific responsibilities
+*   **Dual-Agent Gateway Pattern**: Intent and Session Agent handles message analysis and session management, while Orchestrator Agent coordinates task delegation and compiles responses
+*   **Session State Management**: Persistent session continuity across all agents with shared memory systems
+*   **Agent Workflow Coordination**: Orchestrated task delegation between specialized agents with compliance validation
+*   **Dynamic Form Rendering**: JSON-schema driven form generation enabling flexible data collection within chat conversations
+*   **Real-time Communication**: Socket.IO integration for immediate notification delivery and bidirectional communication
+*   **Hybrid Data Storage**: Structured tables for core entities + flexible JSONB for complex financial schemas + session state management
+*   **Memory-Driven Intelligence**: Each agent maintains contextual memories for consistent, personalized responses across conversations
+*   **Serverless Workflows**: n8n orchestrates all external calls (Google OAuth, LLM, notification server, future bank APIs)
+*   **Event-Driven Monitoring**: Scheduled workflows for goal tracking with real-time alert triggering
