@@ -24,28 +24,40 @@ class DashboardService {
     try {
       final uri = Uri.parse('$_baseUrl/dashboard');
 
-      final response = await http
-          .post(
-            uri,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $authToken',
-            },
-            body:
-                json.encode({}), // Dashboard Agent expects POST with empty body
-          )
-          .timeout(_timeout);
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+      ).timeout(_timeout);
 
       final responseData = json.decode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200) {
-        return DashboardData.fromJson(responseData);
+        // Check if response has success field
+        if (responseData['success'] == true) {
+          return DashboardData.fromJson(responseData);
+        } else {
+          throw DashboardServiceException(
+            message: responseData['error']?['message'] as String? ??
+                'API returned unsuccessful response',
+            statusCode: response.statusCode,
+            type: DashboardServiceExceptionType.apiError,
+          );
+        }
       } else {
+        // Handle error response
+        final errorMessage = responseData['error']?['message'] as String? ??
+            responseData['message'] as String? ??
+            'Failed to fetch dashboard data';
+
         throw DashboardServiceException(
-          message: responseData['message'] as String? ??
-              'Failed to fetch dashboard data',
+          message: errorMessage,
           statusCode: response.statusCode,
-          type: DashboardServiceExceptionType.apiError,
+          type: response.statusCode == 401
+              ? DashboardServiceExceptionType.authenticationError
+              : DashboardServiceExceptionType.apiError,
         );
       }
     } on FormatException {
@@ -84,23 +96,20 @@ class DashboardService {
 
   /// Test API connectivity
   ///
-  /// Performs a lightweight test to check if the Dashboard Agent
+  /// Performs a lightweight test to check if the Dashboard API
   /// endpoint is reachable and responding. Useful for diagnostics
   /// and network connectivity validation.
   Future<bool> testConnectivity() async {
     try {
       final uri = Uri.parse('$_baseUrl/dashboard');
 
-      final response = await http
-          .post(
-            uri,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer test-token',
-            },
-            body: json.encode({}),
-          )
-          .timeout(const Duration(seconds: 5));
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer test-token',
+        },
+      ).timeout(const Duration(seconds: 5));
 
       // We expect either 200 (success) or 401 (auth error)
       // Both indicate the service is reachable

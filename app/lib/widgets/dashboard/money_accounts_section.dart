@@ -55,9 +55,9 @@ class AccountCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (account.institution != null)
+                        if (account.institutionName != null)
                           Text(
-                            account.institution!,
+                            account.institutionName!,
                             style: textTheme.bodySmall?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),

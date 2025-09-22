@@ -2,13 +2,13 @@
     "nodes": [
         {
             "parameters": {},
-            "id": "6bbe6f8b-4c72-467c-96b8-c3a4b906eb0c",
+            "id": "8b896217-c47b-4ad9-a048-2c941cf641c8",
             "name": "Manual Trigger",
             "type": "n8n-nodes-base.manualTrigger",
             "typeVersion": 1,
             "position": [
-                -304,
-                256
+                -224,
+                176
             ]
         },
         {
@@ -17,13 +17,13 @@
                 "query": "-- Enable UUID v7 extension for time-ordered unique identifiers\nCREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";",
                 "options": {}
             },
-            "id": "f8ef1ea9-216b-465d-a595-19c211953047",
+            "id": "d2e780a2-6957-4974-a534-14c48817b796",
             "name": "Enable UUID Extension",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2.4,
             "position": [
-                -112,
-                256
+                -32,
+                176
             ],
             "alwaysOutputData": true,
             "credentials": {
@@ -39,13 +39,13 @@
                 "query": "-- Create users table with UUID v7 primary key for email/password authentication\nCREATE TABLE IF NOT EXISTS users (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    email VARCHAR(255) UNIQUE NOT NULL,\n    password_hash VARCHAR(255) NOT NULL,\n    name VARCHAR(255) NOT NULL,\n    avatar_url TEXT,\n    language VARCHAR(10) DEFAULT 'en',\n    timezone VARCHAR(50) DEFAULT 'UTC',\n    currency VARCHAR(3) DEFAULT 'USD',\n    is_active BOOLEAN DEFAULT true,\n    last_login TIMESTAMPTZ,\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\n\n-- Create index for email lookups\nCREATE INDEX IF NOT EXISTS idx_users_email ON users(email);\nCREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active);",
                 "options": {}
             },
-            "id": "ca4a84b8-df3f-498f-8238-1893f91fefc2",
+            "id": "8ec6063d-994f-484d-b671-7746e7d78a3c",
             "name": "Create Users Table",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2.4,
             "position": [
-                96,
-                -112
+                176,
+                -192
             ],
             "alwaysOutputData": true,
             "credentials": {
@@ -61,13 +61,13 @@
                 "query": "-- Create money_accounts table for financial holdings\nCREATE TABLE IF NOT EXISTS money_accounts (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    name VARCHAR(255) NOT NULL,\n    account_type VARCHAR(50) NOT NULL, -- 'bank', 'credit_card', 'cash', 'investment'\n    institution_name VARCHAR(255),\n    account_number VARCHAR(255),\n    balance DECIMAL(15,2) DEFAULT 0.00,\n    currency VARCHAR(3) DEFAULT 'USD',\n    is_active BOOLEAN DEFAULT true,\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\n\n-- Create index for better query performance\nCREATE INDEX IF NOT EXISTS idx_money_accounts_user_id ON money_accounts(user_id);\nCREATE INDEX IF NOT EXISTS idx_money_accounts_type ON money_accounts(account_type);",
                 "options": {}
             },
-            "id": "a501021b-bf3d-430e-ab0e-1f4c6413c4bb",
+            "id": "daf2ce2d-bf13-4ea3-bc02-4b07664cdf09",
             "name": "Create Money Accounts Table",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2.4,
             "position": [
-                304,
-                -112
+                384,
+                -192
             ],
             "alwaysOutputData": true,
             "credentials": {
@@ -83,13 +83,13 @@
                 "query": "-- Create spending_categories table\nCREATE TABLE IF NOT EXISTS spending_categories (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID REFERENCES users(id) ON DELETE CASCADE, -- NULL for system categories\n    name VARCHAR(255) NOT NULL,\n    description TEXT,\n    color VARCHAR(7), -- Hex color code\n    icon VARCHAR(50),\n    is_system BOOLEAN DEFAULT false,\n    is_active BOOLEAN DEFAULT true,\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    UNIQUE(user_id, name)\n);\n\n-- Create index for better query performance\nCREATE INDEX IF NOT EXISTS idx_spending_categories_user_id ON spending_categories(user_id);\nCREATE INDEX IF NOT EXISTS idx_spending_categories_system ON spending_categories(is_system);",
                 "options": {}
             },
-            "id": "8e6e98fc-1302-4cc5-a4fd-b26d7b80d356",
+            "id": "ee214177-8207-48f6-9f7d-6227c122b932",
             "name": "Create Spending Categories Table",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2.4,
             "position": [
-                96,
-                64
+                176,
+                -16
             ],
             "alwaysOutputData": true,
             "credentials": {
@@ -105,13 +105,13 @@
                 "query": "-- Create budgets table with enhanced period support\nCREATE TABLE IF NOT EXISTS budgets (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    category_id UUID NOT NULL REFERENCES spending_categories(id) ON DELETE CASCADE,\n    name VARCHAR(255) NOT NULL,\n    amount DECIMAL(15,2) NOT NULL,\n    currency VARCHAR(3) DEFAULT 'USD',\n    period VARCHAR(20) NOT NULL DEFAULT 'monthly', -- 'weekly', 'monthly', 'quarterly', 'yearly', 'custom'\n    start_date DATE NOT NULL,\n    end_date DATE,\n    is_active BOOLEAN DEFAULT true,\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\n\n-- Create indexes for better query performance\nCREATE INDEX IF NOT EXISTS idx_budgets_user_id ON budgets(user_id);\nCREATE INDEX IF NOT EXISTS idx_budgets_category_id ON budgets(category_id);\nCREATE INDEX IF NOT EXISTS idx_budgets_period ON budgets(period);\nCREATE INDEX IF NOT EXISTS idx_budgets_dates ON budgets(start_date, end_date);",
                 "options": {}
             },
-            "id": "cf2bfa06-20be-4a15-b9c5-0f60edd5b39a",
+            "id": "26d03260-33e5-4fb0-9874-7c4bfb9f705f",
             "name": "Create Budgets Table",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2.4,
             "position": [
-                304,
-                256
+                384,
+                176
             ],
             "alwaysOutputData": true,
             "credentials": {
@@ -127,13 +127,13 @@
                 "query": "-- Create transactions table\nCREATE TABLE IF NOT EXISTS transactions (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    account_id UUID NOT NULL REFERENCES money_accounts(id) ON DELETE CASCADE,\n    category_id UUID REFERENCES spending_categories(id) ON DELETE SET NULL,\n    amount DECIMAL(15,2) NOT NULL,\n    currency VARCHAR(3) DEFAULT 'USD',\n    description TEXT,\n    transaction_date DATE NOT NULL,\n    transaction_type VARCHAR(20) NOT NULL DEFAULT 'expense', -- 'income', 'expense', 'transfer'\n    merchant_name VARCHAR(255),\n    location JSONB, -- Store latitude/longitude and address\n    tags TEXT[], -- Array of tags for filtering\n    receipt_url TEXT,\n    notes TEXT,\n    is_recurring BOOLEAN DEFAULT false,\n    recurring_id UUID, -- Reference to parent recurring transaction\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\n\n-- Create indexes for better query performance\nCREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);\nCREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions(account_id);\nCREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id);\nCREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date);\nCREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(transaction_type);\nCREATE INDEX IF NOT EXISTS idx_transactions_tags ON transactions USING GIN(tags);",
                 "options": {}
             },
-            "id": "e372c274-dd14-454c-be88-f27300f87e35",
+            "id": "c5fe074d-3cb0-43a5-9576-6f9b24699b34",
             "name": "Create Transactions Table",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2.4,
             "position": [
-                96,
-                256
+                176,
+                176
             ],
             "alwaysOutputData": true,
             "credentials": {
@@ -149,13 +149,13 @@
                 "query": "-- Create data_metadata table for JSONB schema definitions\nCREATE TABLE IF NOT EXISTS data_metadata (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    data_type VARCHAR(50) NOT NULL, -- 'debt', 'property', 'investment', 'insurance', 'savings', 'goal'\n    schema_definition JSONB NOT NULL, -- JSON schema for the data type\n    version INTEGER DEFAULT 1,\n    is_active BOOLEAN DEFAULT true,\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    UNIQUE(user_id, data_type, version)\n);\n\n-- Create indexes for better query performance\nCREATE INDEX IF NOT EXISTS idx_data_metadata_user_id ON data_metadata(user_id);\nCREATE INDEX IF NOT EXISTS idx_data_metadata_type ON data_metadata(data_type);\nCREATE INDEX IF NOT EXISTS idx_data_metadata_schema ON data_metadata USING GIN(schema_definition);",
                 "options": {}
             },
-            "id": "b0e9a572-5381-455b-894a-48d0023350a6",
+            "id": "d306051d-04c5-4f23-bfe1-29af73213a8b",
             "name": "Create Data Metadata Table",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2.4,
             "position": [
-                96,
-                464
+                176,
+                384
             ],
             "alwaysOutputData": true,
             "credentials": {
@@ -171,13 +171,13 @@
                 "query": "-- Create data_rows table for JSONB data storage\nCREATE TABLE IF NOT EXISTS data_rows (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    metadata_id UUID NOT NULL REFERENCES data_metadata(id) ON DELETE CASCADE,\n    data JSONB NOT NULL, -- The actual financial data\n    status VARCHAR(20) DEFAULT 'active', -- 'active', 'archived', 'deleted'\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\n\n-- Create indexes for better query performance\nCREATE INDEX IF NOT EXISTS idx_data_rows_user_id ON data_rows(user_id);\nCREATE INDEX IF NOT EXISTS idx_data_rows_metadata_id ON data_rows(metadata_id);\nCREATE INDEX IF NOT EXISTS idx_data_rows_status ON data_rows(status);\nCREATE INDEX IF NOT EXISTS idx_data_rows_data ON data_rows USING GIN(data);\nCREATE INDEX IF NOT EXISTS idx_data_rows_created_at ON data_rows(created_at);",
                 "options": {}
             },
-            "id": "c9fcf914-d79f-4af6-898c-dca1dc618060",
+            "id": "ee6d81c1-dd2b-4352-a477-e86af0dcc891",
             "name": "Create Data Rows Table",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2.4,
             "position": [
-                304,
-                464
+                384,
+                384
             ],
             "alwaysOutputData": true,
             "credentials": {
@@ -193,13 +193,13 @@
                 "query": "-- Create memories table for AI agent persistent memory\nCREATE TABLE IF NOT EXISTS memories (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    agent_type VARCHAR(50) NOT NULL, -- 'router', 'data_collector', 'analyzer', etc.\n    memory_type VARCHAR(50) NOT NULL, -- 'conversation', 'preference', 'context', 'learning'\n    content JSONB NOT NULL, -- Flexible memory content\n    importance_score DECIMAL(3,2) DEFAULT 0.5, -- 0.0 to 1.0\n    access_count INTEGER DEFAULT 0,\n    last_accessed_at TIMESTAMPTZ,\n    expires_at TIMESTAMPTZ,\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\n\n-- Create indexes for better query performance\nCREATE INDEX IF NOT EXISTS idx_memories_user_id ON memories(user_id);\nCREATE INDEX IF NOT EXISTS idx_memories_agent_type ON memories(agent_type);\nCREATE INDEX IF NOT EXISTS idx_memories_type ON memories(memory_type);\nCREATE INDEX IF NOT EXISTS idx_memories_importance ON memories(importance_score);\nCREATE INDEX IF NOT EXISTS idx_memories_expires ON memories(expires_at);\nCREATE INDEX IF NOT EXISTS idx_memories_content ON memories USING GIN(content);",
                 "options": {}
             },
-            "id": "87ce6c06-62cb-4439-9e86-0629de403824",
+            "id": "5b208b10-392e-4bd9-941b-2e31f5cc22cc",
             "name": "Create Memories Table",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2.4,
             "position": [
-                96,
-                672
+                176,
+                592
             ],
             "alwaysOutputData": true,
             "credentials": {
@@ -215,13 +215,13 @@
                 "query": "-- Create messages table for chat conversation history\nCREATE TABLE IF NOT EXISTS messages (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    session_id VARCHAR(255) NOT NULL, -- Group messages by conversation session\n    message_type VARCHAR(20) NOT NULL DEFAULT 'text', -- 'text', 'image', 'audio', 'file'\n    content TEXT,\n    media_url TEXT, -- For images, audio, files\n    media_metadata JSONB, -- Additional metadata for media files\n    sender_type VARCHAR(20) NOT NULL DEFAULT 'user', -- 'user', 'agent', 'system'\n    language VARCHAR(2) NOT NULL DEFAULT 'en', -- 'en' or 'vi'\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\n\n-- Create indexes for better query performance\nCREATE INDEX IF NOT EXISTS idx_messages_user_id ON messages(user_id);\nCREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id);\nCREATE INDEX IF NOT EXISTS idx_messages_type ON messages(message_type);\nCREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_type);\nCREATE INDEX IF NOT EXISTS idx_messages_language ON messages(language);\nCREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);\nCREATE INDEX IF NOT EXISTS idx_messages_media_metadata ON messages USING GIN(media_metadata);",
                 "options": {}
             },
-            "id": "eccf2665-b5b2-4f6e-822b-e7583a1e6db1",
+            "id": "657d9f78-ec0e-4472-9f4b-f62e7ce9a682",
             "name": "Create Messages Table",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2.4,
             "position": [
-                304,
-                672
+                384,
+                592
             ],
             "alwaysOutputData": true,
             "credentials": {
@@ -237,13 +237,13 @@
                 "query": "-- Create alerts table for user notifications and system alerts\nCREATE TABLE IF NOT EXISTS alerts (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    alert_type VARCHAR(50) NOT NULL, -- 'budget_exceeded', 'goal_achieved', 'payment_due', 'market_alert'\n    title VARCHAR(255) NOT NULL,\n    message TEXT NOT NULL,\n    severity VARCHAR(20) DEFAULT 'info', -- 'info', 'warning', 'error', 'critical'\n    data JSONB, -- Additional alert-specific data\n    is_read BOOLEAN DEFAULT false,\n    read_at TIMESTAMPTZ,\n    action_url TEXT, -- URL for user to take action\n    expires_at TIMESTAMPTZ,\n    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\n\n-- Create indexes for better query performance\nCREATE INDEX IF NOT EXISTS idx_alerts_user_id ON alerts(user_id);\nCREATE INDEX IF NOT EXISTS idx_alerts_type ON alerts(alert_type);\nCREATE INDEX IF NOT EXISTS idx_alerts_severity ON alerts(severity);\nCREATE INDEX IF NOT EXISTS idx_alerts_read ON alerts(is_read);\nCREATE INDEX IF NOT EXISTS idx_alerts_expires ON alerts(expires_at);\nCREATE INDEX IF NOT EXISTS idx_alerts_created_at ON alerts(created_at);\nCREATE INDEX IF NOT EXISTS idx_alerts_data ON alerts USING GIN(data);",
                 "options": {}
             },
-            "id": "9345b701-1bc4-48eb-ad9d-75eb19975d80",
+            "id": "54217a81-e4ed-4b72-95cb-66309e3d6c27",
             "name": "Create Alerts Table",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2.4,
             "position": [
-                512,
-                672
+                592,
+                592
             ],
             "alwaysOutputData": true,
             "credentials": {
@@ -259,13 +259,13 @@
                 "query": "-- Seed default spending categories\nINSERT INTO spending_categories (name, description, color, icon, is_system, is_active) VALUES\n    ('Food & Dining', 'Restaurants, groceries, and food delivery', '#FF6B6B', 'restaurant', true, true),\n    ('Transportation', 'Gas, public transport, rideshare, parking', '#4ECDC4', 'directions_car', true, true),\n    ('Housing', 'Rent, mortgage, utilities, maintenance', '#45B7D1', 'home', true, true),\n    ('Utilities', 'Electricity, water, gas, internet, phone', '#96CEB4', 'bolt', true, true),\n    ('Healthcare', 'Medical bills, insurance, pharmacy', '#FFEAA7', 'local_hospital', true, true),\n    ('Entertainment', 'Movies, games, streaming, hobbies', '#DDA0DD', 'movie', true, true),\n    ('Shopping', 'Clothing, electronics, household items', '#98D8C8', 'shopping_cart', true, true),\n    ('Education', 'Tuition, books, courses, training', '#F7DC6F', 'school', true, true),\n    ('Travel', 'Flights, hotels, vacation expenses', '#BB8FCE', 'flight', true, true),\n    ('Insurance', 'Auto, home, life, health insurance', '#85C1E9', 'security', true, true),\n    ('Savings', 'Emergency fund, investments, retirement', '#82E0AA', 'savings', true, true),\n    ('Other', 'Miscellaneous expenses', '#F8C471', 'category', true, true)\nON CONFLICT (user_id, name) DO NOTHING;",
                 "options": {}
             },
-            "id": "40b8814a-c943-461e-b9ea-abd2ef403af3",
+            "id": "82ed498f-d539-4e85-baff-4aa8a4837455",
             "name": "Seed Spending Categories",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2.4,
             "position": [
-                304,
-                64
+                384,
+                -16
             ],
             "alwaysOutputData": true,
             "credentials": {
@@ -281,13 +281,13 @@
                 "query": "-- Verify all tables were created successfully\nSELECT \n    schemaname,\n    tablename,\n    tableowner\nFROM pg_tables \nWHERE schemaname = 'public' \n    AND tablename IN (\n        'users', 'money_accounts', 'spending_categories', 'budgets', \n        'transactions', 'memories', 'data_metadata', 'data_rows', \n        'messages', 'alerts'\n    )\nORDER BY tablename;",
                 "options": {}
             },
-            "id": "72308c54-8082-4197-bfc0-2b23d5ca3c43",
+            "id": "a328938e-07d5-4062-9c1c-958cdc375d04",
             "name": "Verify Schema Creation",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2.4,
             "position": [
-                96,
-                880
+                176,
+                800
             ],
             "alwaysOutputData": true,
             "credentials": {
@@ -303,13 +303,13 @@
                 "query": "-- Verify seed data was inserted\nSELECT \n    COUNT(*) as total_categories,\n    COUNT(CASE WHEN is_system = true THEN 1 END) as system_categories,\n    COUNT(CASE WHEN is_active = true THEN 1 END) as active_categories\nFROM spending_categories \nWHERE user_id IS NULL;",
                 "options": {}
             },
-            "id": "a57ac2ab-0ac6-4380-aac0-a9efdaf086b5",
+            "id": "19d166b8-f9d4-40a3-bfab-c7f8e86cc041",
             "name": "Verify Seed Data",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2.4,
             "position": [
-                304,
-                880
+                384,
+                800
             ],
             "alwaysOutputData": true,
             "credentials": {
@@ -325,13 +325,13 @@
                 "query": "-- Get database schema summary\nSELECT \n    'Database initialized successfully' as status,\n    NOW() as initialization_time,\n    (SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public') as total_tables,\n    (SELECT COUNT(*) FROM spending_categories WHERE user_id IS NULL AND is_system = true) as system_categories;",
                 "options": {}
             },
-            "id": "972d96ac-f7d3-4185-9411-2f35294f213c",
+            "id": "fcb6d908-7635-479d-9ead-ea15ea5060de",
             "name": "Schema Summary",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2.4,
             "position": [
-                512,
-                880
+                592,
+                800
             ],
             "alwaysOutputData": true,
             "credentials": {
@@ -340,6 +340,20 @@
                     "name": "Postgres account"
                 }
             }
+        },
+        {
+            "parameters": {
+                "height": 1264,
+                "width": 1200
+            },
+            "type": "n8n-nodes-base.stickyNote",
+            "typeVersion": 1,
+            "position": [
+                -336,
+                -224
+            ],
+            "id": "1a95afa3-e61f-41ce-b079-8cdebef29b4f",
+            "name": "Sticky Note6"
         }
     ],
     "connections": {

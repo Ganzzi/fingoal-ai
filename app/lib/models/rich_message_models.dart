@@ -216,7 +216,8 @@ class AccountDashboardItem extends DashboardItem {
             'type': account.type.value,
             'balance': account.balance,
             'currency': account.currency,
-            'institution': account.institution,
+            'institutionName': account.institutionName,
+            'accountNumber': account.accountNumber,
             'isActive': account.isActive,
           },
         );

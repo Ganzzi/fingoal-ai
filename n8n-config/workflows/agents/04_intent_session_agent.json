@@ -565,8 +565,8 @@
                     "value": {
                         "user_id": "={{ $('Validate Input').item.json.user_id }}",
                         "sender_type": "agent",
-                        "message_type": "={{ $('Call \\'OrchestratorAgent\\'').item.json.content.message }}",
-                        "content": "={{ $('Validate Input').item.json.message }}",
+                        "message_type": "={{ $('Validate Input').item.json.message_type }}",
+                        "content": "={{ $('Call \\'OrchestratorAgent\\'').item.json.content.message }}",
                         "session_id": "={{ $('Format Orchestrator Response').item.json.detected_intent }}",
                         "language": "={{ $('Validate Input').item.json. language }}"
                     },

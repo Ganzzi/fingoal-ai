@@ -75,10 +75,10 @@ class SelectableAccountListItem extends StatelessWidget {
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
-            if (account.institution != null) ...[
+            if (account.institutionName != null) ...[
               const SizedBox(height: 4),
               Text(
-                account.institution!,
+                account.institutionName!,
                 style: textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -341,7 +341,7 @@ class _EnhancedMoneyAccountsSectionState
                             color: colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 8),
                         Text(
                           _formatBalance(totalBalance),
                           style: textTheme.headlineSmall?.copyWith(
@@ -349,6 +349,15 @@ class _EnhancedMoneyAccountsSectionState
                             color: totalBalance >= 0
                                 ? colorScheme.onSurface
                                 : const Color(0xFFF44336),
+                          ),
+                          overflow: TextOverflow.visible,
+                          softWrap: true,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${widget.accounts.length} account${widget.accounts.length != 1 ? 's' : ''}',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],

@@ -1,24 +1,760 @@
 {
-    "name": "Dashboard API Workflow",
     "nodes": [
         {
-            "parameters": {},
-            "id": "placeholder-node",
-            "name": "Placeholder",
-            "type": "n8n-nodes-base.noOp",
+            "parameters": {
+                "path": "dashboard",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "3cad4ea7-71f9-42c7-9afc-04dba0c88e92",
+            "name": "Dashboard Webhook",
+            "type": "n8n-nodes-base.webhook",
             "typeVersion": 1,
             "position": [
-                250,
-                300
+                4016,
+                1664
+            ],
+            "webhookId": "dashboard-get-webhook-id"
+        },
+        {
+            "parameters": {
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "money_accounts",
+                    "mode": "list",
+                    "cachedResultName": "money_accounts"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "user_id",
+                            "value": "={{ $('Check Dashboard Authentication').item.json.payload.userId }}"
+                        }
+                    ]
+                },
+                "sort": {
+                    "values": [
+                        {
+                            "column": "account_type"
+                        },
+                        {
+                            "column": "name"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "name",
+                        "account_type",
+                        "institution_name",
+                        "account_number",
+                        "currency",
+                        "balance",
+                        "is_active",
+                        "created_at",
+                        "updated_at"
+                    ]
+                }
+            },
+            "id": "83ad18bf-dabc-49d8-8a88-0fa67c63417b",
+            "name": "Fetch Money Accounts",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                4896,
+                1424
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Fetch recent transactions (last 30 days) with category information\nSELECT \n    t.id,\n    t.amount,\n    t.currency,\n    t.description,\n    t.transaction_date,\n    t.transaction_type,\n    t.merchant_name,\n    t.tags,\n    t.created_at,\n    ma.name as account_name,\n    ma.account_type,\n    sc.name as category_name,\n    sc.color as category_color,\n    sc.icon as category_icon\nFROM transactions t\nJOIN money_accounts ma ON t.account_id = ma.id\nLEFT JOIN spending_categories sc ON t.category_id = sc.id\nWHERE t.user_id = '{{ $('Check Dashboard Authentication').item.json.payload.userId }}' \n  AND t.transaction_date >= CURRENT_DATE - INTERVAL '30 days'\nORDER BY t.transaction_date DESC, t.created_at DESC\nLIMIT 100;",
+                "options": {}
+            },
+            "id": "ca6d6736-b025-4313-9228-9d8e3231388a",
+            "name": "Fetch Recent Transactions",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                4896,
+                1568
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Fetch budgets with spending category details and current spending\nSELECT \n    b.id,\n    b.name as budget_name,\n    b.amount as budget_amount,\n    b.currency,\n    b.period,\n    b.start_date,\n    b.end_date,\n    b.is_active,\n    sc.id as category_id,\n    sc.name as category_name,\n    sc.color as category_color,\n    sc.icon as category_icon,\n    COALESCE(spent.total_spent, 0) as spent_amount\nFROM budgets b\nJOIN spending_categories sc ON b.category_id = sc.id\nLEFT JOIN (\n    SELECT \n        category_id,\n        SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END) as total_spent\n    FROM transactions \n    WHERE user_id = '{{ $('Check Dashboard Authentication').item.json.payload.userId }}' \n      AND transaction_date >= CURRENT_DATE - INTERVAL '30 days'\n      AND category_id IS NOT NULL\n    GROUP BY category_id\n) spent ON sc.id = spent.category_id\nWHERE b.user_id = '{{ $('Check Dashboard Authentication').item.json.payload.userId }}' AND b.is_active = true\nORDER BY sc.name;",
+                "options": {}
+            },
+            "id": "cffe189e-d683-4a65-83b3-dbffaff467a3",
+            "name": "Fetch Budgets",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                4896,
+                1712
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Fetch flexible financial data metadata for the user\nSELECT \n    dm.id,\n    dm.data_type,\n    dm.schema_definition,\n    dm.version,\n    COUNT(dr.id) as data_count\nFROM data_metadata dm\nLEFT JOIN data_rows dr ON dm.id = dr.metadata_id AND dr.status = 'active'\nWHERE dm.user_id = '{{ $('Check Dashboard Authentication').item.json.payload.userId }}' AND dm.is_active = true\nGROUP BY dm.id, dm.data_type, dm.schema_definition, dm.version\nORDER BY dm.data_type;",
+                "options": {}
+            },
+            "id": "6e286902-31af-4feb-af4c-aafc994a25d6",
+            "name": "Fetch Data Metadata",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                4896,
+                1856
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Fetch flexible financial data rows for the user\nSELECT \n    dr.id,\n    dr.data,\n    dr.status,\n    dr.created_at,\n    dr.updated_at,\n    dm.data_type,\n    dm.schema_definition\nFROM data_rows dr\nJOIN data_metadata dm ON dr.metadata_id = dm.id\nWHERE dr.user_id = '{{ $('Check Dashboard Authentication').item.json.payload.userId }}' AND dr.status = 'active' AND dm.is_active = true\nORDER BY dm.data_type, dr.created_at;",
+                "options": {}
+            },
+            "id": "76b2344a-088b-412c-bcb0-cfd9e2a42543",
+            "name": "Fetch Data Rows",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                4896,
+                1984
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Fetch recent alerts for the user\nSELECT \n    id,\n    alert_type,\n    title,\n    message,\n    severity,\n    data,\n    is_read,\n    action_url,\n    expires_at,\n    created_at\nFROM alerts \nWHERE user_id = '{{ $('Check Dashboard Authentication').item.json.payload.userId }}' \n  AND (expires_at IS NULL OR expires_at > NOW())\nORDER BY \n  CASE severity \n    WHEN 'critical' THEN 1\n    WHEN 'high' THEN 2 \n    WHEN 'normal' THEN 3\n    WHEN 'low' THEN 4\n  END,\n  created_at DESC\nLIMIT 10;",
+                "options": {}
+            },
+            "id": "a3da7ffe-56de-49db-b632-dba87040642c",
+            "name": "Fetch Alerts",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                4896,
+                2128
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Process and aggregate all dashboard data\nconst userId = $('Check Dashboard Authentication').first().json.payload.userId;\n\n// Get data from merge node - access the first item which contains all merged data\nconst mergedData = $input.first().json;\nlet accounts = mergedData.money_accounts || [];\nlet transactions = mergedData.transactions || [];\nlet budgets = mergedData.budgets || [];\nlet metadata = mergedData.metadata || [];\nlet dataRows = mergedData.dataRows || [];\nlet alerts = mergedData.alerts || [];\n\n// Handle case where arrays contain a single empty object\nif (accounts.length === 1 && Object.keys(accounts[0]).length === 0) {\n  accounts = [];\n}\nif (transactions.length === 1 && Object.keys(transactions[0]).length === 0) {\n  transactions = [];\n}\nif (budgets.length === 1 && Object.keys(budgets[0]).length === 0) {\n  budgets = [];\n}\nif (metadata.length === 1 && Object.keys(metadata[0]).length === 0) {\n  metadata = [];\n}\nif (dataRows.length === 1 && Object.keys(dataRows[0]).length === 0) {\n  dataRows = [];\n}\nif (alerts.length === 1 && Object.keys(alerts[0]).length === 0) {\n  alerts = [];\n}\n\n// Calculate account totals by type\nconst accountTotals = accounts.reduce((totals, account) => {\n  const type = account.account_type;\n  if (!totals[type]) totals[type] = 0;\n  totals[type] += parseFloat(account.balance || 0);\n  return totals;\n}, {});\n\n// Calculate net worth (assets - debts from flexible data)\nconst totalAssets = Object.values(accountTotals).reduce((sum, val) => sum + val, 0);\n\n// Calculate estimated debts and income from flexible data\nconst incomeData = dataRows.filter(row => row.data_type === 'income');\nconst expenseData = dataRows.filter(row => row.data_type === 'expense');\nconst debtData = dataRows.filter(row => row.data_type === 'debt');\n\n// Calculate monthly income from flexible data\nconst monthlyIncome = incomeData.reduce((sum, income) => {\n  const amount = parseFloat(income.data.amount || 0);\n  return sum + (income.data.frequency === 'monthly' ? amount : 0);\n}, 0);\n\n// Calculate monthly expenses from flexible data\nconst monthlyExpenses = expenseData.reduce((sum, expense) => {\n  const amount = parseFloat(expense.data.amount || 0);\n  return sum + (expense.data.frequency === 'monthly' ? amount : 0);\n}, 0);\n\n// Calculate total debts from flexible data\nconst totalDebts = debtData.reduce((sum, debt) => {\n  return sum + parseFloat(debt.data.balance || debt.data.amount || 0);\n}, 0);\n\nconst monthlyCashFlow = monthlyIncome - monthlyExpenses;\n\n// Calculate savings rate (simplified estimation)\nconst savingsRate = monthlyIncome > 0 ? ((monthlyCashFlow / monthlyIncome) * 100) : 0;\n\n// Format accounts data\nconst formattedAccounts = accounts.map(account => ({\n  id: account.id,\n  name: account.name,\n  accountType: account.account_type,\n  institutionName: account.institution_name,\n  accountNumber: account.account_number,\n  balance: parseFloat(account.balance || 0),\n  currency: account.currency,\n  isActive: account.is_active,\n  createdAt: account.created_at,\n  updatedAt: account.updated_at\n}));\n\n// Format transactions data\nconst formattedTransactions = transactions.map(transaction => ({\n  id: transaction.id,\n  amount: parseFloat(transaction.amount || 0),\n  currency: transaction.currency,\n  description: transaction.description,\n  transactionDate: transaction.transaction_date,\n  transactionType: transaction.transaction_type,\n  merchantName: transaction.merchant_name,\n  tags: transaction.tags || [],\n  accountName: transaction.account_name,\n  accountType: transaction.account_type,\n  categoryName: transaction.category_name,\n  categoryColor: transaction.category_color,\n  categoryIcon: transaction.category_icon,\n  createdAt: transaction.created_at\n}));\n\n// Format budgets data with progress calculation\nconst formattedBudgets = budgets.map(budget => {\n  const budgetAmount = parseFloat(budget.budget_amount || 0);\n  const spentAmount = parseFloat(budget.spent_amount || 0);\n  const progressPercentage = budgetAmount > 0 ? (spentAmount / budgetAmount) * 100 : 0;\n  const remainingAmount = budgetAmount - spentAmount;\n  \n  return {\n    id: budget.id,\n    name: budget.budget_name,\n    budgetAmount: budgetAmount,\n    spentAmount: spentAmount,\n    remainingAmount: remainingAmount,\n    progressPercentage: Math.round(progressPercentage * 100) / 100,\n    currency: budget.currency,\n    period: budget.period,\n    startDate: budget.start_date,\n    endDate: budget.end_date,\n    categoryId: budget.category_id,\n    categoryName: budget.category_name,\n    categoryColor: budget.category_color,\n    categoryIcon: budget.category_icon,\n    isActive: budget.is_active\n  };\n});\n\n// Format alerts data\nconst formattedAlerts = alerts.map(alert => ({\n  id: alert.id,\n  type: alert.alert_type,\n  title: alert.title,\n  message: alert.message,\n  severity: alert.severity,\n  data: alert.data,\n  isRead: alert.is_read,\n  actionUrl: alert.action_url,\n  expiresAt: alert.expires_at,\n  createdAt: alert.created_at\n}));\n\n// Group metadata by data_type for easy lookup\nconst metadataByType = metadata.reduce((acc, meta) => {\n  acc[meta.data_type] = meta;\n  return acc;\n}, {});\n\n// Group data rows by type with metadata\nconst structuredData = dataRows.reduce((acc, row) => {\n  const dataType = row.data_type;\n  if (!acc[dataType]) {\n    acc[dataType] = {\n      metadata: metadataByType[dataType] || null,\n      items: []\n    };\n  }\n  acc[dataType].items.push({\n    id: row.id,\n    data: row.data,\n    status: row.status,\n    createdAt: row.created_at,\n    updatedAt: row.updated_at\n  });\n  return acc;\n}, {});\n\n// Build comprehensive dashboard response\nconst dashboardResponse = {\n  success: true,\n  data: {\n    overview: {\n      netWorth: Math.round((totalAssets - totalDebts) * 100) / 100,\n      monthlyCashFlow: Math.round(monthlyCashFlow * 100) / 100,\n      monthlyIncome: Math.round(monthlyIncome * 100) / 100,\n      monthlyExpenses: Math.round(monthlyExpenses * 100) / 100,\n      totalAssets: Math.round(totalAssets * 100) / 100,\n      totalDebts: Math.round(totalDebts * 100) / 100,\n      savingsRate: Math.round(savingsRate * 100) / 100,\n      accountTotals: Object.keys(accountTotals).reduce((formatted, type) => {\n        formatted[type] = Math.round(accountTotals[type] * 100) / 100;\n        return formatted;\n      }, {})\n    },\n    accounts: formattedAccounts,\n    transactions: formattedTransactions,\n    budgets: formattedBudgets,\n    structuredData: structuredData, // Raw JSONB data organized by type\n    alerts: formattedAlerts,\n    summary: {\n      totalAccounts: formattedAccounts.length,\n      totalTransactions: formattedTransactions.length,\n      totalBudgets: formattedBudgets.length,\n      totalAlerts: formattedAlerts.length,\n      dataTypes: Object.keys(structuredData),\n      totalStructuredItems: dataRows.length\n    }\n  },\n  meta: {\n    timestamp: new Date().toISOString(),\n    version: '1.0.0',\n    endpoint: 'GET /dashboard', \n    userId: userId,\n    cacheStatus: 'fresh'\n  }\n};\n\nconsole.log('Dashboard Response Summary:', {\n  netWorth: dashboardResponse.data.overview.netWorth,\n  monthlyIncome: dashboardResponse.data.overview.monthlyIncome,\n  monthlyExpenses: dashboardResponse.data.overview.monthlyExpenses,\n  totalAccounts: dashboardResponse.data.summary.totalAccounts,\n  totalTransactions: dashboardResponse.data.summary.totalTransactions,\n  totalBudgets: dashboardResponse.data.summary.totalBudgets,\n  dataTypes: dashboardResponse.data.summary.dataTypes,\n  totalStructuredItems: dashboardResponse.data.summary.totalStructuredItems\n});\n\nreturn [{\n  json: dashboardResponse\n}];"
+            },
+            "id": "f7acfb02-3998-4cdb-82b2-c92119b706f9",
+            "name": "Process Dashboard Data",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                5744,
+                1648
+            ],
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "FFVCIbRv16oygx1i",
+                    "mode": "list",
+                    "cachedResultName": "Middleware"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {},
+                    "matchingColumns": [],
+                    "schema": [],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": true
+                },
+                "options": {}
+            },
+            "id": "e27d06aa-75b1-4391-9bf5-4bc6d8698437",
+            "name": "Execute Auth Middleware3",
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.2,
+            "position": [
+                4240,
+                1664
             ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract user context from JWT payload\nconst jwtPayload = $('Dashboard Webhook').item.json.jwtPayload || {};\nconst userId = jwtPayload.userId || jwtPayload.user_id;\nconst userEmail = jwtPayload.email;\n\nconsole.log('Dashboard API - GET Request:', {\n  userId,\n  userEmail,\n  timestamp: new Date().toISOString()\n});\n\nreturn [{\n  json: {\n    userId: userId,\n    userEmail: userEmail,\n    timestamp: new Date().toISOString()\n  }\n}];"
+            },
+            "id": "eeaec10d-29e0-4220-81ff-34931ef5bfad",
+            "name": "Extract User Context2",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                4688,
+                1568
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {}
+            },
+            "id": "39c9e436-c62c-45f9-956e-f61b1cea31de",
+            "name": "Respond Success2",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                5952,
+                1632
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ {\n  \"success\": false,\n  \"error\": {\n    \"type\": \"authentication_error\",\n    \"message\": \"Authentication required to access dashboard\",\n    \"timestamp\": new Date().toISOString()\n  }\n} }}",
+                "options": {}
+            },
+            "id": "bbb9be00-5ba3-497e-9530-53a8146d2f3f",
+            "name": "Respond Unauthorized3",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                4688,
+                1776
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Handle database or processing errors\nconst error = $input.first().json || { message: 'Unknown error' };\n\nconst errorResponse = {\n  success: false,\n  error: {\n    type: 'dashboard_error',\n    message: 'Failed to fetch dashboard data',\n    details: error.message || 'Unknown database error',\n    timestamp: new Date().toISOString()\n  }\n};\n\nconsole.error('Dashboard API Error:', errorResponse);\n\nreturn [{\n  json: errorResponse\n}];"
+            },
+            "id": "117ca0e3-1f71-4e2d-866f-cf7aa86c3c36",
+            "name": "Handle Error2",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                5552,
+                1856
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {}
+            },
+            "id": "048e7a36-aba0-4886-9b34-df2801d940e9",
+            "name": "Respond Error2",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                5952,
+                1856
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 1
+                    },
+                    "conditions": [
+                        {
+                            "id": "bbf6d17e-71a9-4b1f-92b8-88569c8bdfe0",
+                            "leftValue": "={{ $json.success }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "f42dba90-cb51-41c8-9c44-157b1b27d9c0",
+            "name": "Check Dashboard Authentication",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                4464,
+                1664
+            ]
+        },
+        {
+            "parameters": {
+                "aggregate": "aggregateAllItemData",
+                "destinationFieldName": "money_accounts",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.aggregate",
+            "typeVersion": 1,
+            "position": [
+                5104,
+                1408
+            ],
+            "id": "49fdd4f0-8f33-4fca-bfdc-3f6f2a1727ef",
+            "name": "Aggregate money accounts"
+        },
+        {
+            "parameters": {
+                "aggregate": "aggregateAllItemData",
+                "destinationFieldName": "transactions",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.aggregate",
+            "typeVersion": 1,
+            "position": [
+                5104,
+                1552
+            ],
+            "id": "6c4d39b7-d9f4-43f8-837e-de37fc2bb79a",
+            "name": "Aggregate transactions"
+        },
+        {
+            "parameters": {
+                "aggregate": "aggregateAllItemData",
+                "destinationFieldName": "budgets",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.aggregate",
+            "typeVersion": 1,
+            "position": [
+                5104,
+                1696
+            ],
+            "id": "f534fc5b-a21c-4a89-8a3a-0424a69172de",
+            "name": "Aggregate budgets"
+        },
+        {
+            "parameters": {
+                "aggregate": "aggregateAllItemData",
+                "destinationFieldName": "metadata",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.aggregate",
+            "typeVersion": 1,
+            "position": [
+                5104,
+                1840
+            ],
+            "id": "09587bfa-f5cd-4f47-94a4-01b9f6ea3055",
+            "name": "Aggregate metadata"
+        },
+        {
+            "parameters": {
+                "aggregate": "aggregateAllItemData",
+                "destinationFieldName": "dataRows",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.aggregate",
+            "typeVersion": 1,
+            "position": [
+                5104,
+                1968
+            ],
+            "id": "52e165ec-86b9-4661-abee-3f18b54555e2",
+            "name": "Aggregate data rows"
+        },
+        {
+            "parameters": {
+                "aggregate": "aggregateAllItemData",
+                "destinationFieldName": "alerts",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.aggregate",
+            "typeVersion": 1,
+            "position": [
+                5104,
+                2112
+            ],
+            "id": "861d3967-6a02-4382-bb5a-41ecf230ddcc",
+            "name": "Aggregate alerts"
+        },
+        {
+            "parameters": {
+                "numberInputs": 6
+            },
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 3.2,
+            "position": [
+                5552,
+                1584
+            ],
+            "id": "02c79343-539d-4aae-be43-b14957998b2e",
+            "name": "Merge"
         }
     ],
-    "connections": {},
-    "active": false,
-    "settings": {},
-    "versionId": "1",
-    "id": "15",
+    "connections": {
+        "Dashboard Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Execute Auth Middleware3",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Money Accounts": {
+            "main": [
+                [
+                    {
+                        "node": "Aggregate money accounts",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Handle Error2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Recent Transactions": {
+            "main": [
+                [
+                    {
+                        "node": "Aggregate transactions",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Handle Error2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Budgets": {
+            "main": [
+                [
+                    {
+                        "node": "Aggregate budgets",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Handle Error2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Data Metadata": {
+            "main": [
+                [
+                    {
+                        "node": "Aggregate metadata",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Handle Error2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Data Rows": {
+            "main": [
+                [
+                    {
+                        "node": "Aggregate data rows",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Handle Error2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Alerts": {
+            "main": [
+                [
+                    {
+                        "node": "Aggregate alerts",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Handle Error2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Process Dashboard Data": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Success2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Respond Error2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Execute Auth Middleware3": {
+            "main": [
+                [
+                    {
+                        "node": "Check Dashboard Authentication",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract User Context2": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch Money Accounts",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Fetch Recent Transactions",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Fetch Budgets",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Fetch Data Metadata",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Fetch Data Rows",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Fetch Alerts",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Handle Error2": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Error2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Dashboard Authentication": {
+            "main": [
+                [
+                    {
+                        "node": "Extract User Context2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Respond Unauthorized3",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Aggregate money accounts": {
+            "main": [
+                [
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Aggregate transactions": {
+            "main": [
+                [
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "Aggregate budgets": {
+            "main": [
+                [
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 2
+                    }
+                ]
+            ]
+        },
+        "Aggregate metadata": {
+            "main": [
+                [
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 3
+                    }
+                ]
+            ]
+        },
+        "Aggregate data rows": {
+            "main": [
+                [
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 4
+                    }
+                ]
+            ]
+        },
+        "Aggregate alerts": {
+            "main": [
+                [
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 5
+                    }
+                ]
+            ]
+        },
+        "Merge": {
+            "main": [
+                [
+                    {
+                        "node": "Process Dashboard Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {
+        "Dashboard Webhook": [
+            {
+                "headers": {
+                    "host": "localhost:5678",
+                    "user-agent": "curl/8.4.0",
+                    "accept": "*/*",
+                    "content-type": "application/json",
+                    "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVzSW4iOiIyNGgiLCJ1c2VySWQiOiJiMTQ0YjY3MC02NTY5LTRiNjMtOTNlYS1mMWJkOGExODA0MWIiLCJlbWFpbCI6InRlc3R1c2VyMTIzQGV4YW1wbGUuY29tIiwiaWF0IjoxNzU4NTMxNTYyfQ.PKoZzwChAGwONSVcJJc67xta6BTYiBwvt-S35-bovv0"
+                },
+                "params": {},
+                "query": {},
+                "webhookUrl": "http://localhost:5678/webhook/dashboard",
+                "executionMode": "production"
+            }
+        ]
+    },
     "meta": {
-        "templateCredsSetupCompleted": true
+        "templateCredsSetupCompleted": true,
+        "instanceId": "8f73175c8cfc4e9b66eecf1cdc8ab8fdf6289436294741f796d676a38d70095e"
     }
 }

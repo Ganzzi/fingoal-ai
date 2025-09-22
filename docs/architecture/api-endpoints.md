@@ -511,6 +511,274 @@ Content-Type: application/json
 
 ---
 
+## Dashboard API
+
+### Get Dashboard Data
+**Endpoint:** `GET /dashboard`  
+**Authentication:** Required  
+
+#### Request Headers
+```
+Authorization: Bearer <jwt_token>
+```
+
+#### Success Response (200)
+```json
+{
+  "success": true,
+  "data": {
+    "overview": {
+      "netWorth": 8500.00,
+      "monthlyCashFlow": 2300.00,
+      "monthlyIncome": 5000.00,
+      "monthlyExpenses": 2700.00,
+      "totalAssets": 10000.00,
+      "totalDebts": 1500.00,
+      "savingsRate": 46.00,
+      "accountTotals": {
+        "bank": 8500.00,
+        "credit_card": -500.00,
+        "investment": 2000.00
+      }
+    },
+    "accounts": [
+      {
+        "id": "uuid-string",
+        "name": "Main Checking",
+        "accountType": "bank",
+        "institutionName": "Chase Bank",
+        "accountNumber": "****1234",
+        "balance": 2500.00,
+        "currency": "USD",
+        "isActive": true,
+        "createdAt": "2025-09-22T10:30:00Z",
+        "updatedAt": "2025-09-22T10:30:00Z"
+      }
+    ],
+    "transactions": [
+      {
+        "id": "uuid-string",
+        "amount": 50.00,
+        "currency": "USD",
+        "description": "Grocery shopping",
+        "transactionDate": "2025-09-22",
+        "transactionType": "expense", 
+        "merchantName": "Whole Foods",
+        "tags": ["groceries", "food"],
+        "accountName": "Main Checking",
+        "accountType": "bank",
+        "categoryName": "Food & Dining",
+        "categoryColor": "#FF6B6B",
+        "categoryIcon": "restaurant",
+        "createdAt": "2025-09-22T10:30:00Z"
+      }
+    ],
+    "budgets": [
+      {
+        "id": "uuid-string",
+        "name": "Food & Dining Budget",
+        "budgetAmount": 600.00,
+        "spentAmount": 450.00,
+        "remainingAmount": 150.00,
+        "progressPercentage": 75.00,
+        "currency": "USD",
+        "period": "monthly",
+        "startDate": "2025-09-01",
+        "endDate": "2025-09-30",
+        "categoryId": "uuid-string",
+        "categoryName": "Food & Dining",
+        "categoryColor": "#FF6B6B",
+        "categoryIcon": "restaurant",
+        "isActive": true
+      }
+    ],
+    "structuredData": {
+      "income": {
+        "metadata": {
+          "id": "uuid-string",
+          "data_type": "income",
+          "schema_definition": {
+            "type": "object",
+            "properties": {
+              "amount": { "type": "number" },
+              "source": { "type": "string" },
+              "frequency": { "type": "string" }
+            }
+          },
+          "version": 1,
+          "data_count": 2
+        },
+        "items": [
+          {
+            "id": "uuid-string",
+            "data": {
+              "amount": 5000,
+              "source": "Primary Salary",
+              "frequency": "monthly"
+            },
+            "status": "active",
+            "createdAt": "2025-09-22T06:00:00Z",
+            "updatedAt": "2025-09-22T06:00:00Z"
+          }
+        ]
+      },
+      "expense": {
+        "metadata": {
+          "id": "uuid-string", 
+          "data_type": "expense",
+          "schema_definition": {
+            "type": "object",
+            "properties": {
+              "amount": { "type": "number" },
+              "category": { "type": "string" },
+              "frequency": { "type": "string" }
+            }
+          },
+          "version": 1,
+          "data_count": 1
+        },
+        "items": [
+          {
+            "id": "uuid-string",
+            "data": {
+              "amount": 400,
+              "category": "Dining Out", 
+              "frequency": "monthly"
+            },
+            "status": "active",
+            "createdAt": "2025-09-22T06:00:00Z",
+            "updatedAt": "2025-09-22T06:00:00Z"
+          }
+        ]
+      },
+      "debt": {
+        "metadata": {
+          "id": "uuid-string",
+          "data_type": "debt", 
+          "schema_definition": {
+            "type": "object",
+            "properties": {
+              "balance": { "type": "number" },
+              "interestRate": { "type": "number" },
+              "minimumPayment": { "type": "number" },
+              "creditor": { "type": "string" }
+            }
+          },
+          "version": 1,
+          "data_count": 1
+        },
+        "items": [
+          {
+            "id": "uuid-string",
+            "data": {
+              "balance": 1500,
+              "interestRate": 18.5,
+              "minimumPayment": 50,
+              "creditor": "Credit Card Company"
+            },
+            "status": "active",
+            "createdAt": "2025-09-22T06:00:00Z",
+            "updatedAt": "2025-09-22T06:00:00Z"
+          }
+        ]
+      }
+    },
+    "alerts": [
+      {
+        "id": "uuid-string",
+        "type": "budget_exceeded",
+        "title": "Budget Alert",
+        "message": "You've exceeded your dining budget this month",
+        "severity": "warning",
+        "data": {
+          "categoryId": "uuid-string",
+          "budgetAmount": 400,
+          "spentAmount": 450
+        },
+        "isRead": false,
+        "actionUrl": "/budgets/uuid-string",
+        "expiresAt": "2025-10-01T00:00:00Z",
+        "createdAt": "2025-09-22T10:30:00Z"
+      }
+    ],
+    "summary": {
+      "totalAccounts": 3,
+      "totalTransactions": 15,
+      "totalBudgets": 8,
+      "totalAlerts": 2,
+      "dataTypes": ["income", "expense", "debt", "investment", "savings", "goal"],
+      "totalStructuredItems": 12
+    }
+  },
+  "meta": {
+    "timestamp": "2025-09-22T10:30:00Z",
+    "version": "1.0.0",
+    "endpoint": "GET /dashboard",
+    "userId": "uuid-string",
+    "cacheStatus": "fresh"
+  }
+}
+```
+
+#### Data Structure Overview
+
+**Overview Section:**
+- `netWorth`: Total assets minus total debts
+- `monthlyCashFlow`: Monthly income minus monthly expenses
+- `monthlyIncome`: Sum of monthly income from structured data
+- `monthlyExpenses`: Sum of monthly expenses from structured data  
+- `totalAssets`: Sum of all account balances (positive values)
+- `totalDebts`: Sum of debt balances from structured data
+- `savingsRate`: Percentage of income saved (cash flow / income * 100)
+- `accountTotals`: Account balances grouped by account type
+
+**Structured Data Section:**
+- Contains flexible JSONB financial data organized by type
+- Each data type includes:
+  - `metadata`: Schema definition and count information
+  - `items`: Array of actual data records with JSONB content
+- Common data types: `income`, `expense`, `debt`, `investment`, `savings`, `goal`, `insurance`, `property`
+- Data structure is flexible and defined by user's metadata schemas
+
+**Accounts, Transactions, Budgets:**
+- Standard financial data with structured fields
+- Transactions include category information and account details
+- Budgets show progress tracking with spent vs allocated amounts
+
+#### Error Responses
+```json
+// Unauthorized (401)
+{
+  "success": false,
+  "error": {
+    "type": "authentication_error",
+    "message": "Authentication required to access dashboard",
+    "timestamp": "2025-09-22T10:30:00Z"
+  }
+}
+
+// Database Error (500)
+{
+  "success": false,
+  "error": {
+    "type": "dashboard_error",
+    "message": "Failed to fetch dashboard data",
+    "details": "Database connection timeout",
+    "timestamp": "2025-09-22T10:30:00Z"
+  }
+}
+```
+
+#### Usage Notes
+- Dashboard data is cached for 5 minutes to improve performance
+- `structuredData` section contains flexible JSONB financial data that can be rendered in tables or custom UI components
+- All monetary values are returned as numbers with 2 decimal precision
+- Dates are returned in ISO 8601 format
+- Data types in `structuredData` are determined by user's metadata definitions
+- Empty arrays are returned for data types with no records
+
+---
+
 ## Chat API
 
 ### Send Chat Message

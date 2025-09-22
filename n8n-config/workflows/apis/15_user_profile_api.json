@@ -7,13 +7,13 @@
                 "responseMode": "responseNode",
                 "options": {}
             },
-            "id": "user-profile-get-webhook",
+            "id": "edb3c366-0952-4f21-af93-23de92b3bdd0",
             "name": "Get User Profile Webhook",
             "type": "n8n-nodes-base.webhook",
             "typeVersion": 1,
             "position": [
-                -176,
-                1800
+                2192,
+                1808
             ],
             "webhookId": "user-profile-get-webhook-id",
             "credentials": {
@@ -22,6 +22,218 @@
                     "name": "JWT Auth account"
                 }
             }
+        },
+        {
+            "parameters": {
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "users",
+                    "mode": "list",
+                    "cachedResultName": "users"
+                },
+                "limit": 1,
+                "where": {
+                    "values": [
+                        {
+                            "column": "id",
+                            "value": "={{ $json.userId }}"
+                        },
+                        {
+                            "column": "is_active",
+                            "value": "true"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "email",
+                        "name",
+                        "avatar_url",
+                        "language",
+                        "timezone",
+                        "currency",
+                        "is_active",
+                        "created_at",
+                        "updated_at",
+                        "last_login"
+                    ]
+                }
+            },
+            "id": "8d6b67ed-c486-44c5-ad6b-514f0289a757",
+            "name": "Fetch User Profile",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                3008,
+                1696
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Format user profile response\nconst queryResult = $input.first().json;\nconsole.log('Raw query result:', queryResult);\n\n// Handle the case where query returns an array or single object\nlet userProfile;\nif (Array.isArray(queryResult) && queryResult.length > 0) {\n  userProfile = queryResult[0];\n} else if (queryResult && !Array.isArray(queryResult)) {\n  userProfile = queryResult;\n} else {\n  throw new Error('User not found or inactive');\n}\n\nconsole.log('Processed user profile:', userProfile);\n\nconst response = {\n  success: true,\n  data: {\n    user: {\n      id: userProfile.id,\n      email: userProfile.email,\n      name: userProfile.name,\n      avatarUrl: userProfile.avatar_url || null,\n      language: userProfile.language || 'en',\n      timezone: userProfile.timezone || 'UTC',\n      currency: userProfile.currency || 'USD',\n      isActive: userProfile.is_active,\n      lastLogin: userProfile.last_login,\n      createdAt: userProfile.created_at,\n      updatedAt: userProfile.updated_at\n    }\n  },\n  meta: {\n    timestamp: new Date().toISOString(),\n    version: '1.0.0',\n    endpoint: 'GET /user/profile'\n  }\n};\n\nconsole.log('User Profile Response:', {\n  userId: userProfile.id,\n  email: userProfile.email,\n  name: userProfile.name\n});\n\nreturn [{\n  json: response\n}];"
+            },
+            "id": "d696fac8-e41f-49b4-9d5a-be511f212be1",
+            "name": "Format Profile Response",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                3200,
+                1616
+            ]
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "user/profile",
+                "authentication": "jwtAuth",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "e2053433-4a0b-4fd5-b4e7-4eefed7155d6",
+            "name": "Update User Profile Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                2192,
+                2096
+            ],
+            "webhookId": "user-profile-post-webhook-id",
+            "credentials": {
+                "jwtAuth": {
+                    "id": "oOaAzR6thOsg7HXV",
+                    "name": "JWT Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract and validate POST request data\nconst requestBody = $('Update User Profile Webhook').first().json.body || {};\nconst jwtPayload = $('Update User Profile Webhook').first().json.jwtPayload || {};\n\nconst userId = jwtPayload.userId || jwtPayload.user_id;\nconst userEmail = jwtPayload.email;\n\n// Extract profile update data\nconst profileData = {\n  name: requestBody.name,\n  avatarUrl: requestBody.avatarUrl,\n  language: requestBody.language,\n  timezone: requestBody.timezone,\n  currency: requestBody.currency\n};\n\n// Remove undefined values\nObject.keys(profileData).forEach(key => {\n  if (profileData[key] === undefined) {\n    delete profileData[key];\n  }\n});\n\n// Validate at least one field is being updated\nif (Object.keys(profileData).length === 0) {\n  throw new Error('No valid fields provided for update');\n}\n\nconst context = {\n  userId,\n  userEmail,\n  profileData,\n  timestamp: new Date().toISOString()\n};\n\nconsole.log('User Profile API - POST Request:', context);\n\nreturn [{\n  json: context\n}];"
+            },
+            "id": "f118a5a4-f545-4c3e-aa9f-9adf007b6bfb",
+            "name": "Validate Profile Request",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2800,
+                2016
+            ],
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE users \nSET \n  name = CASE WHEN '{{ $('Validate Profile Request').item.json.profileData.name }}' != '' THEN '{{ $('Validate Profile Request').item.json.profileData.name }}' ELSE name END,\n  avatar_url = CASE WHEN '{{ $('Validate Profile Request').item.json.profileData.avatarUrl }}' != '' THEN '{{ $('Validate Profile Request').item.json.profileData.avatarUrl }}' ELSE avatar_url END,\n  language = CASE WHEN '{{ $('Validate Profile Request').item.json.profileData.language }}' != '' THEN '{{ $('Validate Profile Request').item.json.profileData.language }}' ELSE language END,\n  timezone = CASE WHEN '{{ $('Validate Profile Request').item.json.profileData.timezone }}' != '' THEN '{{ $('Validate Profile Request').item.json.profileData.timezone }}' ELSE timezone END,\n  currency = CASE WHEN '{{ $('Validate Profile Request').item.json.profileData.currency }}' != '' THEN '{{ $('Validate Profile Request').item.json.profileData.currency }}' ELSE currency END,\n  updated_at = NOW()\nWHERE id = '{{ $('Validate Profile Request').item.json.userId }}'::UUID\nRETURNING \n  id,\n  email,\n  name,\n  avatar_url,\n  language,\n  timezone,\n  currency,\n  is_active,\n  last_login,\n  created_at,\n  updated_at",
+                "options": {}
+            },
+            "id": "d1eedf39-fb7c-4a9c-babe-17bd0ac32ff8",
+            "name": "Update User Profile",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                3008,
+                2016
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Format successful profile update response\nconst userProfile = $input.first().json;\n\nif (!userProfile || Object.keys(userProfile).length === 0) {\n  throw new Error('User not found or update failed');\n}\n\nconst response = {\n  success: true,\n  data: {\n    user: {\n      id: userProfile.id,\n      email: userProfile.email,\n      name: userProfile.name,\n      avatarUrl: userProfile.avatar_url,\n      language: userProfile.language || 'en',\n      timezone: userProfile.timezone || 'UTC',\n      currency: userProfile.currency || 'USD',\n      isActive: userProfile.is_active,\n      lastLogin: userProfile.last_login,\n      createdAt: userProfile.created_at,\n      updatedAt: userProfile.updated_at\n    }\n  },\n  meta: {\n    timestamp: new Date().toISOString(),\n    version: '1.0.0',\n    endpoint: 'POST /user/profile'\n  }\n};\n\nconsole.log('Profile Update Success:', {\n  userId: userProfile.id,\n  updatedFields: Object.keys($('Validate Profile Request').first().json.profileData)\n});\n\nreturn [{\n  json: response\n}];"
+            },
+            "id": "f0257903-ed0a-48b1-a2ba-a3cdf537d75e",
+            "name": "Format Update Success",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                3200,
+                1936
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {
+                    "responseCode": 200,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "name": "X-API-Version",
+                                "value": "1.0.0"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "cf2a5450-03e6-4fb7-b391-d83656613ad5",
+            "name": "Respond Update Success",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                3408,
+                1936
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Handle POST operation errors\nconst error = $input.first().json || { message: 'Unknown error' };\n\nconst errorResponse = {\n  success: false,\n  error: {\n    type: 'operation_error',\n    message: 'Failed to update user profile',\n    details: error.message || 'Unknown operation error',\n    timestamp: new Date().toISOString()\n  }\n};\n\nconsole.error('Profile Update Error:', errorResponse);\n\nreturn [{\n  json: errorResponse\n}];"
+            },
+            "id": "039feb1b-1184-497a-96ac-e95dd08c60f9",
+            "name": "Handle Update Error",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                3200,
+                2096
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {
+                    "responseCode": 500,
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "8161ebd7-a847-4d87-8407-6879f521a01d",
+            "name": "Respond Update Error",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                3408,
+                2096
+            ]
         },
         {
             "parameters": {
@@ -41,13 +253,13 @@
                     "waitForSubWorkflow": true
                 }
             },
-            "id": "execute-auth-middleware-get",
-            "name": "Execute Auth Middleware",
+            "id": "594ef408-7128-4298-985d-7b60d4d57f19",
+            "name": "Execute Auth Middleware1",
             "type": "n8n-nodes-base.executeWorkflow",
             "typeVersion": 1.2,
             "position": [
-                32,
-                1800
+                2400,
+                1808
             ]
         },
         {
@@ -74,61 +286,26 @@
                 },
                 "options": {}
             },
-            "id": "check-auth-get",
-            "name": "Check Authentication",
+            "id": "7661b572-cd83-4df4-947f-2c72114771ae",
+            "name": "Check Authentication1",
             "type": "n8n-nodes-base.if",
             "typeVersion": 2,
             "position": [
-                224,
-                1800
+                2592,
+                1808
             ]
         },
         {
             "parameters": {
                 "jsCode": "// Extract user context from JWT payload\nconst jwtPayload = $('Get User Profile Webhook').item.json.jwtPayload || {};\nconst userId = jwtPayload.userId || jwtPayload.user_id;\nconst userEmail = jwtPayload.email;\n\nconsole.log('User Profile API - GET Request:', {\n  userId,\n  userEmail,\n  timestamp: new Date().toISOString()\n});\n\nreturn [{\n  json: {\n    userId: userId,\n    userEmail: userEmail,\n    timestamp: new Date().toISOString()\n  }\n}];"
             },
-            "id": "extract-user-context-get",
-            "name": "Extract User Context",
+            "id": "9432e7e2-519e-4c62-91c0-e7737cd4b2a5",
+            "name": "Extract User Context1",
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
             "position": [
-                432,
-                1688
-            ]
-        },
-        {
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "SELECT \n  id,\n  email,\n  name,\n  avatar_url,\n  language,\n  timezone,\n  currency,\n  is_active,\n  last_login,\n  created_at,\n  updated_at\nFROM users \nWHERE id = '{{ $('Extract User Context').item.json.userId }}'::UUID\nAND is_active = true",
-                "options": {}
-            },
-            "id": "fetch-user-profile",
-            "name": "Fetch User Profile",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.4,
-            "position": [
-                640,
-                1688
-            ],
-            "credentials": {
-                "postgres": {
-                    "id": "A9ARSsEr8DBB7lXK",
-                    "name": "Postgres account"
-                }
-            },
-            "onError": "continueErrorOutput"
-        },
-        {
-            "parameters": {
-                "jsCode": "// Format user profile response\nconst queryResult = $input.first().json;\nconsole.log('Raw query result:', queryResult);\n\n// Handle the case where query returns an array or single object\nlet userProfile;\nif (Array.isArray(queryResult) && queryResult.length > 0) {\n  userProfile = queryResult[0];\n} else if (queryResult && !Array.isArray(queryResult)) {\n  userProfile = queryResult;\n} else {\n  throw new Error('User not found or inactive');\n}\n\nconsole.log('Processed user profile:', userProfile);\n\nconst response = {\n  success: true,\n  data: {\n    user: {\n      id: userProfile.id,\n      email: userProfile.email,\n      name: userProfile.name,\n      avatarUrl: userProfile.avatar_url || null,\n      language: userProfile.language || 'en',\n      timezone: userProfile.timezone || 'UTC',\n      currency: userProfile.currency || 'USD',\n      isActive: userProfile.is_active,\n      lastLogin: userProfile.last_login,\n      createdAt: userProfile.created_at,\n      updatedAt: userProfile.updated_at\n    }\n  },\n  meta: {\n    timestamp: new Date().toISOString(),\n    version: '1.0.0',\n    endpoint: 'GET /user/profile'\n  }\n};\n\nconsole.log('User Profile Response:', {\n  userId: userProfile.id,\n  email: userProfile.email,\n  name: userProfile.name\n});\n\nreturn [{\n  json: response\n}];"
-            },
-            "id": "format-profile-response",
-            "name": "Format Profile Response",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                832,
-                1608
+                2800,
+                1696
             ]
         },
         {
@@ -151,13 +328,13 @@
                     }
                 }
             },
-            "id": "respond-profile-success",
-            "name": "Respond Success",
+            "id": "09a66e93-faa7-44ad-a9d5-4e65c400bad4",
+            "name": "Respond Success1",
             "type": "n8n-nodes-base.respondToWebhook",
             "typeVersion": 1,
             "position": [
-                1040,
-                1608
+                3408,
+                1616
             ]
         },
         {
@@ -176,26 +353,26 @@
                     }
                 }
             },
-            "id": "respond-unauthorized-get",
-            "name": "Respond Unauthorized",
+            "id": "0593a2dc-d7cc-4e25-9450-e068ad9e8777",
+            "name": "Respond Unauthorized1",
             "type": "n8n-nodes-base.respondToWebhook",
             "typeVersion": 1,
             "position": [
-                432,
-                1864
+                2800,
+                1872
             ]
         },
         {
             "parameters": {
                 "jsCode": "// Handle database or processing errors\nconst error = $input.first().json || { message: 'Unknown error' };\n\nconst errorResponse = {\n  success: false,\n  error: {\n    type: 'database_error',\n    message: 'Failed to fetch user profile',\n    details: error.message || 'Unknown database error',\n    timestamp: new Date().toISOString()\n  }\n};\n\nconsole.error('User Profile API Error:', errorResponse);\n\nreturn [{\n  json: errorResponse\n}];"
             },
-            "id": "handle-profile-error",
-            "name": "Handle Error",
+            "id": "52b87efb-7881-434b-9320-31dd8faf4c02",
+            "name": "Handle Error1",
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
             "position": [
-                832,
-                1752
+                3200,
+                1760
             ]
         },
         {
@@ -214,38 +391,14 @@
                     }
                 }
             },
-            "id": "respond-profile-error",
-            "name": "Respond Error",
+            "id": "d02a8802-7dbb-4293-bdca-09190c50e1d3",
+            "name": "Respond Error1",
             "type": "n8n-nodes-base.respondToWebhook",
             "typeVersion": 1,
             "position": [
-                1040,
-                1752
+                3408,
+                1760
             ]
-        },
-        {
-            "parameters": {
-                "httpMethod": "POST",
-                "path": "user/profile",
-                "authentication": "jwtAuth",
-                "responseMode": "responseNode",
-                "options": {}
-            },
-            "id": "update-profile-webhook",
-            "name": "Update User Profile Webhook",
-            "type": "n8n-nodes-base.webhook",
-            "typeVersion": 1,
-            "position": [
-                -176,
-                2088
-            ],
-            "webhookId": "user-profile-post-webhook-id",
-            "credentials": {
-                "jwtAuth": {
-                    "id": "oOaAzR6thOsg7HXV",
-                    "name": "JWT Auth account"
-                }
-            }
         },
         {
             "parameters": {
@@ -265,13 +418,13 @@
                     "waitForSubWorkflow": true
                 }
             },
-            "id": "execute-auth-middleware-post",
-            "name": "Execute Auth Middleware POST",
+            "id": "7899d1bf-4bf0-4c9a-b129-e8b2e34d706b",
+            "name": "Execute Auth Middleware POST1",
             "type": "n8n-nodes-base.executeWorkflow",
             "typeVersion": 1.2,
             "position": [
-                32,
-                2088
+                2400,
+                2096
             ]
         },
         {
@@ -297,91 +450,13 @@
                 },
                 "options": {}
             },
-            "id": "check-auth-post",
-            "name": "Check Authentication POST",
+            "id": "6b49d348-81bb-4710-88f4-e122d2053aea",
+            "name": "Check Authentication POST1",
             "type": "n8n-nodes-base.if",
             "typeVersion": 2,
             "position": [
-                224,
-                2088
-            ]
-        },
-        {
-            "parameters": {
-                "jsCode": "// Extract and validate POST request data\nconst requestBody = $('Update User Profile Webhook').first().json.body || {};\nconst jwtPayload = $('Update User Profile Webhook').first().json.jwtPayload || {};\n\nconst userId = jwtPayload.userId || jwtPayload.user_id;\nconst userEmail = jwtPayload.email;\n\n// Extract profile update data\nconst profileData = {\n  name: requestBody.name,\n  avatarUrl: requestBody.avatarUrl,\n  language: requestBody.language,\n  timezone: requestBody.timezone,\n  currency: requestBody.currency\n};\n\n// Remove undefined values\nObject.keys(profileData).forEach(key => {\n  if (profileData[key] === undefined) {\n    delete profileData[key];\n  }\n});\n\n// Validate at least one field is being updated\nif (Object.keys(profileData).length === 0) {\n  throw new Error('No valid fields provided for update');\n}\n\nconst context = {\n  userId,\n  userEmail,\n  profileData,\n  timestamp: new Date().toISOString()\n};\n\nconsole.log('User Profile API - POST Request:', context);\n\nreturn [{\n  json: context\n}];"
-            },
-            "id": "validate-profile-request",
-            "name": "Validate Profile Request",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                432,
-                2008
-            ],
-            "onError": "continueErrorOutput"
-        },
-        {
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "UPDATE users \nSET \n  name = CASE WHEN '{{ $('Validate Profile Request').item.json.profileData.name }}' != '' THEN '{{ $('Validate Profile Request').item.json.profileData.name }}' ELSE name END,\n  avatar_url = CASE WHEN '{{ $('Validate Profile Request').item.json.profileData.avatarUrl }}' != '' THEN '{{ $('Validate Profile Request').item.json.profileData.avatarUrl }}' ELSE avatar_url END,\n  language = CASE WHEN '{{ $('Validate Profile Request').item.json.profileData.language }}' != '' THEN '{{ $('Validate Profile Request').item.json.profileData.language }}' ELSE language END,\n  timezone = CASE WHEN '{{ $('Validate Profile Request').item.json.profileData.timezone }}' != '' THEN '{{ $('Validate Profile Request').item.json.profileData.timezone }}' ELSE timezone END,\n  currency = CASE WHEN '{{ $('Validate Profile Request').item.json.profileData.currency }}' != '' THEN '{{ $('Validate Profile Request').item.json.profileData.currency }}' ELSE currency END,\n  updated_at = NOW()\nWHERE id = '{{ $('Validate Profile Request').item.json.userId }}'::UUID\nRETURNING \n  id,\n  email,\n  name,\n  avatar_url,\n  language,\n  timezone,\n  currency,\n  is_active,\n  last_login,\n  created_at,\n  updated_at",
-                "options": {}
-            },
-            "id": "update-user-profile",
-            "name": "Update User Profile",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.4,
-            "position": [
-                640,
-                2008
-            ],
-            "credentials": {
-                "postgres": {
-                    "id": "A9ARSsEr8DBB7lXK",
-                    "name": "Postgres account"
-                }
-            },
-            "onError": "continueErrorOutput"
-        },
-        {
-            "parameters": {
-                "jsCode": "// Format successful profile update response\nconst userProfile = $input.first().json;\n\nif (!userProfile || Object.keys(userProfile).length === 0) {\n  throw new Error('User not found or update failed');\n}\n\nconst response = {\n  success: true,\n  data: {\n    user: {\n      id: userProfile.id,\n      email: userProfile.email,\n      name: userProfile.name,\n      avatarUrl: userProfile.avatar_url,\n      language: userProfile.language || 'en',\n      timezone: userProfile.timezone || 'UTC',\n      currency: userProfile.currency || 'USD',\n      isActive: userProfile.is_active,\n      lastLogin: userProfile.last_login,\n      createdAt: userProfile.created_at,\n      updatedAt: userProfile.updated_at\n    }\n  },\n  meta: {\n    timestamp: new Date().toISOString(),\n    version: '1.0.0',\n    endpoint: 'POST /user/profile'\n  }\n};\n\nconsole.log('Profile Update Success:', {\n  userId: userProfile.id,\n  updatedFields: Object.keys($('Validate Profile Request').first().json.profileData)\n});\n\nreturn [{\n  json: response\n}];"
-            },
-            "id": "format-update-success",
-            "name": "Format Update Success",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                832,
-                1928
-            ]
-        },
-        {
-            "parameters": {
-                "respondWith": "json",
-                "responseBody": "={{ $json }}",
-                "options": {
-                    "responseCode": 200,
-                    "responseHeaders": {
-                        "entries": [
-                            {
-                                "name": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "name": "X-API-Version",
-                                "value": "1.0.0"
-                            }
-                        ]
-                    }
-                }
-            },
-            "id": "respond-update-success",
-            "name": "Respond Update Success",
-            "type": "n8n-nodes-base.respondToWebhook",
-            "typeVersion": 1,
-            "position": [
-                1040,
-                1928
+                2592,
+                2096
             ]
         },
         {
@@ -400,52 +475,28 @@
                     }
                 }
             },
-            "id": "respond-unauthorized-post",
-            "name": "Respond Unauthorized POST",
+            "id": "a1f0badd-8ec3-4d56-aed0-31f66465f831",
+            "name": "Respond Unauthorized POST1",
             "type": "n8n-nodes-base.respondToWebhook",
             "typeVersion": 1,
             "position": [
-                432,
-                2200
+                2800,
+                2208
             ]
         },
         {
             "parameters": {
-                "jsCode": "// Handle POST operation errors\nconst error = $input.first().json || { message: 'Unknown error' };\n\nconst errorResponse = {\n  success: false,\n  error: {\n    type: 'operation_error',\n    message: 'Failed to update user profile',\n    details: error.message || 'Unknown operation error',\n    timestamp: new Date().toISOString()\n  }\n};\n\nconsole.error('Profile Update Error:', errorResponse);\n\nreturn [{\n  json: errorResponse\n}];"
+                "height": 960,
+                "width": 1568
             },
-            "id": "handle-update-error",
-            "name": "Handle Update Error",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                832,
-                2088
-            ]
-        },
-        {
-            "parameters": {
-                "respondWith": "json",
-                "responseBody": "={{ $json }}",
-                "options": {
-                    "responseCode": 500,
-                    "responseHeaders": {
-                        "entries": [
-                            {
-                                "name": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ]
-                    }
-                }
-            },
-            "id": "respond-update-error",
-            "name": "Respond Update Error",
-            "type": "n8n-nodes-base.respondToWebhook",
+            "type": "n8n-nodes-base.stickyNote",
             "typeVersion": 1,
             "position": [
-                1040,
-                2088
-            ]
+                2096,
+                1504
+            ],
+            "id": "bd6d6745-b8cc-455c-bad3-d49af2930b6a",
+            "name": "Sticky Note5"
         }
     ],
     "connections": {
@@ -453,47 +504,7 @@
             "main": [
                 [
                     {
-                        "node": "Execute Auth Middleware",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Execute Auth Middleware": {
-            "main": [
-                [
-                    {
-                        "node": "Check Authentication",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Check Authentication": {
-            "main": [
-                [
-                    {
-                        "node": "Extract User Context",
-                        "type": "main",
-                        "index": 0
-                    }
-                ],
-                [
-                    {
-                        "node": "Respond Unauthorized",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Extract User Context": {
-            "main": [
-                [
-                    {
-                        "node": "Fetch User Profile",
+                        "node": "Execute Auth Middleware1",
                         "type": "main",
                         "index": 0
                     }
@@ -511,7 +522,7 @@
                 ],
                 [
                     {
-                        "node": "Handle Error",
+                        "node": "Handle Error1",
                         "type": "main",
                         "index": 0
                     }
@@ -522,18 +533,7 @@
             "main": [
                 [
                     {
-                        "node": "Respond Success",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Handle Error": {
-            "main": [
-                [
-                    {
-                        "node": "Respond Error",
+                        "node": "Respond Success1",
                         "type": "main",
                         "index": 0
                     }
@@ -544,36 +544,7 @@
             "main": [
                 [
                     {
-                        "node": "Execute Auth Middleware POST",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Execute Auth Middleware POST": {
-            "main": [
-                [
-                    {
-                        "node": "Check Authentication POST",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Check Authentication POST": {
-            "main": [
-                [
-                    {
-                        "node": "Validate Profile Request",
-                        "type": "main",
-                        "index": 0
-                    }
-                ],
-                [
-                    {
-                        "node": "Respond Unauthorized POST",
+                        "node": "Execute Auth Middleware POST1",
                         "type": "main",
                         "index": 0
                     }
@@ -637,9 +608,111 @@
                     }
                 ]
             ]
+        },
+        "Execute Auth Middleware1": {
+            "main": [
+                [
+                    {
+                        "node": "Check Authentication1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Authentication1": {
+            "main": [
+                [
+                    {
+                        "node": "Extract User Context1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Respond Unauthorized1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract User Context1": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch User Profile",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Handle Error1": {
+            "main": [
+                [
+                    {
+                        "node": "Respond Error1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Execute Auth Middleware POST1": {
+            "main": [
+                [
+                    {
+                        "node": "Check Authentication POST1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Authentication POST1": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Profile Request",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Respond Unauthorized POST1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
         }
     },
-    "pinData": {},
+    "pinData": {
+        "Get User Profile Webhook": [
+            {
+                "headers": {
+                    "host": "localhost:5678",
+                    "user-agent": "curl/8.4.0",
+                    "accept": "*/*",
+                    "content-type": "application/json",
+                    "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVzSW4iOiIyNGgiLCJ1c2VySWQiOiJiMTQ0YjY3MC02NTY5LTRiNjMtOTNlYS1mMWJkOGExODA0MWIiLCJlbWFpbCI6InRlc3R1c2VyMTIzQGV4YW1wbGUuY29tIiwiaWF0IjoxNzU4NTMxNTYyfQ.PKoZzwChAGwONSVcJJc67xta6BTYiBwvt-S35-bovv0"
+                },
+                "params": {},
+                "query": {},
+                "webhookUrl": "http://localhost:5678/webhook/user/profile",
+                "executionMode": "production",
+                "jwtPayload": {
+                    "expiresIn": "24h",
+                    "userId": "b144b670-6569-4b63-93ea-f1bd8a18041b",
+                    "email": "testuser123@example.com",
+                    "iat": 1758531562
+                }
+            }
+        ]
+    },
     "meta": {
         "templateCredsSetupCompleted": true,
         "instanceId": "8f73175c8cfc4e9b66eecf1cdc8ab8fdf6289436294741f796d676a38d70095e"

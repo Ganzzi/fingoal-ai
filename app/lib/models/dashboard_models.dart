@@ -1,7 +1,8 @@
 /// Models for Dashboard Data
 ///
 /// These models define the structure for dashboard financial data
-/// that will be consumed from the Dashboard Agent n8n workflow.
+/// that will be consumed from the Dashboard API n8n workflow.
+/// Matches the API response structure from Story 5.1.
 
 import 'package:intl/intl.dart';
 
@@ -11,63 +12,76 @@ class DashboardData {
   final List<Budget> budgets;
   final List<Transaction> recentTransactions;
   final FinancialOverview financialOverview;
-  final Map<String, dynamic> otherData;
+  final Map<String, dynamic> structuredData;
+  final List<Alert> alerts;
+  final DashboardSummary summary;
   final DashboardMetadata metadata;
-  final EmptyState? emptyState;
 
   const DashboardData({
     required this.moneyAccounts,
     required this.budgets,
     required this.recentTransactions,
     required this.financialOverview,
-    required this.otherData,
+    required this.structuredData,
+    required this.alerts,
+    required this.summary,
     required this.metadata,
-    this.emptyState,
   });
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
+    // Extract data and meta from API response
+    final data = json['data'] as Map<String, dynamic>? ?? {};
+    final meta = json['meta'] as Map<String, dynamic>? ?? {};
+
     return DashboardData(
-      moneyAccounts: (json['moneyAccounts'] as List? ?? [])
+      moneyAccounts: (data['accounts'] as List? ?? [])
           .map((account) =>
               MoneyAccount.fromJson(account as Map<String, dynamic>))
           .toList(),
-      budgets: (json['budgets'] as List? ?? [])
+      budgets: (data['budgets'] as List? ?? [])
           .map((budget) => Budget.fromJson(budget as Map<String, dynamic>))
           .toList(),
-      recentTransactions: (json['recentTransactions'] as List? ?? [])
+      recentTransactions: (data['transactions'] as List? ?? [])
           .map((transaction) =>
               Transaction.fromJson(transaction as Map<String, dynamic>))
           .toList(),
       financialOverview: FinancialOverview.fromJson(
-        json['financialOverview'] as Map<String, dynamic>? ?? {},
+        data['overview'] as Map<String, dynamic>? ?? {},
       ),
-      otherData: json['otherData'] as Map<String, dynamic>? ?? {},
-      metadata: DashboardMetadata.fromJson(
-        json['metadata'] as Map<String, dynamic>? ?? {},
+      structuredData: data['structuredData'] as Map<String, dynamic>? ?? {},
+      alerts: (data['alerts'] as List? ?? [])
+          .map((alert) => Alert.fromJson(alert as Map<String, dynamic>))
+          .toList(),
+      summary: DashboardSummary.fromJson(
+        data['summary'] as Map<String, dynamic>? ?? {},
       ),
-      emptyState: json['emptyState'] != null
-          ? EmptyState.fromJson(json['emptyState'] as Map<String, dynamic>)
-          : null,
+      metadata: DashboardMetadata.fromJson(meta),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'moneyAccounts':
-          moneyAccounts.map((account) => account.toJson()).toList(),
-      'budgets': budgets.map((budget) => budget.toJson()).toList(),
-      'recentTransactions': recentTransactions
-          .map((transaction) => transaction.toJson())
-          .toList(),
-      'financialOverview': financialOverview.toJson(),
-      'otherData': otherData,
-      'metadata': metadata.toJson(),
-      if (emptyState != null) 'emptyState': emptyState!.toJson(),
+      'success': true,
+      'data': {
+        'accounts': moneyAccounts.map((account) => account.toJson()).toList(),
+        'budgets': budgets.map((budget) => budget.toJson()).toList(),
+        'transactions': recentTransactions
+            .map((transaction) => transaction.toJson())
+            .toList(),
+        'overview': financialOverview.toJson(),
+        'structuredData': structuredData,
+        'alerts': alerts.map((alert) => alert.toJson()).toList(),
+        'summary': summary.toJson(),
+      },
+      'meta': metadata.toJson(),
     };
   }
 
   /// Check if this is an empty state (new user with no data)
-  bool get isEmpty => metadata.isEmpty == true || emptyState != null;
+  bool get isEmpty =>
+      summary.totalAccounts == 0 &&
+      summary.totalTransactions == 0 &&
+      summary.totalBudgets == 0;
 
   /// Get total number of financial entities
   int get totalItemsCount =>
@@ -79,30 +93,43 @@ class MoneyAccount {
   final String id;
   final String name;
   final AccountType type;
-  final String? institution;
+  final String? institutionName;
+  final String? accountNumber;
   final double balance;
   final String currency;
   final bool isActive;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   const MoneyAccount({
     required this.id,
     required this.name,
     required this.type,
-    this.institution,
+    this.institutionName,
+    this.accountNumber,
     required this.balance,
     required this.currency,
     required this.isActive,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory MoneyAccount.fromJson(Map<String, dynamic> json) {
     return MoneyAccount(
       id: json['id'] as String,
       name: json['name'] as String,
-      type: AccountType.fromString(json['type'] as String),
-      institution: json['institution'] as String?,
+      type: AccountType.fromString(json['accountType'] as String? ?? 'bank'),
+      institutionName: json['institutionName'] as String?,
+      accountNumber: json['accountNumber'] as String?,
       balance: (json['balance'] as num).toDouble(),
       currency: json['currency'] as String? ?? 'USD',
       isActive: json['isActive'] as bool? ?? true,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'] as String)
+          : null,
     );
   }
 
@@ -110,11 +137,14 @@ class MoneyAccount {
     return {
       'id': id,
       'name': name,
-      'type': type.value,
-      'institution': institution,
+      'accountType': type.value,
+      'institutionName': institutionName,
+      'accountNumber': accountNumber,
       'balance': balance,
       'currency': currency,
       'isActive': isActive,
+      if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+      if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
     };
   }
 
@@ -449,41 +479,55 @@ enum TransactionType {
 
 /// Financial overview model with calculated metrics
 class FinancialOverview {
-  final double totalAssets;
-  final double totalDebts;
   final double netWorth;
+  final double monthlyCashFlow;
   final double monthlyIncome;
   final double monthlyExpenses;
-  final int savingsRate;
+  final double totalAssets;
+  final double totalDebts;
+  final double savingsRate;
+  final Map<String, double> accountTotals;
 
   const FinancialOverview({
-    required this.totalAssets,
-    required this.totalDebts,
     required this.netWorth,
+    required this.monthlyCashFlow,
     required this.monthlyIncome,
     required this.monthlyExpenses,
+    required this.totalAssets,
+    required this.totalDebts,
     required this.savingsRate,
+    required this.accountTotals,
   });
 
   factory FinancialOverview.fromJson(Map<String, dynamic> json) {
+    final accountTotalsJson =
+        json['accountTotals'] as Map<String, dynamic>? ?? {};
+    final accountTotals = accountTotalsJson.map(
+      (key, value) => MapEntry(key, (value as num).toDouble()),
+    );
+
     return FinancialOverview(
-      totalAssets: (json['totalAssets'] as num?)?.toDouble() ?? 0.0,
-      totalDebts: (json['totalDebts'] as num?)?.toDouble() ?? 0.0,
       netWorth: (json['netWorth'] as num?)?.toDouble() ?? 0.0,
+      monthlyCashFlow: (json['monthlyCashFlow'] as num?)?.toDouble() ?? 0.0,
       monthlyIncome: (json['monthlyIncome'] as num?)?.toDouble() ?? 0.0,
       monthlyExpenses: (json['monthlyExpenses'] as num?)?.toDouble() ?? 0.0,
-      savingsRate: (json['savingsRate'] as num?)?.toInt() ?? 0,
+      totalAssets: (json['totalAssets'] as num?)?.toDouble() ?? 0.0,
+      totalDebts: (json['totalDebts'] as num?)?.toDouble() ?? 0.0,
+      savingsRate: (json['savingsRate'] as num?)?.toDouble() ?? 0.0,
+      accountTotals: accountTotals,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'totalAssets': totalAssets,
-      'totalDebts': totalDebts,
       'netWorth': netWorth,
+      'monthlyCashFlow': monthlyCashFlow,
       'monthlyIncome': monthlyIncome,
       'monthlyExpenses': monthlyExpenses,
+      'totalAssets': totalAssets,
+      'totalDebts': totalDebts,
       'savingsRate': savingsRate,
+      'accountTotals': accountTotals,
     };
   }
 
@@ -520,9 +564,6 @@ class FinancialOverview {
   /// Check if net worth is positive
   bool get hasPositiveNetWorth => netWorth > 0;
 
-  /// Get monthly cash flow (income - expenses)
-  double get monthlyCashFlow => monthlyIncome - monthlyExpenses;
-
   /// Get formatted monthly cash flow
   String get formattedMonthlyCashFlow {
     final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 0);
@@ -533,76 +574,176 @@ class FinancialOverview {
   bool get hasPositiveCashFlow => monthlyCashFlow > 0;
 }
 
-/// Dashboard metadata model
+/// Dashboard metadata model from API meta section
 class DashboardMetadata {
-  final DateTime generatedAt;
-  final int accountsCount;
-  final int budgetsCount;
-  final int transactionsCount;
-  final int dataTypesCount;
-  final bool? isEmpty;
+  final DateTime timestamp;
+  final String version;
+  final String endpoint;
+  final String? userId;
+  final String? cacheStatus;
 
   const DashboardMetadata({
-    required this.generatedAt,
-    required this.accountsCount,
-    required this.budgetsCount,
-    required this.transactionsCount,
-    required this.dataTypesCount,
-    this.isEmpty,
+    required this.timestamp,
+    required this.version,
+    required this.endpoint,
+    this.userId,
+    this.cacheStatus,
   });
 
   factory DashboardMetadata.fromJson(Map<String, dynamic> json) {
     return DashboardMetadata(
-      generatedAt: DateTime.parse(json['generatedAt'] as String),
-      accountsCount: json['accountsCount'] as int? ?? 0,
-      budgetsCount: json['budgetsCount'] as int? ?? 0,
-      transactionsCount: json['transactionsCount'] as int? ?? 0,
-      dataTypesCount: json['dataTypesCount'] as int? ?? 0,
-      isEmpty: json['isEmpty'] as bool?,
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      version: json['version'] as String? ?? '1.0.0',
+      endpoint: json['endpoint'] as String? ?? 'GET /dashboard',
+      userId: json['userId'] as String?,
+      cacheStatus: json['cacheStatus'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'generatedAt': generatedAt.toIso8601String(),
-      'accountsCount': accountsCount,
-      'budgetsCount': budgetsCount,
-      'transactionsCount': transactionsCount,
-      'dataTypesCount': dataTypesCount,
-      if (isEmpty != null) 'isEmpty': isEmpty,
+      'timestamp': timestamp.toIso8601String(),
+      'version': version,
+      'endpoint': endpoint,
+      if (userId != null) 'userId': userId,
+      if (cacheStatus != null) 'cacheStatus': cacheStatus,
     };
   }
 
-  /// Get total count of all items
-  int get totalItemsCount => accountsCount + budgetsCount + transactionsCount;
+  /// Check if data is from cache
+  bool get isCached => cacheStatus == 'cached';
+
+  /// Check if data is fresh
+  bool get isFresh => cacheStatus == 'fresh';
 }
 
-/// Empty state model for new users
-class EmptyState {
-  final String title;
-  final String message;
-  final List<String> suggestions;
+/// Dashboard summary model from API summary section
+class DashboardSummary {
+  final int totalAccounts;
+  final int totalTransactions;
+  final int totalBudgets;
+  final int totalAlerts;
+  final List<String> dataTypes;
+  final int totalStructuredItems;
 
-  const EmptyState({
-    required this.title,
-    required this.message,
-    required this.suggestions,
+  const DashboardSummary({
+    required this.totalAccounts,
+    required this.totalTransactions,
+    required this.totalBudgets,
+    required this.totalAlerts,
+    required this.dataTypes,
+    required this.totalStructuredItems,
   });
 
-  factory EmptyState.fromJson(Map<String, dynamic> json) {
-    return EmptyState(
-      title: json['title'] as String,
-      message: json['message'] as String,
-      suggestions: List<String>.from(json['suggestions'] as List),
+  factory DashboardSummary.fromJson(Map<String, dynamic> json) {
+    return DashboardSummary(
+      totalAccounts: json['totalAccounts'] as int? ?? 0,
+      totalTransactions: json['totalTransactions'] as int? ?? 0,
+      totalBudgets: json['totalBudgets'] as int? ?? 0,
+      totalAlerts: json['totalAlerts'] as int? ?? 0,
+      dataTypes: List<String>.from(json['dataTypes'] as List? ?? []),
+      totalStructuredItems: json['totalStructuredItems'] as int? ?? 0,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'totalAccounts': totalAccounts,
+      'totalTransactions': totalTransactions,
+      'totalBudgets': totalBudgets,
+      'totalAlerts': totalAlerts,
+      'dataTypes': dataTypes,
+      'totalStructuredItems': totalStructuredItems,
+    };
+  }
+
+  /// Check if dashboard is empty
+  bool get isEmpty =>
+      totalAccounts == 0 && totalTransactions == 0 && totalBudgets == 0;
+
+  /// Get total items count
+  int get totalItems =>
+      totalAccounts + totalTransactions + totalBudgets + totalAlerts;
+}
+
+/// Alert model for dashboard notifications
+class Alert {
+  final String id;
+  final String type;
+  final String title;
+  final String message;
+  final String severity;
+  final Map<String, dynamic>? data;
+  final bool isRead;
+  final String? actionUrl;
+  final DateTime? expiresAt;
+  final DateTime createdAt;
+
+  const Alert({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.message,
+    required this.severity,
+    this.data,
+    required this.isRead,
+    this.actionUrl,
+    this.expiresAt,
+    required this.createdAt,
+  });
+
+  factory Alert.fromJson(Map<String, dynamic> json) {
+    return Alert(
+      id: json['id'] as String,
+      type: json['type'] as String,
+      title: json['title'] as String,
+      message: json['message'] as String,
+      severity: json['severity'] as String,
+      data: json['data'] as Map<String, dynamic>?,
+      isRead: json['isRead'] as bool? ?? false,
+      actionUrl: json['actionUrl'] as String?,
+      expiresAt: json['expiresAt'] != null
+          ? DateTime.parse(json['expiresAt'] as String)
+          : null,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'type': type,
       'title': title,
       'message': message,
-      'suggestions': suggestions,
+      'severity': severity,
+      if (data != null) 'data': data,
+      'isRead': isRead,
+      if (actionUrl != null) 'actionUrl': actionUrl,
+      if (expiresAt != null) 'expiresAt': expiresAt!.toIso8601String(),
+      'createdAt': createdAt.toIso8601String(),
     };
+  }
+
+  /// Get severity color
+  String get severityColor {
+    switch (severity.toLowerCase()) {
+      case 'error':
+        return '#F44336';
+      case 'warning':
+        return '#FF9800';
+      case 'info':
+        return '#2196F3';
+      case 'success':
+        return '#4CAF50';
+      default:
+        return '#9E9E9E';
+    }
+  }
+
+  /// Check if alert is expired
+  bool get isExpired {
+    if (expiresAt == null) return false;
+    return DateTime.now().isAfter(expiresAt!);
   }
 }
 

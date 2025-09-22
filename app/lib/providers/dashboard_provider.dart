@@ -135,24 +135,8 @@ class DashboardProvider with ChangeNotifier {
   }
 
   /// Get summary statistics for UI display
-  DashboardSummary get summary {
-    if (_dashboardData == null) {
-      return const DashboardSummary(
-        totalAccounts: 0,
-        totalBudgets: 0,
-        totalTransactions: 0,
-        netWorth: 0,
-        isEmpty: true,
-      );
-    }
-
-    return DashboardSummary(
-      totalAccounts: _dashboardData!.moneyAccounts.length,
-      totalBudgets: _dashboardData!.budgets.length,
-      totalTransactions: _dashboardData!.recentTransactions.length,
-      netWorth: _dashboardData!.financialOverview.netWorth,
-      isEmpty: _dashboardData!.isEmpty,
-    );
+  DashboardSummary? get summary {
+    return _dashboardData?.summary;
   }
 
   // Private methods
@@ -228,43 +212,4 @@ enum DashboardLoadingState {
   success,
   cached,
   error,
-}
-
-/// Dashboard summary model for quick stats
-class DashboardSummary {
-  final int totalAccounts;
-  final int totalBudgets;
-  final int totalTransactions;
-  final double netWorth;
-  final bool isEmpty;
-
-  const DashboardSummary({
-    required this.totalAccounts,
-    required this.totalBudgets,
-    required this.totalTransactions,
-    required this.netWorth,
-    required this.isEmpty,
-  });
-
-  /// Get total items count
-  int get totalItems => totalAccounts + totalBudgets + totalTransactions;
-
-  /// Check if has any financial data
-  bool get hasData => totalItems > 0;
-
-  /// Get formatted net worth
-  String get formattedNetWorth {
-    if (netWorth.abs() >= 1000000) {
-      final millions = netWorth / 1000000;
-      return '\$${millions.toStringAsFixed(1)}M';
-    } else if (netWorth.abs() >= 1000) {
-      final thousands = netWorth / 1000;
-      return '\$${thousands.toStringAsFixed(1)}K';
-    } else {
-      return '\$${netWorth.toStringAsFixed(0)}';
-    }
-  }
-
-  /// Check if net worth is positive
-  bool get hasPositiveNetWorth => netWorth > 0;
 }

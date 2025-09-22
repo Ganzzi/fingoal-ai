@@ -22,8 +22,9 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // TODO: Replace with actual auth token from auth provider
-  final String _mockAuthToken = 'mock-jwt-token-for-development';
+  // Use the working JWT token from API tests
+  final String _authToken =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVzSW4iOiIyNGgiLCJ1c2VySWQiOiJiMTQ0YjY3MC02NTY5LTRiNjMtOTNlYS1mMWJkOGExODA0MWIiLCJlbWFpbCI6InRlc3R1c2VyMTIzQGV4YW1wbGUuY29tIiwiaWF0IjoxNzU4NTMxNTYyfQ.PKoZzwChAGwONSVcJJc67xta6BTYiBwvt-S35-bovv0';
 
   @override
   void initState() {
@@ -36,7 +37,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       provider.initialize().then((_) {
         // If no cached data, fetch from API
         if (!provider.hasData) {
-          provider.fetchDashboardData(authToken: _mockAuthToken);
+          provider.fetchDashboardData(authToken: _authToken);
         }
       });
     });
@@ -61,8 +62,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               return IconButton(
                 onPressed: provider.isLoading
                     ? null
-                    : () => provider.refreshDashboardData(
-                        authToken: _mockAuthToken),
+                    : () =>
+                        provider.refreshDashboardData(authToken: _authToken),
                 icon: provider.isLoading
                     ? SizedBox(
                         width: 20,
@@ -132,8 +133,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
-                      onPressed: () => provider.refreshDashboardData(
-                          authToken: _mockAuthToken),
+                      onPressed: () =>
+                          provider.refreshDashboardData(authToken: _authToken),
                       icon: const Icon(Icons.refresh),
                       label: const Text('Try Again'),
                     ),
@@ -154,7 +155,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           // Main dashboard content
           return RefreshIndicator(
             onRefresh: () =>
-                provider.refreshDashboardData(authToken: _mockAuthToken),
+                provider.refreshDashboardData(authToken: _authToken),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               physics: const AlwaysScrollableScrollPhysics(),
