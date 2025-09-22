@@ -1,6 +1,6 @@
 # FinGoal AI - Personal Finance Management with AI
 
-A comprehensive Flutter mobile application for personal finance management, powered by AI agents through n8n workflows. This monorepo contains both the Flutter frontend and n8n backend configuration.
+A Flutter mobile application for personal finance management, powered by multi-agent AI via n8n workflows. This monorepo contains both the Flutter frontend and n8n backend configuration.
 
 ## 🏗️ Architecture
 
@@ -22,9 +22,12 @@ This project follows a monorepo structure with:
 1. Clone the repository
 2. Copy `.env.example` to `.env` and configure your environment variables
 3. Set up PostgreSQL database
-4. Configure n8n instance
-5. Run the database initialization workflow
+4. Configure n8n instance and ensure it's reachable at `http://localhost:5678`
+5. Run the database initialization workflow in n8n (see docs)
 6. Start the Flutter app: `cd app && flutter run`
+
+Notes
+- The mobile app expects n8n webhooks at `http://localhost:5678` by default (`/webhook/auth`, `/webhook/refresh`, `/webhook/chat`). Adjust if your n8n host differs.
 
 ## 📁 Project Structure
 
@@ -64,23 +67,45 @@ flutter run
 ### Database
 Run the database initialization workflow from n8n to set up all required tables.
 
-## 📋 Features
+## 📋 Features & Status
 
-- **AI-Powered Financial Advice**: Chat with AI agents for personalized financial guidance
-- **Multi-language Support**: English and Vietnamese language options
-- **Secure Authentication**: Google OAuth integration
-- **Real-time Data**: Live financial data and market insights
-- **Comprehensive Dashboard**: Visual analytics and spending insights
-- **Profile Management**: User preferences and settings
+**✅ Implemented (MVP)**
+- **Authentication**: Email/Password with JWT tokens, user registration/login, token refresh, and logout functionality via n8n workflows (`/webhook/auth`, `/webhook/refresh`)
+- **Profile Management**: Complete user profile system with view/edit capabilities, spending categories management
+- **Multi-Agent Chat**: Unified chat interface (`/webhook/chat`) with specialized AI agents:
+  - Intent & Session Agent (Router)
+  - Orchestrator Agent (Agent coordination)
+  - Data Collector Agent (Financial data processing)
+  - Customer Consultant Agent (Financial advice)
+  - Plan Maker Agent (Budget & goal planning)
+  - Change Adder Agent (Transaction updates)
+  - Customer Educator Agent (Financial education)
+  - Memory Update Agent (Persistent context)
+- **Dashboard**: Comprehensive financial dashboard with accounts, budgets, transactions, and overview sections
+- **Localization**: English and Vietnamese support (Flutter gen_l10n)
+- **Error Handling**: Robust retry mechanisms, graceful error states, and user-friendly error messages
+
+**🚧 In Progress / Planned**
+- **Push Notifications**: Local notifications implemented; Firebase integration deferred
+- **Bank Integration**: API endpoints ready for third-party financial data providers  
+- **Advanced Analytics**: Enhanced financial insights and trend analysis
+- **Real-time Updates**: Socket.io integration for live data synchronization
+
+**🏗️ Architecture**
+- **Backend**: n8n workflow automation with 8 specialized AI agents
+- **Database**: PostgreSQL with UUID v7 keys and JSONB flexible data storage
+- **Frontend**: Flutter with Provider state management and Material 3 design
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Flutter 3.16.x, Dart 3.x, Provider 6.x
-- **Backend**: n8n (workflow automation)
-- **Database**: PostgreSQL 15/16
-- **Authentication**: Google OAuth 2.0 with JWT
-- **State Management**: Provider pattern
-- **UI Framework**: Material 3
+- **Frontend**: Flutter 3.16.x, Dart 3.x, Provider 6.x for state management
+- **Backend**: n8n (workflow automation) with 8 specialized AI agent workflows
+- **Database**: PostgreSQL 15/16 with UUID v7 keys and JSONB storage
+- **Authentication**: JWT-based auth with SHA-256 hashing, 24h token expiration
+- **AI/LLM**: Integration ready for OpenAI GPT, Anthropic Claude, and Google Gemini
+- **UI Framework**: Material 3 design system with responsive layouts
+- **Localization**: Flutter gen_l10n (English/Vietnamese)
+- **Notifications**: Flutter Local Notifications (Firebase integration ready)
 
 ## 📚 Documentation
 
@@ -88,6 +113,12 @@ Run the database initialization workflow from n8n to set up all required tables.
 - [Architecture Documentation](./docs/architecture/)
 - [Development Workflow](./docs/architecture/development-workflow.md)
 - [N8N Configuration Guide](./docs/n8n_config_creation_instructions/)
+
+## 🎥 Demo
+
+- Detailed, timed script: see `./docs/demo-video-script.md`
+- Covers: setup, register/login, chat with AI, dashboard walkthrough, profile update, and graceful error handling.
+- Recording tip (macOS): QuickTime Player → New Screen Recording; enable microphone and show mouse clicks.
 
 ## 🤝 Contributing
 

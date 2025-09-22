@@ -13,10 +13,10 @@ The database schema uses UUID v7 for primary keys and combines structured tables
 *   `data_metadata` - JSONB schema definitions for complex financial data
 *   `data_rows` - Actual JSONB data rows (debts, properties, investments, insurance, savings, goals)
 
-**7-Agent System:**
-*   `memories` - Persistent memory storage for all 7 AI agents with conversation context and key insights
-*   `messages` - Chat conversation history between user and AI agents with agent attribution
-*   `session_states` - Session management table for multi-turn conversations with progress tracking and context persistence
+**8-Agent System:**
+*   `memories` - Persistent memory storage for all 8 AI agents with conversation context and key insights
+*   `messages` - Chat conversation history between user and AI agents with agent attribution and metadata
+*   `session_states` - Session management for multi-turn conversations with progress tracking and context persistence
 
 **Dynamic Form System:**
 *   `form_schemas` - JSON form definitions with validation rules and conditional logic
@@ -28,13 +28,16 @@ The database schema uses UUID v7 for primary keys and combines structured tables
 *   `notification_history` - Delivery tracking and user interaction analytics
 
 **Key Features:**
-- UUID v7 primary keys for time-ordered, globally unique identifiers
+- UUID v7 primary keys for time-ordered, globally unique identifiers  
 - JSONB schemas enable flexible storage of complex financial instruments and dynamic form definitions
-- 7-agent memory system provides persistent context for intelligent, consistent responses with session continuity
+- 8-agent memory system provides persistent context for intelligent, consistent responses with session continuity
 - Session state management enables multi-turn conversations with progress tracking across all agents
-- Real-time notification system with offline message queuing and delivery tracking
+- JWT-based authentication with secure password hashing and token refresh capabilities
+- Comprehensive user profile system with spending categories and preferences management
+- Financial dashboard data structure supporting accounts, budgets, transactions, and analytics
+- Local notification system with delivery tracking (real-time notifications planned)
 - Dynamic form schema storage supports flexible data collection workflows
 - Proper foreign key relationships and constraints with optimized indexes
-- Support for text, voice, and image message types with rich content rendering
+- Support for text and image message types with structured AI agent responses
 
 ---
