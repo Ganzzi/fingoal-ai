@@ -59,7 +59,11 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(
+          create: (context) => ChatProvider(
+            languageProvider: context.read<LanguageProvider>(),
+          ),
+        ),
         ChangeNotifierProvider(create: (_) => UserProfileProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],

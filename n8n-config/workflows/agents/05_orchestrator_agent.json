@@ -1,0 +1,928 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "workflowInputs": {
+                    "values": [
+                        {
+                            "name": "detected_intent"
+                        },
+                        {
+                            "name": "session_identification",
+                            "type": "object"
+                        },
+                        {
+                            "name": "original_message"
+                        },
+                        {
+                            "name": "user_id"
+                        },
+                        {
+                            "name": "language"
+                        }
+                    ]
+                }
+            },
+            "id": "8719c915-0e14-4c13-9e74-3e37790ebaef",
+            "typeVersion": 1.1,
+            "name": "When Executed by Another Workflow",
+            "type": "n8n-nodes-base.executeWorkflowTrigger",
+            "position": [
+                -1776,
+                96
+            ]
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "input-validation-intent",
+                            "name": "intent",
+                            "value": "={{ $json.detected_intent }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "input-validation-session",
+                            "name": "session_state",
+                            "value": "={{ $json.session_identification }}",
+                            "type": "object"
+                        },
+                        {
+                            "id": "input-validation-message",
+                            "name": "user_message",
+                            "value": "={{ $json.original_message }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "input-validation-timestamp",
+                            "name": "timestamp",
+                            "value": "={{ new Date().toISOString() }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "d191b169-18c2-4a56-9672-fa3f60b794cc",
+                            "name": "agent_type",
+                            "value": "orchestrator_agent",
+                            "type": "string"
+                        },
+                        {
+                            "id": "4274f3f0-fe38-4e26-9f9a-8dee73fabb0e",
+                            "name": "user_id",
+                            "value": "={{ $json.user_id }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "2a776237-f0b7-4e31-ac3a-f10d9ea0cda6",
+                            "name": "language",
+                            "value": "={{ $json.language }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                -1584,
+                96
+            ],
+            "id": "0631a12f-4a11-4123-9aa6-b60bcfb23858",
+            "name": "Validate Input Data"
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "=**ORCHESTRATION CONTEXT:**\nUser Information: {{ $('Get user profile').item.json.toJsonString() }}\nLanguage: {{ $('Validate Input Data').item.json.language }}\nDetected Intent: {{ $('Validate Input Data').item.json.intent }}\nUser Message: {{ $('Validate Input Data').item.json.user_message }}\nSession State: {{ JSON.stringify($('Validate Input Data').item.json.session_state) }}\nTimestamp: {{ $('Validate Input Data').item.json.timestamp }}\n{{ $json.memory_msg }}\n\n**TASK:** Based on the detected intent and user message, coordinate with the appropriate specialized agents to provide a comprehensive financial advisory response. Use the available tools to gather information, provide consultation, create plans, make updates, or educate the user as needed.",
+                "hasOutputParser": true,
+                "options": {
+                    "systemMessage": "You are FinGoal AI Orchestrator, a master financial advisor coordinator that manages a team of specialized AI agents. Your role is to intelligently coordinate with specialized agents and compile their outputs into cohesive, professional financial advisory responses.\n\n**LANGUAGE REQUIREMENT:**\n**CRITICAL: Always respond in the language specified in the context (Language field). If the user's language is Vietnamese (vi), respond entirely in Vietnamese. If English (en), respond in English. Match the language exactly and maintain consistent usage throughout your entire response, including all sections like suggested_actions, next_steps, disclaimers, and educational_tips.**\n\n**CORE PERSONALITY:**\n- Professional yet approachable financial advisor\n- Empathetic and understanding of financial stress  \n- Clear communicator who avoids jargon\n- Encouraging and supportive in tone\n- Always maintains client confidentiality and trust\n- Welcoming and helpful for new users\n\n**WELCOME AND ONBOARDING FLOW:**\nFor \"signup\" intent or new users:\n1. **Welcome Message:** Provide warm, professional greeting introducing FinGoal AI\n2. **Service Overview:** Briefly explain available services (investment advice, financial planning, education)\n3. **Information Gathering Introduction:** Explain the importance of financial information for personalized advice\n4. **Readiness Check:** Ask if user is ready to share their financial information\n5. **Data Collection Initiation:** If user agrees, call DataCollectorAgent to start guided information gathering\n6. **Reassurance:** Emphasize data security, privacy, and the benefits of comprehensive financial planning\n\n**AGENT COORDINATION RULES:**\n1. **Intent-Based Delegation:** Based on the detected intent, intelligently decide which specialized agents to engage:\n   - \"signup\" → Provide welcome flow, then use DataCollectorAgent for profile setup\n   - \"provide_info\" → Use DataCollectorAgent for data parsing and profile building\n   - \"request_consultation\" → Use CustomerConsultorAgent for investment/insurance advice\n   - \"request_plan\" → Use PlanMakerAgent for financial planning and budgets\n   - \"update_changes\" → Use ChangeAdderAgent for data updates and impact analysis\n   - \"ask_question\" → Use CustomerEducatorAgent for educational content delivery\n\n2. **Multi-Agent Coordination:** You may call multiple agents if the user's request requires it:\n   - For new users: Welcome flow → DataCollector → (if sufficient data) → ConsultorAgent or PlanMaker\n   - For complex planning: DataCollector → PlanMaker → CustomerConsultor\n   - For education with consultation: CustomerEducator → CustomerConsultor\n   - Always gather data first before providing personalized advice\n\n3. **Response Compilation:** Synthesize all agent outputs into a single, coherent response that:\n   - **Responds entirely in the specified language (Language field in context)**\n   - Maintains consistent \"FinGoal AI\" voice\n   - Flows naturally as one conversation\n   - Never mentions internal agent processes\n   - Includes appropriate next steps and follow-ups\n\n**INFORMATION GATHERING COORDINATION:**\n- Present financial information checklist in user-friendly format\n- Explain why each type of information is important for financial planning\n- Guide users through progressive information sharing\n- Handle incomplete information gracefully with follow-up questions\n- Provide handoff messages when transitioning between data collection and advice services\n\n**HANDOFF MESSAGES:**\nAfter data collection completion, offer clear next steps:\n- \"Would you like investment and insurance consultation based on your profile?\"\n- \"Shall we create a comprehensive financial plan for your goals?\"\n- \"Do you have any questions about financial concepts or strategies?\"\n\n**FINANCIAL ADVISOR EXPERTISE:**\n- Investment planning and portfolio management\n- Insurance needs analysis and recommendations\n- Budgeting and cash flow management\n- Retirement and long-term financial planning\n- Tax-efficient financial strategies\n- Risk assessment and management\n\n**COMPLIANCE REQUIREMENTS:**\n- Always include appropriate disclaimers for investment advice\n- Emphasize the importance of professional consultation for major decisions\n- Never guarantee specific returns or outcomes\n- Maintain regulatory compliance in all recommendations\n- Include risk disclosures for investment strategies\n\n**RESPONSE ENHANCEMENT:**\n- Add relevant educational context when appropriate\n- Suggest logical next steps in the financial planning process\n- Offer to elaborate on complex topics\n- Provide encouragement and motivation for financial goals\n- Include visualizations, charts, or progress indicators when helpful\n- Add suggested actions and next steps\n\n**MEMORY MANAGEMENT:**\n- Track user communication preferences and interaction patterns\n- Maintain compliance audit logs for regulatory requirements\n- Store conversation context for future interactions\n- Update user preferences based on feedback and engagement\n- Remember user's information gathering progress\n\nYour goal is to make users feel they're talking to a knowledgeable, caring financial advisor who has access to a comprehensive suite of financial planning tools and expertise, with special attention to welcoming new users and guiding them through the information gathering process."
+                }
+            },
+            "id": "12b606ca-356f-40ff-b844-ff6e9092025d",
+            "name": "Orchestrator AI Agent",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1.6,
+            "position": [
+                -928,
+                96
+            ]
+        },
+        {
+            "parameters": {
+                "description": "Use this tool for signup processes and when users provide financial information. This agent handles user registration, profile creation, financial data collection, and data validation. Call this agent when users are setting up their profile or updating their financial information (income, expenses, assets, debts, goals).",
+                "workflowId": {
+                    "__rl": true,
+                    "value": "VO781OUu5zzwEAlR",
+                    "mode": "list",
+                    "cachedResultName": "DataCollectorAgent"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_message": "={{ $('Validate Input Data').item.json.user_message }}",
+                        "intent": "={{ $('Validate Input Data').item.json.intent }}",
+                        "session_state": "={{ $('Validate Input Data').item.json.session_state }}",
+                        "user_id": "={{ $('Validate Input Data').item.json.user_id }}",
+                        "user_info": "={{ $('Get user profile').item.json }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "user_message",
+                            "displayName": "user_message",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "intent",
+                            "displayName": "intent",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "session_state",
+                            "displayName": "session_state",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "object"
+                        },
+                        {
+                            "id": "user_info",
+                            "displayName": "user_info",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "object",
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+            "typeVersion": 2.2,
+            "position": [
+                -1024,
+                448
+            ],
+            "id": "e2bf4e57-3ea4-4e7d-bf34-846653c485fe",
+            "name": "Call DataCollectorAgent"
+        },
+        {
+            "parameters": {
+                "description": "Use this tool for investment and insurance consultation requests. This agent provides personalized investment advice, portfolio recommendations, insurance needs analysis, and risk assessment. Call this agent when users ask for investment strategies, insurance recommendations, or financial consultation services.",
+                "workflowId": {
+                    "__rl": true,
+                    "value": "mqYsPP76pXY4Oiaw",
+                    "mode": "list",
+                    "cachedResultName": "CustomerConsultorAgent"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_message": "={{ $('Validate Input Data').item.json.user_message }}",
+                        "intent": "={{ $('Validate Input Data').item.json.intent }}",
+                        "session_state": "={{ $('Validate Input Data').item.json.session_state }}",
+                        "user_id": "={{ $('Validate Input Data').item.json.user_id }}",
+                        "user_info": "={{ $('Get user profile').item.json }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "user_message",
+                            "displayName": "user_message",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "intent",
+                            "displayName": "intent",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "session_state",
+                            "displayName": "session_state",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "object"
+                        },
+                        {
+                            "id": "user_info",
+                            "displayName": "user_info",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "object",
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+            "typeVersion": 2.2,
+            "position": [
+                -928,
+                304
+            ],
+            "id": "abd83f4c-a35c-4350-aacf-754c3a6958c3",
+            "name": "Call CustomerConsultorAgent"
+        },
+        {
+            "parameters": {
+                "description": "Use this tool for financial planning and budget creation requests. This agent creates comprehensive financial plans, budgets, savings strategies, and goal-based financial roadmaps. Call this agent when users request financial plans, budgets, savings strategies, or goal planning assistance.",
+                "workflowId": {
+                    "__rl": true,
+                    "value": "he4iAderwAw6zH0j",
+                    "mode": "list",
+                    "cachedResultName": "PlanMakerAgent"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_message": "={{ $('Validate Input Data').item.json.user_message }}",
+                        "intent": "={{ $('Validate Input Data').item.json.intent }}",
+                        "session_state": "={{ $('Validate Input Data').item.json.session_state }}",
+                        "user_id": "={{ $('Validate Input Data').item.json.user_id }}",
+                        "user_info": "={{ $('Get user profile').item.json }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "user_message",
+                            "displayName": "user_message",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "intent",
+                            "displayName": "intent",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "session_state",
+                            "displayName": "session_state",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "object"
+                        },
+                        {
+                            "id": "user_info",
+                            "displayName": "user_info",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "object",
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+            "typeVersion": 2.2,
+            "position": [
+                -848,
+                448
+            ],
+            "id": "3abea025-7a63-4bc7-b8fb-4700403e1987",
+            "name": "Call PlanMakerAgent"
+        },
+        {
+            "parameters": {
+                "description": "Use this tool for updates and changes to existing financial data or plans. This agent handles modifications to user profiles, financial data updates, plan adjustments, and impact analysis of changes. Call this agent when users want to update their information, modify existing plans, or see the impact of financial changes.",
+                "workflowId": {
+                    "__rl": true,
+                    "value": "CHANGE_ADDER_AGENT_ID",
+                    "mode": "list",
+                    "cachedResultName": "ChangeAdderAgent"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_message": "={{ $('Validate Input Data').item.json.user_message }}",
+                        "intent": "={{ $('Validate Input Data').item.json.intent }}",
+                        "session_state": "={{ $('Validate Input Data').item.json.session_state }}",
+                        "user_id": "={{ $('Validate Input Data').item.json.user_id }}",
+                        "user_info": "={{ $('Get user profile').item.json }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "user_message",
+                            "displayName": "user_message",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "intent",
+                            "displayName": "intent",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "session_state",
+                            "displayName": "session_state",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "object"
+                        },
+                        {
+                            "id": "user_info",
+                            "displayName": "user_info",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "object",
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+            "typeVersion": 2.2,
+            "position": [
+                -784,
+                304
+            ],
+            "id": "1c2435d7-f61a-4be7-8a6f-64d6fd888d1b",
+            "name": "Call ChangeAdderAgent"
+        },
+        {
+            "parameters": {
+                "description": "Use this tool for educational and explanatory queries about financial topics. This agent provides educational content about investments, insurance, financial planning concepts, market explanations, and general financial literacy. Call this agent when users ask questions about financial concepts, want to learn about investment options, or need explanations about financial topics.",
+                "workflowId": {
+                    "__rl": true,
+                    "value": "prE1BfTZ0ojGNKUR",
+                    "mode": "list",
+                    "cachedResultName": "CustomerEducatorAgent"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_message": "={{ $('Validate Input Data').item.json.user_message }}",
+                        "intent": "={{ $('Validate Input Data').item.json.intent }}",
+                        "session_state": "={{ $('Validate Input Data').item.json.session_state }}",
+                        "user_id": "={{ $('Validate Input Data').item.json.user_id }}",
+                        "user_info": "={{ $('Get user profile').item.json }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "user_message",
+                            "displayName": "user_message",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "intent",
+                            "displayName": "intent",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "session_state",
+                            "displayName": "session_state",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "object"
+                        },
+                        {
+                            "id": "user_info",
+                            "displayName": "user_info",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "object",
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+            "typeVersion": 2.2,
+            "position": [
+                -688,
+                448
+            ],
+            "id": "73fcd16d-2fba-498c-89d1-1d05a58a2390",
+            "name": "Call CustomerEducatorAgent"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "final-success",
+                            "name": "success",
+                            "value": true,
+                            "type": "boolean"
+                        },
+                        {
+                            "id": "final-content",
+                            "name": "content",
+                            "value": "={{ $json.output.finalResponse }}",
+                            "type": "object"
+                        },
+                        {
+                            "id": "final-compliance-validated",
+                            "name": "compliance_validated",
+                            "value": "={{ $json.output.complianceValidation.validated || false }}",
+                            "type": "boolean"
+                        },
+                        {
+                            "id": "final-timestamp",
+                            "name": "timestamp",
+                            "value": "={{ new Date().toISOString() }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                -544,
+                176
+            ],
+            "id": "071a6f86-e170-4d3e-a025-517dcba3c2e6",
+            "name": "Format Final Response"
+        },
+        {
+            "parameters": {
+                "schemaType": "manual",
+                "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"memory\": {\n      \"type\": \"string\",\n      \"description\": \"Memory updates for orchestrator: aggregated outputs, user communication preferences, compliance logs, conversation context\"\n    },\n    \"finalResponse\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"message\": {\n          \"type\": \"string\",\n          \"description\": \"The main response message to the user\"\n        },\n        \"visualizations\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"type\": {\"type\": \"string\", \"enum\": [\"chart\", \"progress_bar\", \"summary_table\"]},\n              \"title\": {\"type\": \"string\"},\n              \"data\": {\"type\": \"string\"}\n            }\n          },\n          \"description\": \"Text-based visualizations like charts or progress indicators\"\n        },\n        \"suggested_actions\": {\n          \"type\": \"array\",\n          \"items\": {\"type\": \"string\"},\n          \"description\": \"Suggested next steps or actions for the user\"\n        },\n        \"next_steps\": {\n          \"type\": \"array\",\n          \"items\": {\"type\": \"string\"},\n          \"description\": \"Recommended follow-up activities\"\n        },\n        \"disclaimers\": {\n          \"type\": \"array\",\n          \"items\": {\"type\": \"string\"},\n          \"description\": \"Required financial advice disclaimers and risk disclosures\"\n        },\n        \"educational_tips\": {\n          \"type\": \"array\",\n          \"items\": {\"type\": \"string\"},\n          \"description\": \"Additional educational context or tips\"\n        }\n      },\n      \"required\": [\"message\"]\n    },\n    \"complianceValidation\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"validated\": {\"type\": \"boolean\"},\n        \"risks_disclosed\": {\"type\": \"boolean\"},\n        \"disclaimers_included\": {\"type\": \"boolean\"},\n        \"regulatory_compliant\": {\"type\": \"boolean\"}\n      }\n    }\n  },\n  \"required\": [\"finalResponse\", \"complianceValidation\"]\n}",
+                "autoFix": true
+            },
+            "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+            "typeVersion": 1.3,
+            "position": [
+                -624,
+                304
+            ],
+            "id": "03a3dcb6-ff3b-455e-b4f5-2bc435907550",
+            "name": "Structured Output Parser1"
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "CD8W2iWJNWd1GY70",
+                    "mode": "list",
+                    "cachedResultName": "MemoryUpdaterAgent"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "memory": "={{ $json.memory }}",
+                        "agent_type": "={{ $json.agent_type }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "memory",
+                            "displayName": "memory",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string",
+                            "removed": false
+                        },
+                        {
+                            "id": "agent_type",
+                            "displayName": "agent_type",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string",
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": true
+                },
+                "options": {
+                    "waitForSubWorkflow": false
+                }
+            },
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.2,
+            "position": [
+                -352,
+                32
+            ],
+            "id": "6208b84d-e5f0-4e35-91c7-ce9bbe40b9e7",
+            "name": "Call 'MemoryUpdaterAgent'"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "a9195601-ac13-4c10-9ba2-96c151932ae2",
+                            "name": "memory",
+                            "value": "={{ $json.output.memory }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "74c3737b-7805-4d5e-b630-2093b6403232",
+                            "name": "agent_type",
+                            "value": "={{ $('Validate Input Data').item.json.agent_type }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                -544,
+                32
+            ],
+            "id": "53b76fff-e920-4e17-ae24-03d887be9389",
+            "name": "Edit Fields"
+        },
+        {
+            "parameters": {
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "users",
+                    "mode": "list",
+                    "cachedResultName": "users"
+                },
+                "limit": 1,
+                "where": {
+                    "values": [
+                        {
+                            "column": "id",
+                            "value": "={{ $json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "email",
+                        "name",
+                        "language",
+                        "timezone",
+                        "currency"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                -1424,
+                96
+            ],
+            "id": "c78a39fd-aa79-4167-bafc-8bc53583f0c9",
+            "name": "Get user profile",
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "memories",
+                    "mode": "list",
+                    "cachedResultName": "memories"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "agent_type",
+                            "value": "={{ $('Validate Input Data').item.json.agent_type }}"
+                        },
+                        {
+                            "column": "user_id",
+                            "value": "={{ $('Validate Input Data').item.json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "memory_type",
+                        "content",
+                        "importance_score",
+                        "last_accessed_at",
+                        "id"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                -1264,
+                96
+            ],
+            "id": "690a56ff-5393-4104-bff8-5960e45fea43",
+            "name": "Get Memories",
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const memories = $input.all();\n\nif (memories.length == 1 && Object.keys(memories[0].json).length == 0) {\n  return [{ memory_msg: \"You have no memory.\" }];\n}\n\nlet memory_msg = \"## Your memories\\n\";\nfor (const memory of memories) {\n  if (memory.json.memory_type && memory.json.content && memory.json.content.message) {\n    memory_msg += `- ${memory.json.memory_type}: ${memory.json.content.message} (Importance: ${memory.json.importance_score})\\n`;\n  }\n}\nreturn [{ memory_msg }];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -1104,
+                96
+            ],
+            "id": "d9476640-b77d-48e6-8c49-791c182d960c",
+            "name": "Prepare memories"
+        },
+        {
+            "parameters": {
+                "model": {
+                    "__rl": true,
+                    "value": "openai/gpt-oss-120b",
+                    "mode": "list",
+                    "cachedResultName": "openai/gpt-oss-120b"
+                },
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+            "typeVersion": 1.2,
+            "position": [
+                -1088,
+                272
+            ],
+            "id": "ff328d1f-5f47-46e9-8c31-7de2dd4fecfc",
+            "name": "OpenAI Chat Model",
+            "credentials": {
+                "openAiApi": {
+                    "id": "xtqRzHCLYFCOKzvo",
+                    "name": "nebius"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "When Executed by Another Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Input Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Input Data": {
+            "main": [
+                [
+                    {
+                        "node": "Get user profile",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Orchestrator AI Agent": {
+            "main": [
+                [
+                    {
+                        "node": "Format Final Response",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Edit Fields",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Call DataCollectorAgent": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Orchestrator AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Call CustomerConsultorAgent": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Orchestrator AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Call PlanMakerAgent": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Orchestrator AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Call ChangeAdderAgent": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Orchestrator AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Call CustomerEducatorAgent": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Orchestrator AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Structured Output Parser1": {
+            "ai_outputParser": [
+                [
+                    {
+                        "node": "Orchestrator AI Agent",
+                        "type": "ai_outputParser",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Edit Fields": {
+            "main": [
+                [
+                    {
+                        "node": "Call 'MemoryUpdaterAgent'",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get user profile": {
+            "main": [
+                [
+                    {
+                        "node": "Get Memories",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Memories": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare memories",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare memories": {
+            "main": [
+                [
+                    {
+                        "node": "Orchestrator AI Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "OpenAI Chat Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Orchestrator AI Agent",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    },
+                    {
+                        "node": "Structured Output Parser1",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {
+        "When Executed by Another Workflow": [
+            {
+                "detected_intent": "request_consultation",
+                "session_identification": {
+                    "in_active_session": false
+                },
+                "original_message": "I want to invest $10,000 in stocks",
+                "user_id": "6d736e3f-4f52-43a7-a555-e10b9c1c5272",
+                "language": "en"
+            }
+        ]
+    },
+    "meta": {
+        "instanceId": "8f73175c8cfc4e9b66eecf1cdc8ab8fdf6289436294741f796d676a38d70095e"
+    }
+}

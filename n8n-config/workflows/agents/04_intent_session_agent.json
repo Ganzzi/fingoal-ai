@@ -1,0 +1,880 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "chat",
+                "authentication": "jwtAuth",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "c6d9ed6b-14b0-473d-9620-802563d9cd45",
+            "name": "Chat Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                6112,
+                -240
+            ],
+            "webhookId": "intent-chat-webhook-id",
+            "credentials": {
+                "jwtAuth": {
+                    "id": "oOaAzR6thOsg7HXV",
+                    "name": "JWT Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "validate-user-id",
+                            "name": "user_id",
+                            "value": "={{ $json.payload.userId }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "validate-message",
+                            "name": "message",
+                            "value": "={{ $('Chat Webhook').item.json.body.message || '' }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "validate-type",
+                            "name": "message_type",
+                            "value": "={{ $('Chat Webhook').item.json.body.type || 'text' }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "validate-language",
+                            "name": "language",
+                            "value": "={{ $('Chat Webhook').item.json.body.language || 'en' }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "b7d1a9af-daf4-432b-b67d-232338f287c9",
+            "name": "Validate Input",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                6720,
+                -256
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "messages",
+                    "mode": "list",
+                    "cachedResultName": "messages"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "user_id",
+                            "value": "={{ $json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "content",
+                        "created_at",
+                        "message_type",
+                        "sender_type",
+                        "session_id"
+                    ]
+                }
+            },
+            "id": "f8e6ee19-8fc7-425f-9817-307e49f0f8cc",
+            "name": "Query Recent Messages",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                6912,
+                -256
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "=Language: {{ $json.language }}\nMessage Type: {{ $json.message_type }}\nCurrent Message: {{ $json.current_message }}\n\nMessage History:\n{{ $json.message_history }}\n\nAnalyze this message for intent and session identification.",
+                "hasOutputParser": true,
+                "options": {
+                    "systemMessage": "You are an expert financial advisory intent detection and session identification agent. Your job is to:\n\n**INTENT DETECTION (Required):**\nClassify user messages into exactly one of these 6 categories:\n1. \"signup\" - New user registration, profile creation, welcome messages, or expressions of readiness to start financial planning\n2. \"provide_info\" - User providing financial information (income, expenses, assets, debts, goals, investments, insurance, savings accounts, spending categories)\n3. \"request_consultation\" - Seeking investment/insurance advice\n4. \"request_plan\" - Requesting financial plans or budgets\n5. \"update_changes\" - Modifying existing data or plans\n6. \"ask_question\" - Educational or explanatory queries\n\n**ENHANCED SIGNUP DETECTION:**\nDetect \"signup\" intent for:\n- New user greetings (\"Hello\", \"Hi\", \"I'm new here\")\n- First-time financial planning expressions (\"I want to start managing my finances\", \"Help me get started\")\n- Readiness to share information (\"I'm ready to provide my financial info\", \"Yes, let's begin\")\n- Profile setup requests (\"Create my profile\", \"Set up my account\")\n\n**ENHANCED DATA COLLECTION DETECTION:**\nDetect \"provide_info\" intent for:\n- Sharing any financial data (accounts, income, expenses, debts, goals)\n- Responding to data collection questions\n- Uploading or providing financial documents\n- Confirming or updating previously shared information\n\n**SESSION IDENTIFICATION RULES:**\nFor conversation-based tasks, determine if user is in active session:\n\n- **DATA_COLLECTION SESSION**: Active if recent messages (last 3-5) show:\n  - Ongoing information gathering process\n  - Agent asking for specific financial details\n  - User providing partial or complete financial information\n  - Progressive data collection workflow in progress\n  - Profile completeness assessment discussions\n\n- **CONSULTATION SESSION**: Active if recent messages (last 3-5) show:\n  - Ongoing investment/insurance advice discussion\n  - User asking follow-up questions about investments\n  - Providing additional financial details for advice\n  - Discussion about risk tolerance, investment timeline\n\n- **PLANNING SESSION**: Active if recent messages show:\n  - Ongoing financial planning or budgeting discussion\n  - Step-by-step plan development\n  - Budget creation or modification process\n  - Goal-setting and financial planning workflow\n\n- **SESSION CONTINUITY**: Session continues if:\n  - Conversation flows naturally on same topic\n  - No clear topic changes or new intent indicators\n  - User responds to previous agent questions\n  - Building on previous conversation context\n\n- **NEW SESSION**: Starts when:\n  - User changes topic completely\n  - Asks unrelated question\n  - Begins new conversation thread\n  - Long periods of inactivity\n\nRespond in structured format with intent and session identification."
+                }
+            },
+            "id": "94ada33e-e800-427e-92b1-494395dee88a",
+            "name": "Intent Analysis AI Agent",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1.6,
+            "position": [
+                7360,
+                -256
+            ]
+        },
+        {
+            "parameters": {
+                "schemaType": "manual",
+                "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"detected_intent\": {\n      \"type\": \"string\",\n      \"enum\": [\"signup\", \"provide_info\", \"request_consultation\", \"request_plan\", \"update_changes\", \"ask_question\"],\n      \"description\": \"The detected user intent category\"\n    },\n    \"session_identification\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"in_active_session\": {\n          \"type\": \"boolean\",\n          \"description\": \"Whether user is currently in an active session\"\n        },\n        \"session_type\": {\n          \"type\": \"string\",\n          \"enum\": [\"data_collection\", \"consultation\", \"planning\"],\n          \"description\": \"Type of active session if any\"\n        }\n      },\n      \"required\": [\"in_active_session\"]\n    }\n  },\n  \"required\": [\"detected_intent\", \"session_identification\"]\n}",
+                "autoFix": true
+            },
+            "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+            "typeVersion": 1.3,
+            "position": [
+                7504,
+                -48
+            ],
+            "id": "fcb01a3c-2ddd-4008-b185-38037176f970",
+            "name": "Structured Output Parser"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "108c7fe0-1870-4249-b8d8-d50175546324",
+                            "name": "detected_intent",
+                            "value": "={{ $json.output.detected_intent }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "b1ebed7b-b4db-4052-97a0-b76d1a598496",
+                            "name": "session_identification",
+                            "value": "={{ $json.output.session_identification }}",
+                            "type": "object"
+                        },
+                        {
+                            "id": "26bb85b5-5238-4890-8272-8ec05fd573f9",
+                            "name": "original_message",
+                            "value": "={{ $('Code in JavaScript').item.json.current_message }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "3830396b-87e2-4eaf-99c4-47dcc61cc6ae",
+            "name": "Format Orchestrator Response",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                7680,
+                -256
+            ]
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "FFVCIbRv16oygx1i",
+                    "mode": "list",
+                    "cachedResultName": "Middleware"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "authHeader": "={{ $json.authHeader }}"
+                    }
+                },
+                "options": {
+                    "waitForSubWorkflow": true
+                }
+            },
+            "id": "6440027c-008b-4618-918b-749f29ac2661",
+            "name": "Execute Auth Middleware2",
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.2,
+            "position": [
+                6352,
+                -240
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-authenticated",
+                            "leftValue": "={{ $json.authenticated }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "193e208e-aba8-4cee-a23d-b351dd978e26",
+            "name": "Check Authentication2",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                6512,
+                -240
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { error: 'Unauthorized', message: 'Valid JWT token required' } }}",
+                "options": {
+                    "responseCode": 401
+                }
+            },
+            "id": "97f32d8a-2854-4001-a492-35ad8a725d05",
+            "name": "Respond Unauthorized2",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                6720,
+                -32
+            ]
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.4,
+            "position": [
+                8064,
+                -256
+            ],
+            "id": "036b4a6b-157c-4e45-a7e1-6e86ff3db9fb",
+            "name": "Respond to Webhook"
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "fIj4sAzAvviOcZDC",
+                    "mode": "list",
+                    "cachedResultName": "OrchestratorAgent"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "detected_intent": "={{ $json.detected_intent }}",
+                        "session_identification": "={{ $json. session_identification }}",
+                        "original_message": "={{ $json.original_message }}",
+                        "user_id": "={{ $('Code in JavaScript').item.json.user_id }}",
+                        "language": "={{ $('Code in JavaScript').item.json.language }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "detected_intent",
+                            "displayName": "detected_intent",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string",
+                            "removed": false
+                        },
+                        {
+                            "id": "session_identification",
+                            "displayName": "session_identification",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "object",
+                            "removed": false
+                        },
+                        {
+                            "id": "original_message",
+                            "displayName": "original_message",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string",
+                            "removed": false
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string",
+                            "removed": false
+                        },
+                        {
+                            "id": "language",
+                            "displayName": "language",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string",
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": true
+                },
+                "options": {
+                    "waitForSubWorkflow": true
+                }
+            },
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.2,
+            "position": [
+                7872,
+                -256
+            ],
+            "id": "7c5a2d66-50ce-449d-b5ef-dcf049a2e3e0",
+            "name": "Call 'OrchestratorAgent'",
+            "alwaysOutputData": true
+        },
+        {
+            "parameters": {
+                "jsCode": "const input_msg = $input.all()\nlet message_history = \"No previous messages\"\n\nif (input_msg.length == 1 && Object.keys(input_msg[0].json).length == 0) {\n  message_history = \"\"\n} else {\n  message_history = input_msg.map(msg => msg.json.created_at + ': [' + (msg.json.agent_type || 'User') + '] ' + msg.json.content).join('\\n')\n}\n\nreturn [{\n  message_history: message_history,\n  current_message: $('Validate Input').first().json.message,\n  user_id: $('Validate Input').first().json.user_id,\n  message_type: $('Validate Input').first().json.message_type,\n  language: $('Validate Input').first().json.language\n}]"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                7120,
+                -256
+            ],
+            "id": "e725b159-cd79-44f3-b93d-f91375bc386b",
+            "name": "Code in JavaScript"
+        },
+        {
+            "parameters": {
+                "model": {
+                    "__rl": true,
+                    "value": "openai/gpt-oss-120b",
+                    "mode": "list",
+                    "cachedResultName": "openai/gpt-oss-120b"
+                },
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+            "typeVersion": 1.2,
+            "position": [
+                7200,
+                -48
+            ],
+            "id": "fb675846-a4d3-446b-9312-12ba58dae328",
+            "name": "OpenAI Chat Model",
+            "credentials": {
+                "openAiApi": {
+                    "id": "xtqRzHCLYFCOKzvo",
+                    "name": "nebius"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "messages",
+                    "mode": "list",
+                    "cachedResultName": "messages"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_id": "={{ $('Validate Input').item.json.user_id }}",
+                        "sender_type": "user",
+                        "message_type": "={{ $('Validate Input').item.json.message_type }}",
+                        "content": "={{ $('Validate Input').item.json.message }}",
+                        "session_id": "={{ $('Format Orchestrator Response').item.json.detected_intent }}",
+                        "language": "={{ $('Validate Input').item.json. language }}"
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": true
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "session_id",
+                            "displayName": "session_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "message_type",
+                            "displayName": "message_type",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "content",
+                            "displayName": "content",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "media_url",
+                            "displayName": "media_url",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": true
+                        },
+                        {
+                            "id": "media_metadata",
+                            "displayName": "media_metadata",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "object",
+                            "canBeUsedToMatch": true,
+                            "removed": true
+                        },
+                        {
+                            "id": "sender_type",
+                            "displayName": "sender_type",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "language",
+                            "displayName": "language",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "created_at",
+                            "displayName": "created_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                8064,
+                32
+            ],
+            "id": "b90b823b-0645-442e-9f2a-62c44e452057",
+            "name": "Insert user message",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "messages",
+                    "mode": "list",
+                    "cachedResultName": "messages"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_id": "={{ $('Validate Input').item.json.user_id }}",
+                        "sender_type": "agent",
+                        "message_type": "={{ $('Call \\'OrchestratorAgent\\'').item.json.content.message }}",
+                        "content": "={{ $('Validate Input').item.json.message }}",
+                        "session_id": "={{ $('Format Orchestrator Response').item.json.detected_intent }}",
+                        "language": "={{ $('Validate Input').item.json. language }}"
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": true
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "session_id",
+                            "displayName": "session_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "message_type",
+                            "displayName": "message_type",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "content",
+                            "displayName": "content",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "media_url",
+                            "displayName": "media_url",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": true
+                        },
+                        {
+                            "id": "media_metadata",
+                            "displayName": "media_metadata",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "object",
+                            "canBeUsedToMatch": true,
+                            "removed": true
+                        },
+                        {
+                            "id": "sender_type",
+                            "displayName": "sender_type",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "language",
+                            "displayName": "language",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true,
+                            "removed": false
+                        },
+                        {
+                            "id": "created_at",
+                            "displayName": "created_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": true
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                8240,
+                32
+            ],
+            "id": "25179a05-aa35-4721-b77a-180fab8fd493",
+            "name": "Insert agent message",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Chat Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Execute Auth Middleware2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Input": {
+            "main": [
+                [
+                    {
+                        "node": "Query Recent Messages",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Recent Messages": {
+            "main": [
+                [
+                    {
+                        "node": "Code in JavaScript",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Intent Analysis AI Agent": {
+            "main": [
+                [
+                    {
+                        "node": "Format Orchestrator Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Structured Output Parser": {
+            "ai_outputParser": [
+                [
+                    {
+                        "node": "Intent Analysis AI Agent",
+                        "type": "ai_outputParser",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Orchestrator Response": {
+            "main": [
+                [
+                    {
+                        "node": "Call 'OrchestratorAgent'",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Execute Auth Middleware2": {
+            "main": [
+                [
+                    {
+                        "node": "Check Authentication2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Authentication2": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Input",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Respond Unauthorized2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Call 'OrchestratorAgent'": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Insert user message",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code in JavaScript": {
+            "main": [
+                [
+                    {
+                        "node": "Intent Analysis AI Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "OpenAI Chat Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Intent Analysis AI Agent",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    },
+                    {
+                        "node": "Structured Output Parser",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Insert user message": {
+            "main": [
+                [
+                    {
+                        "node": "Insert agent message",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {
+        "Chat Webhook": [
+            {
+                "headers": {
+                    "host": "localhost:5678",
+                    "user-agent": "curl/8.4.0",
+                    "accept": "*/*",
+                    "content-type": "application/json",
+                    "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcmVzSW4iOiIyNGgiLCJ1c2VySWQiOiI2Nzg4NjdmNi1hMjVjLTRmY2QtYmNhZS01ZGVmNWM5ZjBkMjkiLCJlbWFpbCI6InRlc3R1c2VyMTIzQGV4YW1wbGUuY29tIiwiaWF0IjoxNzU4MzY4MjU4fQ.WB95YtDVIeERvGlovzJKLXMU_0Cuo8fjdhaewtHNQRg",
+                    "content-length": "99"
+                },
+                "params": {},
+                "query": {},
+                "body": {
+                    "message": "I want to invest $10,000 in stocks",
+                    "type": "text",
+                    "language": "en"
+                },
+                "webhookUrl": "http://localhost:5678/webhook/chat",
+                "executionMode": "production"
+            }
+        ]
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "8f73175c8cfc4e9b66eecf1cdc8ab8fdf6289436294741f796d676a38d70095e"
+    }
+}

@@ -1,0 +1,1218 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "workflowInputs": {
+                    "values": [
+                        {
+                            "name": "user_message"
+                        },
+                        {
+                            "name": "intent"
+                        },
+                        {
+                            "name": "session_state",
+                            "type": "object"
+                        },
+                        {
+                            "name": "user_info",
+                            "type": "object"
+                        }
+                    ]
+                }
+            },
+            "id": "000cd1d0-d627-416f-8918-1e392dd2398a",
+            "typeVersion": 1.1,
+            "name": "When Executed by Another Workflow",
+            "type": "n8n-nodes-base.executeWorkflowTrigger",
+            "position": [
+                416,
+                -256
+            ]
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "input-validation-message",
+                            "name": "user_message",
+                            "value": "={{ $json.user_message }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "input-validation-intent",
+                            "name": "intent",
+                            "value": "={{ $json.intent }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "input-validation-session",
+                            "name": "session_state",
+                            "value": "={{ $json.session_state }}",
+                            "type": "object"
+                        },
+                        {
+                            "id": "agent-type-field",
+                            "name": "agent_type",
+                            "value": "customer_consultant_agent",
+                            "type": "string"
+                        },
+                        {
+                            "id": "f647f8dd-6978-41a5-8d4b-769834e6fc4e",
+                            "name": "user_id",
+                            "value": "={{ $json.user_info.id }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "07eee8b2-affa-4937-8c7b-77cdf550abc3",
+                            "name": "timestamp",
+                            "value": "={{ $now }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                592,
+                -256
+            ],
+            "id": "7a04fb7d-451d-4f2b-b395-5bb4781c6f50",
+            "name": "Validate Input Data"
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "=**CONSULTATION CONTEXT:**\nUser Information: {{ $('When Executed by Another Workflow').first().json.user_info.toJsonString() }}\nUser Message: {{ $('Validate Input Data').first().json.user_message }}\nSession State: {{ $('Validate Input Data').first().json.session_state.toJsonString() }}\nTimestamp: {{ $('Validate Input Data').first().json.timestamp }}\n\n{{ $json.memory_msg }}\n\n**TASK:** Provide personalized investment and insurance advice based on the user's complete financial profile. Analyze their situation comprehensively and deliver tailored recommendations with clear reasoning and scenario modeling.",
+                "hasOutputParser": true,
+                "options": {
+                    "systemMessage": "You are FinGoal AI Financial Consultant, an expert interactive financial advisor specializing in personalized investment, savings, and insurance consultation. Your role is to actively engage users through comprehensive financial analysis, provide tailored advice, and guide them toward optimal financial planning solutions.\n\n**CORE MISSION:**\n- Conduct interactive financial consultations through detailed questioning and analysis\n- Provide comprehensive investment, savings, and insurance advice based on current financial profiles\n- Actively gather additional information during consultation to enhance recommendations\n- Create and update financial data based on consultation insights\n- Guide users toward appropriate financial planning services when consultation reveals planning needs\n\n**INTERACTIVE CONSULTATION APPROACH:**\n1. **Current Situation Analysis:** Thoroughly analyze existing financial data using available tools\n2. **Active Information Gathering:** Ask targeted questions to fill knowledge gaps and understand preferences\n3. **Real-Time Data Updates:** Add new information discovered during consultation to user's financial profile\n4. **Personalized Strategy Development:** Create tailored recommendations based on comprehensive understanding\n5. **Implementation Roadmap:** Provide clear, prioritized action steps with timelines\n6. **Handoff Coordination:** Guide users to financial planning services when comprehensive budgeting is needed\n\n**CONSULTATION METHODOLOGY:**\n**Phase 1: Discovery & Analysis**\n- Query and analyze all existing financial data (accounts, transactions, investments, debts, goals, insurance)\n- Review spending categories and patterns to understand financial behavior\n- Identify gaps in current financial strategy and opportunities for optimization\n- Assess risk tolerance and investment timeline through targeted questioning\n\n**Phase 2: Interactive Consultation**\n- Ask probing questions about financial goals, concerns, and preferences\n- Gather missing information about income stability, future plans, and life changes\n- Explore specific investment interests and insurance concerns\n- Understand time horizons for different financial objectives\n- Clarify risk comfort levels through scenario discussions\n\n**Phase 3: Strategy Development & Recommendations**\n- Develop personalized investment allocation strategies\n- Provide specific investment product recommendations (ETFs, mutual funds, individual stocks)\n- Analyze insurance coverage gaps and recommend appropriate solutions\n- Create savings strategies for emergency funds and specific goals\n- Model potential outcomes under different scenarios\n\n**Phase 4: Data Enhancement & Implementation**\n- Add newly discovered financial information to user's profile\n- Create new spending categories or update existing ones based on consultation\n- Store detailed consultation insights and preferences for future reference\n- Provide step-by-step implementation guidance with specific actions\n\n**INVESTMENT ADVISORY EXPERTISE:**\n**Risk-Based Portfolio Strategies:**\n- **Conservative (Low Risk):** 20-30% stocks, 70-80% bonds, focus on capital preservation\n- **Moderate (Balanced Risk):** 50-70% stocks, 30-50% bonds, balanced growth approach\n- **Aggressive (High Risk):** 80-90% stocks, 10-20% bonds, maximum growth potential\n- **Target-Date Approach:** Age-appropriate allocation with automatic rebalancing\n\n**Specific Investment Recommendations:**\n- **Broad Market Exposure:** Total stock market index funds (VTI, SWTSX)\n- **International Diversification:** International developed (VTIAX) and emerging markets (VEMSX)\n- **Bond Allocation:** Total bond market (VBTLX) or Treasury bonds (VGIT)\n- **Sector-Specific:** Technology (VGT), Healthcare (VHT), Real Estate (VNQ)\n- **Individual Stocks:** Blue-chip dividends, growth stocks, value opportunities\n\n**Savings Strategy Development:**\n- **Emergency Fund:** 3-6 months expenses in high-yield savings (Marcus, Ally, Discover)\n- **Goal-Based Savings:** Specific accounts for vacations, home purchases, education\n- **Tax-Advantaged Optimization:** 401(k) match maximization, IRA contributions, HSA benefits\n- **Cash Management:** Money market accounts for intermediate-term goals\n\n**COMPREHENSIVE INSURANCE ANALYSIS:**\n**Life Insurance Needs Assessment:**\n- **Coverage Calculation:** 10-12x annual income for dependents + debt coverage\n- **Term vs. Permanent:** Cost analysis and appropriate recommendations\n- **Beneficiary Optimization:** Proper designation and contingent beneficiaries\n- **Employer Benefits Integration:** Coordination with workplace group life insurance\n\n**Property & Casualty Review:**\n- **Coverage Adequacy Analysis:** Dwelling, personal property, liability limits\n- **Deductible Optimization:** Balance between premiums and out-of-pocket exposure\n- **Umbrella Insurance:** Liability protection for high net worth individuals\n- **Auto Insurance:** Comprehensive analysis of coverage needs and cost optimization\n\n**Health & Disability Protection:**\n- **Health Insurance Strategy:** Plan selection, HSA maximization, network considerations\n- **Disability Insurance Gaps:** Income replacement analysis and supplemental coverage needs\n- **Long-term Care Planning:** Future care cost projections and insurance options\n\n**ACTIVE DATA MANAGEMENT:**\n**Information Gathering During Consultation:**\n- Ask about unreported income sources (freelance, side businesses, investment income)\n- Discover additional accounts or investments not yet documented\n- Identify new financial goals or changes in existing goals\n- Uncover insurance coverage gaps or upcoming life changes\n- Understand spending patterns and category preferences\n\n**Real-Time Profile Enhancement:**\n- Add newly discovered accounts to money_accounts table\n- Create custom spending categories based on user preferences\n- Store complex financial instruments in data_rows (investments, insurance policies)\n- Update transaction data with recurring income or expense patterns\n- Document consultation insights and preferences in user profile\n\n**STRATEGIC HANDOFF TO FINANCIAL PLANNING (PRIMARY FOCUS):**\nAfter providing investment and insurance consultation, your primary goal is to guide users toward comprehensive financial planning services that will help them implement and coordinate their financial strategy through budgeting and goal management.\n\n**HANDOFF DECISION FRAMEWORK:**\n**Always Consider Financial Planning Handoff When:**\n- User shows interest in implementing recommendations but lacks a structured plan\n- Multiple financial goals need systematic coordination and timeline management\n- Investment or insurance advice requires ongoing budget integration for implementation\n- User would benefit from structured monthly budgeting to achieve their goals\n- Consultation reveals the need for cash flow optimization to fund recommendations\n- User expresses uncertainty about how to prioritize multiple financial objectives\n\n**Priority Handoff Triggers (Recommend Planning in 90%+ of cases):**\n- User has multiple competing financial goals (retirement, emergency fund, major purchases)\n- Recommendations require significant monthly savings or budget adjustments\n- Debt payoff strategies need integration with overall financial planning\n- Investment goals require systematic funding through budget optimization\n- User needs help translating advice into actionable monthly spending plans\n- Insurance recommendations impact monthly budget and require coordination\n\n**Continue Consultation Only When:**\n- User has very specific, isolated investment questions with existing financial plan\n- Simple insurance policy comparison or minor coverage adjustments\n- User explicitly declines planning services and only wants investment advice\n- Consultation is follow-up to previous detailed planning sessions\n\n**ENHANCED HANDOFF MESSAGING FRAMEWORK:**\nAlways provide compelling, personalized handoff messages that emphasize the value of financial planning:\n\n**Investment Strategy Handoffs:**\n- \"Your investment strategy is excellent! To maximize its success, I recommend our financial planning service to create a structured budget that ensures consistent funding of your investment goals. This will help you implement our recommendations systematically.\"\n- \"We've optimized your portfolio allocation, but the key to success is consistent contributions. Our financial planning service can help you create a monthly budget that prioritizes your investment goals while managing your other expenses.\"\n\n**Insurance Analysis Handoffs:**\n- \"Your insurance coverage is now properly structured. To ensure these premiums fit comfortably in your monthly budget while still achieving your other goals, our financial planning service can create a comprehensive plan that balances protection with growth.\"\n- \"Great progress on your insurance strategy! Now let's make sure these recommendations integrate seamlessly with your overall financial plan. Our planning service can help you budget for premiums while optimizing your savings and investment strategies.\"\n\n**Multi-Goal Coordination Handoffs:**\n- \"You have excellent financial goals! The challenge is prioritizing and funding them systematically. Our financial planning service specializes in creating budgets that balance multiple objectives - ensuring you make progress on retirement, emergency funds, and [specific goals] simultaneously.\"\n- \"Your consultation has clarified your priorities. Now you need a structured plan to achieve them. Our financial planning service will create detailed monthly budgets and timelines that turn today's recommendations into tomorrow's financial success.\"\n\n**Implementation-Focused Handoffs:**\n- \"Our consultation has given you a clear strategy. The next step is implementation through structured budgeting. Our financial planning service will create specific monthly spending plans that ensure you can afford to implement every recommendation we've discussed.\"\n- \"You're ready to take action! Our financial planning service will help you create budgets and goal timelines that make implementation effortless. They'll ensure your monthly spending aligns perfectly with achieving your investment and insurance objectives.\"\n\n**HANDOFF SUCCESS METRICS:**\nAim for 70-80% of consultations to result in financial planning handoff recommendations, as most users benefit significantly from structured budgeting and goal coordination after receiving investment and insurance advice.\n\n**CONSULTATION COMMUNICATION STYLE:**\n- **Engaging & Interactive:** Ask follow-up questions and encourage detailed responses\n- **Educational:** Explain the reasoning behind recommendations clearly\n- **Personalized:** Reference specific user circumstances and preferences throughout\n- **Action-Oriented:** Provide concrete next steps and implementation guidance\n- **Supportive:** Acknowledge progress and celebrate financial improvements\n\n**COMPLIANCE & ETHICS:**\n- Maintain fiduciary standards in all recommendations\n- Provide clear disclaimers about investment risks and market volatility\n- Encourage professional consultation for complex tax and legal matters\n- Document all advice provided and reasoning behind recommendations\n- Respect user preferences and risk tolerance in all suggestions\n\nYour goal is to provide exceptional, interactive financial consultation that not only addresses immediate questions but also enhances the user's overall financial profile through active information gathering and personalized guidance, while seamlessly facilitating handoffs to financial planning services when comprehensive budgeting and planning are needed."
+                }
+            },
+            "id": "95588d74-cd38-48c0-b92d-7e645ffc8fce",
+            "name": "Financial Consultation AI Agent",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1.6,
+            "position": [
+                1120,
+                -256
+            ]
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query user's money accounts, balances, and holdings to understand current asset allocation and investment positions.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "money_accounts",
+                    "mode": "list",
+                    "cachedResultName": "money_accounts"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "user_id",
+                            "value": "={{ $('Validate Input Data').item.json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "user_id",
+                        "name",
+                        "account_type",
+                        "institution_name",
+                        "balance",
+                        "currency",
+                        "is_active",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                1024,
+                -48
+            ],
+            "id": "965f669a-bac0-455d-aa0d-1845a478b3d7",
+            "name": "Query Money Accounts",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query transaction history and spending patterns to analyze income sources, expense categories, and cash flow trends.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "transactions",
+                    "mode": "list",
+                    "cachedResultName": "transactions"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "user_id",
+                            "value": "={{ $('Validate Input Data').item.json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "user_id",
+                        "account_id",
+                        "category_id",
+                        "amount",
+                        "currency",
+                        "description",
+                        "transaction_date",
+                        "transaction_type",
+                        "merchant_name",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                1104,
+                80
+            ],
+            "id": "8d7ec590-e4e3-4fad-a6be-ff0fe9554aa6",
+            "name": "Query Transactions",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query user's spending categories to understand current category structure and preferences for expense tracking and budgeting recommendations.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "spending_categories",
+                    "mode": "list",
+                    "cachedResultName": "spending_categories"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "user_id",
+                            "value": "={{ $('Validate Input Data').item.json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "user_id",
+                        "name",
+                        "description",
+                        "color",
+                        "icon",
+                        "is_system",
+                        "is_active",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                1184,
+                208
+            ],
+            "id": "ef507fbe-3dc5-46a8-a900-b5961f28d0f9",
+            "name": "Query Spending Categories",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Insert new spending categories discovered during consultation. Use this to add custom categories based on user preferences and spending patterns discussed in the consultation.",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "spending_categories",
+                    "mode": "list",
+                    "cachedResultName": "spending_categories"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_id": "={{ $fromAI('user_id') }}",
+                        "name": "={{ $fromAI('name') }}",
+                        "description": "={{ $fromAI('description') }}",
+                        "color": "={{ $fromAI('color') }}",
+                        "icon": "={{ $fromAI('icon') }}",
+                        "is_system": "={{ $fromAI('is_system') }}",
+                        "is_active": "={{ $fromAI('is_active') }}"
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "name",
+                            "displayName": "name",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "description",
+                            "displayName": "description",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "color",
+                            "displayName": "color",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "icon",
+                            "displayName": "icon",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "is_system",
+                            "displayName": "is_system",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "boolean",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "is_active",
+                            "displayName": "is_active",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "boolean",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                1264,
+                336
+            ],
+            "id": "9bedddb4-cec9-41db-8ca3-c47eac3d01a7",
+            "name": "Insert Spending Categories",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Insert new money accounts discovered during consultation (additional investment accounts, savings accounts, credit cards, etc.). Use this to enhance the user's financial profile with accounts discussed during consultation.",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "money_accounts",
+                    "mode": "list",
+                    "cachedResultName": "money_accounts"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_id": "={{ $fromAI('user_id') }}",
+                        "name": "={{ $fromAI('name') }}",
+                        "account_type": "={{ $fromAI('account_type') }}",
+                        "institution_name": "={{ $fromAI('institution_name') }}",
+                        "account_number": "={{ $fromAI('account_number') }}",
+                        "balance": "={{ $fromAI('balance') }}",
+                        "currency": "={{ $fromAI('currency') }}",
+                        "is_active": "={{ $fromAI('is_active') }}"
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "name",
+                            "displayName": "name",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "account_type",
+                            "displayName": "account_type",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "institution_name",
+                            "displayName": "institution_name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "account_number",
+                            "displayName": "account_number",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "balance",
+                            "displayName": "balance",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "number",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "currency",
+                            "displayName": "currency",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "is_active",
+                            "displayName": "is_active",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "boolean",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                1344,
+                208
+            ],
+            "id": "940012cb-783c-47fd-bbd5-0f225c27fc6f",
+            "name": "Insert Money Accounts",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Insert metadata for new complex financial data types (investments, insurance policies, financial goals, etc.) discovered during consultation. Use this before inserting data into data_rows.",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "data_metadata",
+                    "mode": "list",
+                    "cachedResultName": "data_metadata"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_id": "={{ $fromAI('user_id') }}",
+                        "data_type": "={{ $fromAI('data_type') }}",
+                        "schema_definition": "={{ $fromAI('schema_definition') }}",
+                        "version": "={{ $fromAI('version') }}",
+                        "is_active": "={{ $fromAI('is_active') }}"
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "data_type",
+                            "displayName": "data_type",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "schema_definition",
+                            "displayName": "schema_definition",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "json",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "version",
+                            "displayName": "version",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "number",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "is_active",
+                            "displayName": "is_active",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "boolean",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                1424,
+                336
+            ],
+            "id": "15afc245-7bed-4d04-9f89-a7fdd35b1751",
+            "name": "Insert Data Metadata",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Insert complex financial data (investments, insurance policies, goals, etc.) discovered during consultation. Use this to store detailed financial instruments and policies in JSONB format.",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "data_rows",
+                    "mode": "list",
+                    "cachedResultName": "data_rows"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "user_id": "={{ $fromAI('user_id') }}",
+                        "metadata_id": "={{ $fromAI('metadata_id') }}",
+                        "data": "={{ $fromAI('data') }}",
+                        "status": "={{ $fromAI('status') }}"
+                    },
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "metadata_id",
+                            "displayName": "metadata_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "data",
+                            "displayName": "data",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "json",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "status",
+                            "displayName": "status",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                1504,
+                208
+            ],
+            "id": "c846dd9b-872d-4094-aee4-c51a357e85f6",
+            "name": "Insert Complex Financial Data",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "# SQL Query Tool\n\nUse this tool to query data from the `data_rows` table, which stores structured data from files (e.g., CSV, XLSX) uploaded to the system. Each file is identified by a `metadata_id`, which is the artifact ID of the file (a UUID string, e.g., '44a4852e-31b3-4057-b4ea-b73d3377c23d'). The `data` column is a JSONB field containing all keys from the file's schema, as defined in the `data_metadata` table.\n\nInstructions:\n\n- Identify the relevant file and its artifact ID (`metadata_id`) from the provided documents or artifacts.\n- Construct a SQL query to retrieve the required information from the `data` JSONB field.\n- Use `data->>'key'` to access string values and `(data->>'key')::numeric` for numeric values.\n- Ensure the `metadata_id` matches the file's artifact ID to query the correct dataset.\n- To query across multiple files of the same type (e.g., all debts), join `data_rows` to `data_metadata` on `metadata_id` and filter by `data_metadata.data_type` (e.g., 'investment', 'debt', 'goal', 'insurance') and `user_id`.\n\nCommon query patterns:\n\n- Access JSON scalar:\n    - Text: `data->>'Key'`\n    - Numeric: `(data->>'Key')::numeric`\n    - Boolean: `(data->>'Key')::boolean`\n    - Date (ISO-8601): `(data->>'DateKey')::date`\n- Find maximum/minimum numeric value:\n    - `ORDER BY (data->>'Key')::numeric DESC/ASC LIMIT 1`\n- Filter rows:\n    - By value: `WHERE data->>'Key' = 'Value'`\n    - By numeric range: `WHERE (data->>'Amount')::numeric BETWEEN 100 AND 500`\n    - By date range: `WHERE (data->>'DueDate')::date >= current_date`\n- Aggregate data:\n    - `SUM`, `AVG`, `COUNT` on cast numeric/boolean fields, with optional `GROUP BY` on JSON keys\n- Scope your query:\n    - Single file: `WHERE metadata_id = '<file-uuid>'`\n    - All files of a type for a user: `FROM data_rows dr JOIN data_metadata dm ON dm.id = dr.metadata_id WHERE dr.user_id = '<user-uuid>' AND dm.data_type = '<type>'`\n- Helpful patterns:\n    - Avoid divide-by-zero: `... / NULLIF((data->>'Denominator')::numeric, 0)`\n    - Order by dates stored as text: `ORDER BY (data->>'DueDate')::date`\n\nExample Query 1: Find the row with the highest numeric value (e.g., most expensive order):\n\n```\nSELECT \n    data->>'CustomerName' AS CustomerName,\n    data->>'OrderID' AS OrderID,\n    (data->>'TotalCost')::numeric AS TotalCost\nFROM data_rows\nWHERE metadata_id = '44a4852e-31b3-4057-b4ea-b73d3377c23d'\nORDER BY (data->>'TotalCost')::numeric DESC\nLIMIT 1;\n```\n\nExpected Output:\n\n```\nCustomerName: Alice Brown\nOrderID: O001\nTotalCost: 1999.98\n```\n\nExample Query 2: Calculate the sum of a numeric field (e.g., total order cost):\n\n```\nSELECT \n    SUM((data->>'TotalCost')::numeric) AS TotalOrderCost\nFROM data_rows\nWHERE metadata_id = '44a4852e-31b3-4057-b4ea-b73d3377c23d';\n```\n\nExpected Output:\n\n```\nTotalOrderCost: 4749.89\n```\n\nExample Query 3: Filter rows by a specific value (e.g., orders by a customer):\n\n```\nSELECT \n    data->>'OrderID' AS OrderID,\n    data->>'ProductPurchased' AS ProductPurchased,\n    (data->>'TotalCost')::numeric AS TotalCost\nFROM data_rows\nWHERE metadata_id = '44a4852e-31b3-4057-b4ea-b73d3377c23d'\nAND data->>'CustomerName' = 'David Lee';\n```\n\nExpected",
+                "operation": "executeQuery",
+                "query": "{{ $fromAI('sql_query') }}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                1328,
+                80
+            ],
+            "id": "2c5f019d-b46c-4515-ab08-d6840418da13",
+            "name": "Execute Financial Analysis",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "schemaType": "manual",
+                "inputSchema": "{\n  \"$id\": \"https://fingoal.ai/schemas/financial-consultation.json\",\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"consultation\": {\n      \"type\": \"object\",\n      \"description\": \"Comprehensive financial consultation response\",\n      \"properties\": {\n        \"message\": {\n          \"type\": \"string\",\n          \"maxLength\": 2000,\n          \"description\": \"Main consultation message with personalized advice and guidance\"\n        },\n        \"consultation_type\": {\n          \"type\": \"string\",\n          \"enum\": [\"investment_advice\", \"insurance_analysis\", \"savings_strategy\", \"comprehensive_review\", \"portfolio_optimization\"],\n          \"description\": \"Type of consultation provided\"\n        },\n        \"risk_assessment\": {\n          \"type\": \"object\",\n          \"description\": \"Detailed risk profile and assessment\",\n          \"$ref\": \"#/$defs/risk_profile\"\n        },\n        \"recommendations\": {\n          \"type\": \"array\",\n          \"minItems\": 1,\n          \"maxItems\": 8,\n          \"items\": {\n            \"type\": \"object\",\n            \"$ref\": \"#/$defs/recommendation\"\n          },\n          \"description\": \"Specific actionable recommendations\"\n        },\n        \"portfolio_analysis\": {\n          \"type\": \"object\",\n          \"description\": \"Current portfolio analysis and optimization suggestions\",\n          \"$ref\": \"#/$defs/portfolio_analysis\"\n        },\n        \"scenario_modeling\": {\n          \"type\": \"array\",\n          \"maxItems\": 4,\n          \"items\": {\n            \"type\": \"object\",\n            \"$ref\": \"#/$defs/scenario\"\n          },\n          \"description\": \"Financial scenarios and outcome projections\"\n        },\n        \"implementation_plan\": {\n          \"type\": \"object\",\n          \"description\": \"Step-by-step implementation guidance\",\n          \"$ref\": \"#/$defs/implementation_plan\"\n        },\n        \"data_updates_made\": {\n          \"type\": \"object\",\n          \"description\": \"Summary of data additions/updates during consultation\",\n          \"$ref\": \"#/$defs/data_updates\"\n        },\n        \"follow_up_questions\": {\n          \"type\": \"array\",\n          \"maxItems\": 5,\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 150\n          },\n          \"description\": \"Questions to gather additional information for better advice\"\n        },\n        \"handoff_recommendation\": {\n          \"type\": \"object\",\n          \"description\": \"Recommendation for financial planning services if needed\",\n          \"$ref\": \"#/$defs/handoff_option\"\n        },\n        \"educational_insights\": {\n          \"type\": \"array\",\n          \"maxItems\": 4,\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 200\n          },\n          \"description\": \"Educational tips and financial insights\"\n        },\n        \"disclaimers\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 200\n          },\n          \"minItems\": 1,\n          \"description\": \"Required financial advice disclaimers\"\n        }\n      },\n      \"required\": [\n        \"message\",\n        \"consultation_type\",\n        \"recommendations\",\n        \"disclaimers\"\n      ]\n    },\n    \"memory\": {\n      \"type\": \"object\",\n      \"description\": \"Memory updates for financial consultant\",\n      \"properties\": {\n        \"consultation_summary\": {\n          \"type\": \"string\",\n          \"maxLength\": 1000,\n          \"description\": \"Key consultation points and client responses\"\n        },\n        \"risk_profile_updates\": {\n          \"type\": \"string\",\n          \"maxLength\": 500,\n          \"description\": \"Updated risk tolerance and investment preferences\"\n        },\n        \"client_preferences\": {\n          \"type\": \"string\",\n          \"maxLength\": 500,\n          \"description\": \"Investment preferences, goals, and concerns expressed\"\n        },\n        \"data_enhancement_notes\": {\n          \"type\": \"string\",\n          \"maxLength\": 500,\n          \"description\": \"Notes on data additions and profile enhancements made\"\n        }\n      }\n    }\n  },\n  \"required\": [\n    \"consultation\",\n    \"memory\"\n  ],\n  \"$defs\": {\n    \"risk_profile\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"tolerance\": {\n          \"type\": \"string\",\n          \"enum\": [\"conservative\", \"moderate\", \"aggressive\"],\n          \"description\": \"Overall risk tolerance level\"\n        },\n        \"capacity_score\": {\n          \"type\": \"number\",\n          \"minimum\": 1,\n          \"maximum\": 10,\n          \"description\": \"Risk capacity assessment (1-10 scale)\"\n        },\n        \"time_horizon\": {\n          \"type\": \"string\",\n          \"description\": \"Investment time horizon (e.g., '5-10 years', '20+ years')\"\n        },\n        \"key_concerns\": {\n          \"type\": \"array\",\n          \"items\": {\"type\": \"string\", \"maxLength\": 100},\n          \"maxItems\": 3,\n          \"description\": \"Primary financial concerns or constraints\"\n        }\n      },\n      \"required\": [\"tolerance\"]\n    },\n    \"recommendation\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"category\": {\n          \"type\": \"string\",\n          \"enum\": [\n            \"investment_allocation\",\n            \"portfolio_rebalancing\",\n            \"insurance_coverage\",\n            \"savings_optimization\",\n            \"risk_management\",\n            \"tax_strategy\",\n            \"account_consolidation\",\n            \"emergency_fund\"\n          ]\n        },\n        \"title\": {\n          \"type\": \"string\",\n          \"maxLength\": 80,\n          \"description\": \"Clear recommendation title\"\n        },\n        \"action\": {\n          \"type\": \"string\",\n          \"maxLength\": 300,\n          \"description\": \"Specific action to take\"\n        },\n        \"reasoning\": {\n          \"type\": \"string\",\n          \"maxLength\": 400,\n          \"description\": \"Detailed explanation of why this recommendation is appropriate\"\n        },\n        \"priority\": {\n          \"type\": \"string\",\n          \"enum\": [\"high\", \"medium\", \"low\"]\n        },\n        \"timeline\": {\n          \"type\": \"string\",\n          \"description\": \"Implementation timeline (e.g., 'immediate', '1-3 months')\"\n        },\n        \"expected_impact\": {\n          \"type\": \"string\",\n          \"maxLength\": 150,\n          \"description\": \"Expected financial benefit or outcome\"\n        },\n        \"specific_products\": {\n          \"type\": \"array\",\n          \"items\": {\"type\": \"string\", \"maxLength\": 50},\n          \"maxItems\": 3,\n          \"description\": \"Specific investment products or insurance policies recommended\"\n        }\n      },\n      \"required\": [\n        \"category\",\n        \"title\",\n        \"action\",\n        \"reasoning\",\n        \"priority\"\n      ]\n    },\n    \"portfolio_analysis\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"current_allocation\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"stocks_percentage\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100},\n            \"bonds_percentage\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100},\n            \"cash_percentage\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100},\n            \"other_percentage\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100}\n          }\n        },\n        \"recommended_allocation\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"stocks_percentage\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100},\n            \"bonds_percentage\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100},\n            \"cash_percentage\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100},\n            \"other_percentage\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 100}\n          }\n        },\n        \"rebalancing_needed\": {\"type\": \"boolean\"},\n        \"diversification_score\": {\n          \"type\": \"number\",\n          \"minimum\": 1,\n          \"maximum\": 10,\n          \"description\": \"Portfolio diversification rating\"\n        },\n        \"key_observations\": {\n          \"type\": \"array\",\n          \"items\": {\"type\": \"string\", \"maxLength\": 150},\n          \"maxItems\": 4\n        }\n      }\n    },\n    \"scenario\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"name\": {\n          \"type\": \"string\",\n          \"maxLength\": 60,\n          \"description\": \"Scenario name (e.g., 'Market Downturn', 'Retirement at 65')\"\n        },\n        \"description\": {\n          \"type\": \"string\",\n          \"maxLength\": 200,\n          \"description\": \"Detailed scenario description\"\n        },\n        \"projected_outcome\": {\n          \"type\": \"string\",\n          \"maxLength\": 250,\n          \"description\": \"Expected financial outcome under this scenario\"\n        },\n        \"probability\": {\n          \"type\": \"string\",\n          \"enum\": [\"high\", \"medium\", \"low\"],\n          \"description\": \"Likelihood of this scenario occurring\"\n        },\n        \"recommended_preparation\": {\n          \"type\": \"string\",\n          \"maxLength\": 200,\n          \"description\": \"How to prepare for or benefit from this scenario\"\n        }\n      },\n      \"required\": [\n        \"name\",\n        \"description\",\n        \"projected_outcome\",\n        \"probability\"\n      ]\n    },\n    \"implementation_plan\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"immediate_actions\": {\n          \"type\": \"array\",\n          \"items\": {\"type\": \"string\", \"maxLength\": 100},\n          \"maxItems\": 3,\n          \"description\": \"Actions to take within the next 2 weeks\"\n        },\n        \"short_term_goals\": {\n          \"type\": \"array\",\n          \"items\": {\"type\": \"string\", \"maxLength\": 100},\n          \"maxItems\": 3,\n          \"description\": \"Goals for the next 1-3 months\"\n        },\n        \"long_term_objectives\": {\n          \"type\": \"array\",\n          \"items\": {\"type\": \"string\", \"maxLength\": 100},\n          \"maxItems\": 3,\n          \"description\": \"Objectives for 6+ months\"\n        },\n        \"monitoring_schedule\": {\n          \"type\": \"string\",\n          \"description\": \"How often to review and adjust strategy\"\n        }\n      }\n    },\n    \"data_updates\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"accounts_added\": {\"type\": \"number\", \"minimum\": 0},\n        \"categories_created\": {\"type\": \"number\", \"minimum\": 0},\n        \"financial_instruments_added\": {\"type\": \"number\", \"minimum\": 0},\n        \"profile_enhancements\": {\n          \"type\": \"array\",\n          \"items\": {\"type\": \"string\", \"maxLength\": 100},\n          \"maxItems\": 5,\n          \"description\": \"List of profile improvements made during consultation\"\n        }\n      }\n    },\n    \"handoff_option\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"recommended\": {\n          \"type\": \"boolean\",\n          \"description\": \"Whether financial planning service is recommended\"\n        },\n        \"service_type\": {\n          \"type\": \"string\",\n          \"enum\": [\"budgeting\", \"comprehensive_planning\", \"debt_management\", \"goal_coordination\"],\n          \"description\": \"Type of financial planning service recommended\"\n        },\n        \"title\": {\n          \"type\": \"string\",\n          \"maxLength\": 80,\n          \"description\": \"Handoff service title\"\n        },\n        \"message\": {\n          \"type\": \"string\",\n          \"maxLength\": 300,\n          \"description\": \"Personalized message explaining why financial planning would be beneficial\"\n        },\n        \"expected_benefits\": {\n          \"type\": \"array\",\n          \"items\": {\"type\": \"string\", \"maxLength\": 80},\n          \"maxItems\": 3,\n          \"description\": \"Key benefits user would gain from financial planning service\"\n        },\n        \"readiness_score\": {\n          \"type\": \"number\",\n          \"minimum\": 1,\n          \"maximum\": 10,\n          \"description\": \"How ready the user is for comprehensive financial planning (1-10)\"\n        }\n      },\n      \"required\": [\"recommended\"]\n    }\n  }\n}",
+                "autoFix": true
+            },
+            "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+            "typeVersion": 1.3,
+            "position": [
+                1408,
+                -16
+            ],
+            "id": "ac48038e-9a23-41bf-8132-7efdff4e4577",
+            "name": "Structured Output Parser",
+            "notesInFlow": false
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "final-success",
+                            "name": "success",
+                            "value": true,
+                            "type": "boolean"
+                        },
+                        {
+                            "id": "final-content",
+                            "name": "consultation",
+                            "value": "={{ $json.output.consultation }}",
+                            "type": "object"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                1472,
+                -176
+            ],
+            "id": "4747c940-1f16-426e-acbb-d8ecdc6b7b0a",
+            "name": "Format Final Response"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "memory-content-field",
+                            "name": "memory",
+                            "value": "={{ $json.output.memory }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "agent-type-field",
+                            "name": "agent_type",
+                            "value": "={{ $('Validate Input Data').item.json.agent_type }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                1472,
+                -320
+            ],
+            "id": "e995453d-17b6-4371-990f-fdaddc552bf9",
+            "name": "Prepare Memory Update"
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "CD8W2iWJNWd1GY70",
+                    "mode": "list",
+                    "cachedResultName": "MemoryUpdaterAgent"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "memory": "={{ $json.memory }}",
+                        "agent_type": "={{ $json.agent_type }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "memory",
+                            "displayName": "memory",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "agent_type",
+                            "displayName": "agent_type",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": true
+                },
+                "options": {
+                    "waitForSubWorkflow": false
+                }
+            },
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.2,
+            "position": [
+                1680,
+                -320
+            ],
+            "id": "89704274-5ea3-42d1-9e62-c6d2af085208",
+            "name": "Call MemoryUpdaterAgent"
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Use this tool to fetch all available financial-related table schema stored in flexible JSONB format including investments, debts, goals, and insurance policies. Call this tool before querying data_rows table.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "data_metadata",
+                    "mode": "list",
+                    "cachedResultName": "data_metadata"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "user_id",
+                            "value": "={{ $('Validate Input Data').item.json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "data_type",
+                        "schema_definition",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                1200,
+                -48
+            ],
+            "id": "d140aea4-cedb-496f-85a8-794bd7afbddd",
+            "name": "Query Financial Metadata",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "memories",
+                    "mode": "list",
+                    "cachedResultName": "memories"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "agent_type",
+                            "value": "={{ $('Validate Input Data').item.json.agent_type }}"
+                        },
+                        {
+                            "column": "user_id",
+                            "value": "={{ $('Validate Input Data').item.json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "memory_type",
+                        "content",
+                        "importance_score",
+                        "last_accessed_at",
+                        "id"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                768,
+                -256
+            ],
+            "id": "ac533e44-1390-4366-badf-4ab1fd31b880",
+            "name": "Get Memories",
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const memories = $input.all();\n\nif (memories.length == 1 && Object.keys(memories[0].json).length == 0) {\n  return [{ memory_msg: \"You have no memory.\" }];\n}\n\nlet memory_msg = \"## Your memories\\n\";\nfor (const memory of memories) {\n  if (memory.json.memory_type && memory.json.content && memory.json.content.message) {\n    memory_msg += `- ${memory.json.memory_type}: ${memory.json.content.message} (Importance: ${memory.json.importance_score})\\n`;\n  }\n}\nreturn [{ memory_msg }];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                928,
+                -256
+            ],
+            "id": "910bf7f2-8957-4a4a-b6fb-12be31c43b9e",
+            "name": "Prepare memories"
+        },
+        {
+            "parameters": {
+                "model": {
+                    "__rl": true,
+                    "value": "openai/gpt-oss-120b",
+                    "mode": "list",
+                    "cachedResultName": "openai/gpt-oss-120b"
+                },
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+            "typeVersion": 1.2,
+            "position": [
+                752,
+                0
+            ],
+            "id": "c362e681-8ed2-4371-97d2-2b616c23d728",
+            "name": "OpenAI Chat Model",
+            "credentials": {
+                "openAiApi": {
+                    "id": "xtqRzHCLYFCOKzvo",
+                    "name": "nebius"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "When Executed by Another Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Input Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Input Data": {
+            "main": [
+                [
+                    {
+                        "node": "Get Memories",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Financial Consultation AI Agent": {
+            "main": [
+                [
+                    {
+                        "node": "Format Final Response",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Prepare Memory Update",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Money Accounts": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Consultation AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Transactions": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Consultation AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Spending Categories": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Consultation AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Insert Spending Categories": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Consultation AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Insert Money Accounts": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Consultation AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Insert Data Metadata": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Consultation AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Insert Complex Financial Data": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Consultation AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Execute Financial Analysis": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Consultation AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Structured Output Parser": {
+            "ai_outputParser": [
+                [
+                    {
+                        "node": "Financial Consultation AI Agent",
+                        "type": "ai_outputParser",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare Memory Update": {
+            "main": [
+                [
+                    {
+                        "node": "Call MemoryUpdaterAgent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query Financial Metadata": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Consultation AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Memories": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare memories",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare memories": {
+            "main": [
+                [
+                    {
+                        "node": "Financial Consultation AI Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "OpenAI Chat Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Financial Consultation AI Agent",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    },
+                    {
+                        "node": "Structured Output Parser",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {
+        "When Executed by Another Workflow": [
+            {
+                "user_message": "I want to invest $10,000 in stocks",
+                "intent": "request_consultation",
+                "session_state": {
+                    "in_active_session": false
+                },
+                "user_info": {
+                    "id": "6d736e3f-4f52-43a7-a555-e10b9c1c5272",
+                    "email": "testuser123@example.com",
+                    "name": "Test User",
+                    "language": "en",
+                    "timezone": "UTC",
+                    "currency": "USD"
+                }
+            }
+        ]
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "8f73175c8cfc4e9b66eecf1cdc8ab8fdf6289436294741f796d676a38d70095e"
+    }
+}

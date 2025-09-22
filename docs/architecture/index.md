@@ -1,12 +1,11 @@
 # **FinGoal AI Fullstack Architecture Document**
 
 - [Introduction](./introduction.md)
-- [High Level Architecture (Email/Password Authentication)](./high-level-architecture-email-password-auth.md)
+- [High Level Architecture (Auth refactor: n8n handles Google OAuth)](./high-level-architecture-auth-refactor-n8n-handles-google-oauth.md)
 - [Tech Stack](./tech-stack.md)
 - [API Specification](./api-specification.md)
-- [Authentication API](./authentication-api.md)
-- [User Profile API](./user-profile-api.md)
-- [Categories API](./categories-api.md)
+- [API Endpoints Documentation](./api-endpoints.md)
+- [Authentication & Authorization](./authentication.md)
 - [Components](./components.md)
 - [Core Workflows](./core-workflows.md)
 - [Database Schema](./database-schema.md)

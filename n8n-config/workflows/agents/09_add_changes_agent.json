@@ -1,0 +1,1164 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "=**FINANCIAL UPDATE CONTEXT:**\nUser Information: {{ $('When Executed by Another Workflow').first().json.user_info.toJsonString() }}\nUser Message: {{ $('Validate Input Data').first().json.user_message }}\nSession State: {{ $('Validate Input Data').first().json.session_state.toJsonString() }}\nTimestamp: {{ $('Validate Input Data').first().json.timestamp }}\n\n{{ $json.memory_msg }}\n\n**TASK:** Process financial data updates, calculate impact on existing plans and budgets, and update all relevant financial information while maintaining data integrity and providing comprehensive impact analysis.",
+                "hasOutputParser": true,
+                "options": {
+                    "systemMessage": "You are FinGoal AI Update Processor, a specialized financial data management agent focused on processing changes to user financial information and analyzing their impact on existing plans and goals.\n\n**CORE UPDATE CAPABILITIES:**\n- Process financial data updates with comprehensive validation and integrity checks\n- Analyze impact of changes on budgets, goals, and financial projections\n- Update database records with transactional consistency and audit trails\n- Recalculate financial plans and timelines based on new information\n- Provide detailed before/after impact analysis and recommendations\n\n**UPDATE PROCESSING FRAMEWORK:**\n**Change Type Classification:**\n1. **Transaction Updates:** New income/expenses, transaction modifications, account transfers\n2. **Account Changes:** Balance updates, new accounts, account closures, interest rate changes\n3. **Goal Modifications:** Target amount changes, timeline adjustments, priority updates\n4. **Budget Adjustments:** Category limit changes, allocation modifications, spending rule updates\n5. **Plan Revisions:** Strategy changes, timeline modifications, milestone adjustments\n\n**DATA VALIDATION RULES:**\n**Financial Amount Validation:**\n- Currency amounts: Reasonable ranges ($0.01 to $1,000,000), proper decimal formatting\n- Percentage validation: 0-100% for allocations, 0-30% for interest rates\n- Date validation: Chronological order, not future-dated beyond reasonable limits\n- Account ownership: User has permission to modify specified accounts\n\n**Consistency Checks:**\n- Budget total allocations equal 100% of income\n- Goal progress cannot exceed target amounts\n- Account balances align with transaction history\n- Debt payments don't exceed available cash flow\n\n**IMPACT ANALYSIS FRAMEWORK:**\n**Budget Impact Assessment:**\n```javascript\n// Category variance calculation\ncategory_variance = new_spending - budgeted_amount\nvariance_percentage = (category_variance / budgeted_amount) * 100\n\n// Annual impact projection\nannual_impact = monthly_change * 12 + compound_effects\ncash_flow_change = new_income - new_expenses - previous_net_flow\n```\n\n**Goal Timeline Recalculation:**\n```javascript\n// Updated completion timeline\nmonths_remaining = (target_amount - current_progress) / monthly_contribution\nnew_completion_date = current_date.addMonths(months_remaining)\n\n// Achievement probability adjustment\nachievement_probability = calculateMonteCarlo(\n  current_progress, monthly_contribution, market_volatility, time_horizon\n)\n```\n\n**Net Worth Impact:**\n```javascript\n// Net worth change calculation\nnet_worth_change = asset_changes - liability_changes\npercentage_change = (net_worth_change / previous_net_worth) * 100\n\n// Liquidity ratio impact\nliquidity_ratio = liquid_assets / monthly_expenses\ndebt_to_income_ratio = total_debt_payments / monthly_income\n```\n\n**DATABASE UPDATE OPERATIONS:**\n**Transactional Update Patterns:**\n```sql\n-- Transaction-safe update with audit trail\nBEGIN;\n\n-- Insert new transaction\nINSERT INTO transactions (user_id, amount, category_id, date, description)\nVALUES ($1, $2, $3, $4, $5) RETURNING id;\n\n-- Update account balance atomically\nUPDATE money_accounts \nSET balance = balance + $amount, updated_at = CURRENT_TIMESTAMP\nWHERE id = $account_id AND user_id = $user_id;\n\n-- Insert audit record\nINSERT INTO audit_log (user_id, table_name, action, old_values, new_values)\nVALUES ($user_id, 'transactions', 'INSERT', NULL, $new_values);\n\n-- Update affected goals if applicable\nUPDATE data_rows \nSET row_data = jsonb_set(row_data, '{current_progress}', $new_progress::jsonb)\nWHERE user_id = $user_id AND row_data->>'goal_type' = $goal_type;\n\nCOMMIT;\n```\n\n**CONFLICT RESOLUTION STRATEGIES:**\n**Duplicate Detection:**\n- Same amount, date, merchant within 24-hour window\n- Similar transaction patterns and recurring payment identification\n- User confirmation required for potential duplicates\n\n**Balance Reconciliation:**\n- Insufficient funds warnings for expense transactions\n- Overdraft protection and limit notifications\n- Account balance discrepancy alerts and resolution\n\n**Goal Conflict Management:**\n- Resource allocation conflicts between competing goals\n- Timeline impossibility detection (insufficient income/time)\n- Priority-based resource allocation recommendations\n\n**RECALCULATION ENGINE:**\n**Budget Performance Updates:**\n```javascript\n// Category performance recalculation\nfunction recalculateBudgetPerformance(userId, categoryId, newTransaction) {\n  const monthlySpent = calculateMonthlySpending(userId, categoryId);\n  const budgetLimit = getBudgetLimit(userId, categoryId);\n  const variance = monthlySpent - budgetLimit;\n  const percentageUsed = (monthlySpent / budgetLimit) * 100;\n  \n  return {\n    variance: variance,\n    percentageUsed: percentageUsed,\n    status: percentageUsed > 100 ? 'over_budget' : 'on_track',\n    projectedMonthEnd: projectMonthEndSpending(monthlySpent)\n  };\n}\n```\n\n**Goal Progress Updates:**\n```javascript\n// Goal milestone recalculation\nfunction recalculateGoalProgress(goalId, newContribution) {\n  const goal = getGoalDetails(goalId);\n  const newProgress = goal.current_progress + newContribution;\n  const remainingAmount = goal.target_amount - newProgress;\n  const monthsRemaining = remainingAmount / goal.monthly_contribution;\n  \n  return {\n    progress_percentage: (newProgress / goal.target_amount) * 100,\n    months_remaining: Math.ceil(monthsRemaining),\n    new_completion_date: addMonths(new Date(), monthsRemaining),\n    on_track: monthsRemaining <= goal.original_timeline\n  };\n}\n```\n\n**CHANGE CONFIRMATION AND REPORTING:**\n**Impact Summary Structure:**\n```javascript\nconst changeImpactSummary = {\n  changes_applied: [\n    {\n      change_type: 'transaction_added',\n      description: 'Added $500 grocery expense',\n      impact_level: 'medium',\n      affected_areas: ['budget_food_category', 'monthly_cash_flow']\n    }\n  ],\n  budget_impacts: {\n    over_budget_categories: ['food', 'entertainment'],\n    under_budget_categories: ['transportation'],\n    net_cash_flow_change: -150.00\n  },\n  goal_impacts: {\n    accelerated_goals: ['vacation_fund'],\n    delayed_goals: ['emergency_fund'],\n    timeline_changes: ['+2 months emergency fund completion']\n  },\n  recommendations: [\n    'Consider reducing entertainment budget by $100/month',\n    'Increase emergency fund contribution to maintain timeline'\n  ]\n};\n```\n\n**AUDIT AND COMPLIANCE:**\n**Change Audit Trail:**\n- Complete record of all modifications with timestamps\n- User identification and change authorization tracking\n- Before/after state preservation for rollback capability\n- Reason codes and change justification documentation\n\n**Data Integrity Verification:**\n- Post-update validation of all affected calculations\n- Cross-reference checks between related financial data\n- Rollback procedures for failed or invalid updates\n- Consistency verification across all affected systems\n\nYour goal is to process financial updates efficiently while maintaining complete data integrity, providing comprehensive impact analysis, and ensuring users understand how changes affect their overall financial picture."
+                }
+            },
+            "id": "17c13ec5-369e-40b8-8996-dc93d973844b",
+            "name": "Financial Update AI Agent",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1.6,
+            "position": [
+                -48,
+                -160
+            ]
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Query current financial profile and preferences to understand baseline state before processing updates.",
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "users",
+                    "mode": "list",
+                    "cachedResultName": "users"
+                },
+                "options": {
+                    "outputColumns": [
+                        "id",
+                        "email",
+                        "name",
+                        "language",
+                        "timezone",
+                        "currency",
+                        "is_active",
+                        "created_at"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                -240,
+                192
+            ],
+            "id": "f6b2eff9-41e5-4095-bd53-4efb8c8b6360",
+            "name": "Query User Profile",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Insert new transactions into the transactions table with proper categorization and account association.",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "transactions",
+                    "mode": "list",
+                    "cachedResultName": "transactions"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "account_id",
+                            "displayName": "account_id",
+                            "required": true,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "category_id",
+                            "displayName": "category_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "amount",
+                            "displayName": "amount",
+                            "required": true,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "number"
+                        },
+                        {
+                            "id": "currency",
+                            "displayName": "currency",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "description",
+                            "displayName": "description",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "transaction_date",
+                            "displayName": "transaction_date",
+                            "required": true,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "dateTime"
+                        },
+                        {
+                            "id": "transaction_type",
+                            "displayName": "transaction_type",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "merchant_name",
+                            "displayName": "merchant_name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "created_at",
+                            "displayName": "created_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "dateTime"
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "dateTime"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                -80,
+                192
+            ],
+            "id": "8e858f94-a675-4b02-937e-53328a3c3ebb",
+            "name": "Insert New Transactions",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Update existing transactions with modifications, corrections, or additional information.",
+                "operation": "update",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "transactions",
+                    "mode": "list",
+                    "cachedResultName": "transactions"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": true,
+                            "defaultMatch": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "account_id",
+                            "displayName": "account_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "category_id",
+                            "displayName": "category_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "amount",
+                            "displayName": "amount",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "number"
+                        },
+                        {
+                            "id": "currency",
+                            "displayName": "currency",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "description",
+                            "displayName": "description",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "transaction_date",
+                            "displayName": "transaction_date",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "dateTime"
+                        },
+                        {
+                            "id": "transaction_type",
+                            "displayName": "transaction_type",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "merchant_name",
+                            "displayName": "merchant_name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "dateTime"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                0,
+                48
+            ],
+            "id": "ccdb01ae-0958-4e53-a2f7-e652d83f0116",
+            "name": "Update Existing Transactions",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Update account balances and account information in the money_accounts table.",
+                "operation": "update",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "money_accounts",
+                    "mode": "list",
+                    "cachedResultName": "money_accounts"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": true,
+                            "defaultMatch": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "name",
+                            "displayName": "name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "account_type",
+                            "displayName": "account_type",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "institution_name",
+                            "displayName": "institution_name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "balance",
+                            "displayName": "balance",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "number"
+                        },
+                        {
+                            "id": "currency",
+                            "displayName": "currency",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "is_active",
+                            "displayName": "is_active",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "boolean"
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "dateTime"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                96,
+                192
+            ],
+            "id": "474526ce-4105-46f8-bed5-e0ac08dcb96f",
+            "name": "Update Account Balances",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Update budget allocations and spending limits in the budgets table.",
+                "operation": "update",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "budgets",
+                    "mode": "list",
+                    "cachedResultName": "budgets"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": true,
+                            "defaultMatch": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "category_id",
+                            "displayName": "category_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "name",
+                            "displayName": "name",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "amount",
+                            "displayName": "amount",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "number"
+                        },
+                        {
+                            "id": "currency",
+                            "displayName": "currency",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "period",
+                            "displayName": "period",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "start_date",
+                            "displayName": "start_date",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "dateTime"
+                        },
+                        {
+                            "id": "end_date",
+                            "displayName": "end_date",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "dateTime"
+                        },
+                        {
+                            "id": "is_active",
+                            "displayName": "is_active",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "boolean"
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "dateTime"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                160,
+                48
+            ],
+            "id": "af6131b3-5d5b-43fe-bbd3-ee93270f490f",
+            "name": "Update Budget Allocations",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Update goals, debts, and complex financial data stored in JSONB format in the data_rows table.",
+                "operation": "update",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "data_rows",
+                    "mode": "list",
+                    "cachedResultName": "data_rows"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "matchingColumns": [
+                        "id"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": true,
+                            "defaultMatch": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        },
+                        {
+                            "id": "user_id",
+                            "displayName": "user_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "metadata_id",
+                            "displayName": "metadata_id",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "data",
+                            "displayName": "data",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "object"
+                        },
+                        {
+                            "id": "status",
+                            "displayName": "status",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "string"
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "canBeUsedToMatch": false,
+                            "type": "dateTime"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                240,
+                192
+            ],
+            "id": "ca448942-33c8-4bfc-9f2a-9ec20aca4bb1",
+            "name": "Update Goals & Complex Data",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Execute complex impact analysis queries and financial recalculations after updates are applied.",
+                "operation": "executeQuery",
+                "query": "{{ $fromAI('sql_query') }}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                -160,
+                48
+            ],
+            "id": "0c918be7-4212-4d62-aaa3-ec0554cd2df9",
+            "name": "Execute Impact Analysis",
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+            "typeVersion": 1,
+            "position": [
+                -304,
+                48
+            ],
+            "id": "ac464a86-f577-4ee4-a497-ffa36fa15aab",
+            "name": "Google Gemini Chat Model",
+            "credentials": {
+                "googlePalmApi": {
+                    "id": "BtCIEg4EH9gc1bXj",
+                    "name": "Google Gemini(PaLM) Api account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "schemaType": "manual",
+                "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"memory\": {\n      \"type\": \"string\",\n      \"description\": \"Memory updates for changes agent: transaction logs, update patterns, change history, impact analysis results\"\n    },\n    \"changeResult\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"changes_applied\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"change_type\": {\n                \"type\": \"string\",\n                \"enum\": [\"transaction_added\", \"transaction_updated\", \"account_updated\", \"goal_modified\", \"budget_adjusted\"]\n              },\n              \"description\": {\"type\": \"string\"},\n              \"impact_level\": {\n                \"type\": \"string\",\n                \"enum\": [\"low\", \"medium\", \"high\"]\n              },\n              \"affected_areas\": {\n                \"type\": \"array\",\n                \"items\": {\"type\": \"string\"}\n              }\n            },\n            \"required\": [\"change_type\", \"description\", \"impact_level\"]\n          }\n        },\n        \"impact_analysis\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"budget_impact\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"category_variances\": {\n                  \"type\": \"array\",\n                  \"items\": {\n                    \"type\": \"object\",\n                    \"properties\": {\n                      \"category\": {\"type\": \"string\"},\n                      \"variance_amount\": {\"type\": \"number\"},\n                      \"variance_percentage\": {\"type\": \"number\"},\n                      \"status\": {\"type\": \"string\", \"enum\": [\"under_budget\", \"on_track\", \"over_budget\"]}\n                    }\n                  }\n                },\n                \"net_cash_flow_change\": {\"type\": \"number\"},\n                \"annual_impact_projection\": {\"type\": \"number\"}\n              }\n            },\n            \"goal_impact\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"timeline_changes\": {\n                  \"type\": \"array\",\n                  \"items\": {\n                    \"type\": \"object\",\n                    \"properties\": {\n                      \"goal_name\": {\"type\": \"string\"},\n                      \"timeline_change\": {\"type\": \"string\"},\n                      \"new_completion_date\": {\"type\": \"string\"},\n                      \"impact_direction\": {\"type\": \"string\", \"enum\": [\"accelerated\", \"delayed\", \"unchanged\"]}\n                    }\n                  }\n                },\n                \"achievement_probability_changes\": {\n                  \"type\": \"array\",\n                  \"items\": {\n                    \"type\": \"object\",\n                    \"properties\": {\n                      \"goal_name\": {\"type\": \"string\"},\n                      \"old_probability\": {\"type\": \"number\"},\n                      \"new_probability\": {\"type\": \"number\"}\n                    }\n                  }\n                }\n              }\n            },\n            \"net_worth_impact\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"net_worth_change\": {\"type\": \"number\"},\n                \"percentage_change\": {\"type\": \"number\"},\n                \"liquidity_ratio_change\": {\"type\": \"number\"}\n              }\n            }\n          }\n        },\n        \"recommendations\": {\n          \"type\": \"array\",\n          \"items\": {\"type\": \"string\"},\n          \"description\": \"Actionable recommendations based on the changes and their impacts\"\n        },\n        \"warnings\": {\n          \"type\": \"array\",\n          \"items\": {\"type\": \"string\"},\n          \"description\": \"Warnings about potential issues or conflicts from the changes\"\n        },\n        \"update_summary\": {\n          \"type\": \"string\",\n          \"description\": \"Human-readable summary of all changes and their overall impact\"\n        }\n      },\n      \"required\": [\"changes_applied\", \"impact_analysis\", \"update_summary\"]\n    }\n  },\n  \"required\": [\"changeResult\"]\n}"
+            },
+            "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+            "typeVersion": 1.3,
+            "position": [
+                320,
+                48
+            ],
+            "id": "71546770-78af-4a40-ae62-5e148ac4a640",
+            "name": "Structured Output Parser"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "final-success",
+                            "name": "success",
+                            "value": true,
+                            "type": "boolean"
+                        },
+                        {
+                            "id": "final-agent",
+                            "name": "agent",
+                            "value": "Add_Changes_Agent",
+                            "type": "string"
+                        },
+                        {
+                            "id": "final-response-type",
+                            "name": "response_type",
+                            "value": "change_confirmation",
+                            "type": "string"
+                        },
+                        {
+                            "id": "final-content",
+                            "name": "content",
+                            "value": "={{ $json.output.changeResult }}",
+                            "type": "object"
+                        },
+                        {
+                            "id": "final-timestamp",
+                            "name": "timestamp",
+                            "value": "={{ new Date().toISOString() }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                320,
+                -224
+            ],
+            "id": "ecab5b74-1de1-4e9e-ae0b-15ced8887b6e",
+            "name": "Format Final Response"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "memory-content-field",
+                            "name": "memory",
+                            "value": "={{ $json.output.memory }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "agent-type-field",
+                            "name": "agent_type",
+                            "value": "={{ $('Validate Input Data').item.json.agent_type }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                320,
+                -96
+            ],
+            "id": "06bbc153-aacd-4c33-b409-8ce8de988a5f",
+            "name": "Prepare Memory Update"
+        },
+        {
+            "parameters": {
+                "workflowId": {
+                    "__rl": true,
+                    "value": "CD8W2iWJNWd1GY70",
+                    "mode": "list",
+                    "cachedResultName": "MemoryUpdaterAgent"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "memory": "={{ $json.memory }}",
+                        "agent_type": "={{ $json.agent_type }}"
+                    }
+                },
+                "options": {
+                    "waitForSubWorkflow": false
+                }
+            },
+            "type": "n8n-nodes-base.executeWorkflow",
+            "typeVersion": 1.2,
+            "position": [
+                496,
+                -96
+            ],
+            "id": "8e3668ef-0886-4399-a2c3-7c7f19d5a51e",
+            "name": "Call MemoryUpdaterAgent"
+        },
+        {
+            "parameters": {
+                "workflowInputs": {
+                    "values": [
+                        {
+                            "name": "user_message"
+                        },
+                        {
+                            "name": "intent"
+                        },
+                        {
+                            "name": "session_state",
+                            "type": "object"
+                        },
+                        {
+                            "name": "user_info",
+                            "type": "object"
+                        }
+                    ]
+                }
+            },
+            "id": "d5b6918d-6be1-4b63-8c17-3a5f6aa30940",
+            "typeVersion": 1.1,
+            "name": "When Executed by Another Workflow",
+            "type": "n8n-nodes-base.executeWorkflowTrigger",
+            "position": [
+                -736,
+                -160
+            ]
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "input-validation-message",
+                            "name": "user_message",
+                            "value": "={{ $json.user_message }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "input-validation-intent",
+                            "name": "intent",
+                            "value": "={{ $json.intent }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "input-validation-session",
+                            "name": "session_state",
+                            "value": "={{ $json.session_state }}",
+                            "type": "object"
+                        },
+                        {
+                            "id": "agent-type-field",
+                            "name": "agent_type",
+                            "value": "consult_customer_agent",
+                            "type": "string"
+                        },
+                        {
+                            "id": "f647f8dd-6978-41a5-8d4b-769834e6fc4e",
+                            "name": "user_id",
+                            "value": "={{ $json.user_info.id }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "07eee8b2-affa-4937-8c7b-77cdf550abc3",
+                            "name": "timestamp",
+                            "value": "={{ $now }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                -560,
+                -160
+            ],
+            "id": "4af291ab-6c82-4c77-a10b-1cad8cce6059",
+            "name": "Validate Input Data"
+        },
+        {
+            "parameters": {
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "memories",
+                    "mode": "list",
+                    "cachedResultName": "memories"
+                },
+                "where": {
+                    "values": [
+                        {
+                            "column": "agent_type",
+                            "value": "={{ $('Validate Input Data').item.json.agent_type }}"
+                        },
+                        {
+                            "column": "user_id",
+                            "value": "={{ $('Validate Input Data').item.json.user_id }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "outputColumns": [
+                        "memory_type",
+                        "content",
+                        "importance_score",
+                        "last_accessed_at",
+                        "id"
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                -384,
+                -160
+            ],
+            "id": "3e2a9a06-3ffc-4952-addd-d4971fdef592",
+            "name": "Get Memories",
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "A9ARSsEr8DBB7lXK",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const memories = $input.all();\n\nif (memories.length == 1 && Object.keys(memories[0].json).length == 0) {\n  return [{ memory_msg: \"You have no memory.\" }];\n}\n\nlet memory_msg = \"## Your memories\\n\";\nfor (const memory of memories) {\n  if (memory.json.memory_type && memory.json.content && memory.json.content.message) {\n    memory_msg += `- ${memory.json.memory_type}: ${memory.json.content.message} (Importance: ${memory.json.importance_score})\\n`;\n  }\n}\nreturn [{ memory_msg }];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -224,
+                -160
+            ],
+            "id": "00092ba9-d8e6-4944-bae2-d63cb12e83c6",
+            "name": "Prepare memories"
+        }
+    ],
+    "connections": {
+        "Financial Update AI Agent": {
+            "main": [
+                [
+                    {
+                        "node": "Format Final Response",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Prepare Memory Update",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Query User Profile": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Update AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Insert New Transactions": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Update AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update Existing Transactions": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Update AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update Account Balances": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Update AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update Budget Allocations": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Update AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update Goals & Complex Data": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Update AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Execute Impact Analysis": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Financial Update AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Google Gemini Chat Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Financial Update AI Agent",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Structured Output Parser": {
+            "ai_outputParser": [
+                [
+                    {
+                        "node": "Financial Update AI Agent",
+                        "type": "ai_outputParser",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare Memory Update": {
+            "main": [
+                [
+                    {
+                        "node": "Call MemoryUpdaterAgent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "When Executed by Another Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Input Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Input Data": {
+            "main": [
+                [
+                    {
+                        "node": "Get Memories",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Memories": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare memories",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare memories": {
+            "main": [
+                [
+                    {
+                        "node": "Financial Update AI Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {
+        "When Executed by Another Workflow": [
+            {
+                "user_message": "I want to invest $10,000 in stocks",
+                "intent": "request_consultation",
+                "session_state": {
+                    "in_active_session": false
+                },
+                "user_info": {
+                    "id": "6d736e3f-4f52-43a7-a555-e10b9c1c5272",
+                    "email": "testuser123@example.com",
+                    "name": "Test User",
+                    "language": "en",
+                    "timezone": "UTC",
+                    "currency": "USD"
+                }
+            }
+        ]
+    },
+    "meta": {
+        "instanceId": "8f73175c8cfc4e9b66eecf1cdc8ab8fdf6289436294741f796d676a38d70095e"
+    }
+}

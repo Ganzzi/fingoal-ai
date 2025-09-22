@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../api/auth_service.dart';
+import '../api/chat_api_service.dart';
 
 /// Authentication Provider
 ///
@@ -7,6 +8,7 @@ import '../api/auth_service.dart';
 /// for authentication operations throughout the app.
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
+  final ChatApiService _chatApiService = ChatApiService();
 
   bool _isAuthenticated = false;
   bool _isLoading = false;
@@ -66,6 +68,12 @@ class AuthProvider extends ChangeNotifier {
       if (result['success'] == true) {
         _isAuthenticated = true;
         _user = result['user'];
+
+        // Send notification to chat about successful login
+        _sendChatNotification(
+          'Welcome back! I\'m here to help with your financial goals today.',
+        );
+
         notifyListeners();
         return true;
       } else {
@@ -95,6 +103,13 @@ class AuthProvider extends ChangeNotifier {
       if (result['success'] == true) {
         _isAuthenticated = true;
         _user = result['user'];
+
+        // Send notification to chat about successful registration
+        final userName = result['user']?['name'] ?? 'there';
+        _sendChatNotification(
+          'Welcome to FinGoal, $userName! I\'m your AI financial assistant. Let\'s start building your financial future together.',
+        );
+
         notifyListeners();
         return true;
       } else {
@@ -172,6 +187,18 @@ class AuthProvider extends ChangeNotifier {
 
   /// Get authentication service for making authenticated requests
   AuthService get authService => _authService;
+
+  /// Send notification message to chat
+  Future<void> _sendChatNotification(String message) async {
+    try {
+      await _chatApiService.sendNotification(message: message);
+    } catch (e) {
+      // Silently ignore chat notification errors
+      if (kDebugMode) {
+        print('Failed to send chat notification: $e');
+      }
+    }
+  }
 
   /// Set loading state
   void _setLoading(bool loading) {

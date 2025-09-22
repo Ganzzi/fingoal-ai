@@ -12,11 +12,11 @@
       },
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.5,
-      "id": "2b633bf4-ee28-431d-9a78-edbb4470f300",
+      "id": "6f065340-eee8-4927-a8c4-a71a3cb792b4",
       "name": "Create Task Tool",
       "position": [
-        500,
-        420
+        6672,
+        2304
       ]
     },
     {
@@ -29,11 +29,11 @@
       },
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.5,
-      "id": "f81e060e-2f4b-46b0-9bf1-3ad1835e63d8",
+      "id": "67df814b-329c-459b-b125-db7c4a3c1585",
       "name": "Query Tasks Tool",
       "position": [
-        380,
-        420
+        6560,
+        2304
       ]
     },
     {
@@ -46,11 +46,11 @@
       },
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.5,
-      "id": "6915767d-3282-4826-af6b-9eea8b25aeef",
+      "id": "6ff675a1-c253-44a9-8e92-12d75afcf6e0",
       "name": "Update Task Tool",
       "position": [
-        640,
-        420
+        6816,
+        2304
       ]
     },
     {
@@ -63,28 +63,29 @@
       },
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.5,
-      "id": "a5f7aa1a-ca33-4437-892f-a9bed0e02c34",
+      "id": "06aace19-6b76-4c39-b684-8d754e7c0eac",
       "name": "Delete Task Tool",
       "position": [
-        780,
-        420
+        6960,
+        2304
       ]
     },
     {
       "parameters": {
         "promptType": "define",
         "text": "=user id: {{ $json.payload.userId }}\nuser email: {{ $json.payload.email }}\nmessage: {{ $('Chat Webhook1').item.json.body.message }}",
+        "hasOutputParser": true,
         "options": {
           "systemMessage": "You are an expert task breakdown assistant for Vietnamese students. You can help users:\n\n1. CREATE TASKS: Extract title, description, deadline from natural language. Parse Vietnamese dates like 'thứ 6 tuần sau', 'ngày mai', '25/12', etc. Always set a specific deadline.\n\n2. QUERY TASKS: Help users find their tasks using filters. You have access to their task database.\n\n3. BREAK DOWN TASKS: When a user wants to break down a task, follow this process:\n\n   **IDENTIFY TASK**: First, determine which task the user wants to break down. If unclear, list their current tasks and ask them to specify.\n   \n   **BREAKDOWN STRATEGY**: Suggest an appropriate breakdown approach:\n   - Academic projects: Research → Outline → Draft → Review → Submit\n   - Assignments: Understand requirements → Gather resources → Complete sections → Review\n   - Study tasks: Review materials → Create notes → Practice → Test knowledge\n   \n   **GUIDED COLLECTION**: Help the user create 3-7 manageable sub-tasks:\n   - Ask \"What's the first step to complete [task]?\"\n   - Continue: \"What comes next?\"\n   - Ensure each sub-task is specific and actionable\n   - Suggest missing steps if needed\n   \n   **COMPLETION**: Summarize the breakdown and ask for confirmation before saving.\n\n**IMPORTANT DATABASE CONTEXT:**\n- The current user's ID is available in the context. Always use this user ID for security.\n- When constructing SQL queries, you have access to the user ID from the context.\n- All database operations must filter by user_id to ensure data isolation.\n\n**SQL Query Guidelines:**\n- For CREATE TASK: Use INSERT INTO tasks (title, description, deadline, status, user_id) VALUES (...)\n- For QUERY TASKS: Always include WHERE user_id = [user_id] in your queries\n- For SUB-TASKS: Always validate parent task ownership with user_id checks\n- Use proper parameterized queries with $1, $2, etc. for all user inputs\n- Remember to include user_id as a parameter in all relevant queries\n\nFor task creation, extract:\n- title: Main task description\n- description: Additional details (optional)\n- deadline: Parse to ISO format (YYYY-MM-DD HH:MM:SS)\n- status: Usually 'TODO' unless specified\n- user_id: Always include the authenticated user's ID\n\nFor sub-task creation during breakdown:\n- task_id: The parent task ID\n- user_id: The authenticated user's ID (for validation)\n- sub_task_title: Clear, actionable sub-task description\n- is_completed: false (default)\n\nBe encouraging and help students see large tasks as manageable steps. Use Vietnamese expressions like 'Cố lên!' and 'Bạn làm được!' when appropriate."
         }
       },
-      "id": "cb3e0bfa-cdd2-46fa-ae0e-45ed83fbfc9d",
+      "id": "39e8c49a-5f25-4678-b466-766a71a54528",
       "name": "Task Management AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.6,
       "position": [
-        360,
-        160
+        6528,
+        2016
       ]
     },
     {
@@ -95,42 +96,15 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "8f4333ad-ee35-4468-a54e-4ae924642cb3",
+      "id": "9be51a6a-c572-44ca-b07c-d39ad5f2b39e",
       "name": "Chat Webhook1",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -600,
-        160
+        5568,
+        2032
       ],
       "webhookId": "chat-webhook-id"
-    },
-    {
-      "parameters": {
-        "workflowId": {
-          "__rl": true,
-          "value": "TpPWaKie1jlKNQJc",
-          "mode": "list",
-          "cachedResultName": "Middleware"
-        },
-        "workflowInputs": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "authHeader": "={{ $json.authHeader }}"
-          }
-        },
-        "options": {
-          "waitForSubWorkflow": true
-        }
-      },
-      "id": "8acf4386-e636-4812-b3ff-56c1b52f74f4",
-      "name": "Execute Auth Middleware1",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.2,
-      "position": [
-        -380,
-        160
-      ]
     },
     {
       "parameters": {
@@ -155,39 +129,79 @@
         },
         "options": {}
       },
-      "id": "de2d0298-3f61-4f62-b3b9-996f13226f3d",
+      "id": "e7085eb6-ab83-4ba4-9b48-86f55fb2527e",
       "name": "Check Authentication6",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -160,
-        160
+        6016,
+        2032
       ]
     },
     {
       "parameters": {
         "options": {}
       },
-      "id": "fea742d8-fa64-460c-863b-ad193f4e0909",
+      "id": "f01880e3-39b5-4a65-aa4e-d7701c5293c2",
       "name": "Prepare Chat Context1",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3,
       "position": [
-        120,
-        160
+        6288,
+        2016
       ]
     },
     {
       "parameters": {
         "options": {}
       },
-      "id": "c862dcb3-6e5f-4c5d-93c7-03234efc8b5b",
+      "id": "866df421-96bc-4643-a753-ca16b41abe58",
       "name": "Format Chat Response1",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3,
       "position": [
-        720,
-        160
+        6896,
+        2016
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        6400,
+        2304
+      ],
+      "id": "ff07010b-5368-4d3b-8d4d-6598baac0415",
+      "name": "Google Gemini Chat Model1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "TpPWaKie1jlKNQJc",
+          "mode": "list",
+          "cachedResultName": "Middleware"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "authHeader": "={{ $json.authHeader }}"
+          }
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "590214e1-199a-4298-9daa-636465449a1d",
+      "name": "Execute Auth Middleware2",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        5792,
+        2032
       ]
     },
     {
@@ -198,13 +212,13 @@
           "responseCode": 200
         }
       },
-      "id": "0f53ac1f-8aa0-40fe-bf5b-ac3797f152bc",
-      "name": "Respond Success1",
+      "id": "cf388856-13f9-46c5-992a-bba442ada283",
+      "name": "Respond Success2",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        940,
-        160
+        7120,
+        2016
       ]
     },
     {
@@ -215,27 +229,28 @@
           "responseCode": 401
         }
       },
-      "id": "8f6696a4-3c33-4a8a-943d-a669ad8eee49",
-      "name": "Respond Unauthorized1",
+      "id": "707f7c70-8188-44e0-9f4c-f4832f64a63f",
+      "name": "Respond Unauthorized2",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        20,
-        280
+        6192,
+        2160
       ]
     },
     {
       "parameters": {
-        "options": {}
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"memory\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"description\": \"All content to need to update to your memory. Topics: list_here\"\n\t\t},\n\t\t\"outputMessage\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"description\": \"The message to output after processing.\"\n\t\t}\n\t}\n}"
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
       "position": [
-        220,
-        420
+        6896,
+        2432
       ],
-      "id": "40a45d1c-52a3-4984-bfe3-8cfe32e86227",
-      "name": "Google Gemini Chat Model1"
+      "id": "a59b5da4-632f-4f5e-ae40-bd193274eb2e",
+      "name": "Structured Output Parser"
     }
   ],
   "connections": {
@@ -298,18 +313,7 @@
       "main": [
         [
           {
-            "node": "Execute Auth Middleware1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Execute Auth Middleware1": {
-      "main": [
-        [
-          {
-            "node": "Check Authentication6",
+            "node": "Execute Auth Middleware2",
             "type": "main",
             "index": 0
           }
@@ -327,7 +331,7 @@
         ],
         [
           {
-            "node": "Respond Unauthorized1",
+            "node": "Respond Unauthorized2",
             "type": "main",
             "index": 0
           }
@@ -349,7 +353,7 @@
       "main": [
         [
           {
-            "node": "Respond Success1",
+            "node": "Respond Success2",
             "type": "main",
             "index": 0
           }
@@ -362,6 +366,28 @@
           {
             "node": "Task Management AI Agent",
             "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Auth Middleware2": {
+      "main": [
+        [
+          {
+            "node": "Check Authentication6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Task Management AI Agent",
+            "type": "ai_outputParser",
             "index": 0
           }
         ]
@@ -408,7 +434,7 @@
   },
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "5e0161c981e415e651ddc37c539db9639567058c1fed43e489c399659490a582"
+    "instanceId": "8f73175c8cfc4e9b66eecf1cdc8ab8fdf6289436294741f796d676a38d70095e"
   }
 }
 ```

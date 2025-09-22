@@ -1,10 +1,12 @@
-# Deve3.  Configure JWT signing secrets and email service credentials for authentication.opment Workflow
+# Development Workflow
 
 ## Local Development Setup
-1.  Install Flutter SDK, an IDE (VS Code/Android Studio), and Docker (for PostgreSQL).
+1.  Install Flutter SDK, Node.js, an IDE (VS Code/Android Studio), and Docker (for PostgreSQL).
 2.  Set up PostgreSQL instance with UUID v7 extension enabled.
 3.  Set up n8n locally via Docker or use n8n Cloud.
 4.  Configure Google OAuth 2.0 credentials for mobile app.
+5.  Set up Node.js notification server with Socket.IO dependencies.
+6.  Configure LLM API credentials (OpenAI/Gemini) for AI agents.
 
 ## N8N Workflow Development References
 When developing n8n workflows for this project, reference the comprehensive documentation in `docs/n8n_config_creation_instructions/`:
@@ -26,12 +28,13 @@ When developing n8n workflows for this project, reference the comprehensive docu
     *   AI Agent Chat API: `docs/n8n_config_creation_instructions/ai-agent-chat-api-workflow-example.md`
 *   **Connection Patterns:** `docs/n8n_config_creation_instructions/connection-structure.md`
 *   **Overview:** `docs/n8n_config_creation_instructions/overview.md`
-5.  Populate a `.env` file with credentials for PostgreSQL, n8n, JWT secrets, email service, and LLM provider.
-6.  (Future) Set up Node.js environment for Socket.io server development.
+7.  Populate a `.env` file with credentials for PostgreSQL, n8n, Google OAuth, LLM provider, and notification server.
 
 ## Development Commands
 *   **Run DB Init:** Manually execute the `01_db_init_seed.json` workflow in n8n.
-*   **Start Backend:** Activate all agent workflows in your n8n instance.
+*   **Start N8N Backend:** Activate all agent workflows in your n8n instance.
+*   **Start Notification Server:** `npm start` in the `/server` directory.
 *   **Start Frontend:** `flutter run` in the `/app` directory.
+*   **Run Tests:** `flutter test` for Flutter tests, `npm test` for Node.js tests.
 
 ---
